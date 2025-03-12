@@ -1,0 +1,12 @@
+{
+  "name": "dart",
+  "title": "Dangerous Asteroids Radar Tracking",
+  "description": "save ammunition by smarter targeting",
+  "author": "xyzzycgn",
+  "homepage": "https://github.com/xyzzycgn/RLD-lang.git",
+  "version": "0.0.1",
+  "factorio_version": "2.0",
+  "dependencies": [
+    "log4factorio >= 0.0.1"
+  ]
+}

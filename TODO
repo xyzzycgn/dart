@@ -1,0 +1,36 @@
+1. Parameterisierung der Halbgerade:
+P(t) = P0 + t * d für t ≥ 0
+
+2. Kreisgleichung:
+(x - xc)² + (y - yc)² = r²
+
+3. Einsetzen der Parameterisierung in die Kreisgleichung:
+(x0 + t dx - xc)² + (y0 + t dy - yc)² = r²
+
+4. Umformung zur quadratischen Gleichung:
+A t² + B t + C = 0, wobei:
+- A = dx² + dy²
+- B = 2 ((x0 - xc) dx + (y0 - yc) * dy)
+- C = (x0 - xc)² + (y0 - yc)² - r²
+
+5. Diskriminantenberechnung:
+D = B² - 4 A C
+- Wenn D < 0: Die Halbgerade schneidet den Kreis nicht.
+- Wenn D = 0: Die Halbgerade berührt den Kreis (ein Schnittpunkt).
+- Wenn D > 0: Die Halbgerade schneidet den Kreis an zwei Punkten.
+
+6. Überprüfung der Schnittpunkte:
+Berechne die Lösungen für t mit der Mitternachtsformel:
+t1 = (-B - √D) / (2 * A)
+t2 = (-B + √D) / (2 * A)
+
+Überprüfe, ob einer der Werte t1 oder t2 größer oder gleich 0 ist. Wenn ja, schneidet die Halbgerade den Kreis.
+___________________________________________________
+turrets:
+shooting_target  = Zielwahl? (kann nicht auf nil gesetzt werden !!!!!)
+shooting_state
+defines.entity_status.no_ammo ggfls beachten
+get_radius = Reichweite?
+
+asteroiden
+is_military_target?
