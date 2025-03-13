@@ -28,7 +28,7 @@ t2 = (-B + √D) / (2 * A)
 ___________________________________________________
 turrets:
 shooting_target  = Zielwahl? (kann nicht auf nil gesetzt werden !!!!!)
-shooting_state
+shooting_state UNBRAUCHBAR, weil nur für character erlaubt
 defines.entity_status.no_ammo ggfls beachten
 get_radius = Reichweite?
 

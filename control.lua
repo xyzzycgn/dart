@@ -108,7 +108,7 @@ local function dumpPrototypes(sev)
     end
 end
 
-local function dumpEntity(entity)
+local function dumpEntity(entity, is_turret)
     local de = {
         force = entity.force,
         force_index = entity.force_index,
@@ -121,7 +121,15 @@ local function dumpEntity(entity)
         destructible = entity.destructible,
         direction = entity.direction,
         speed = entity.speed,
+        is_military_target = entity.is_military_target,
+        --shooting_state = entity.shooting_state,
+        get_radius = entity.get_radius(),
+        unit_number = entity.unit_number,
     }
+
+    if is_turret then
+        de.shooting_target = entity.shooting_target
+    end
 
     return de
 end
@@ -178,8 +186,8 @@ local function targeting(platform, chunk)
     local x0 = chunk.position.x
     local y0 = chunk.position.y
 
-    local dx = chunk.movement[1]
-    local dy = chunk.movement[2] + platform.speed
+    local dx = chunk.movement.x
+    local dy = chunk.movement.y + platform.speed
 
     local A = dx * dx + dy * dy
     local B = 2 * (x0 * dx + y0 * dy)
@@ -202,6 +210,13 @@ script.on_event(defines.events.on_surface_renamed, function(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
 end)
 
+local show_turrets = true -- TODO später löschen
+
+local targets = {}
+
+local turrets = {}
+
+
 script.on_nth_tick(60, function(event)
     local surface = game.get_surface("platform-2")
     Log.logBlock(surface, function(m)log(m)end, Log.FINER)
@@ -212,56 +227,61 @@ script.on_nth_tick(60, function(event)
     local platform = surface and surface.platform
 
     if platform then
-        Log.log(platform.speed, function(m)log(m)end, Log.FINE)
-        --local chunks = platform.find_asteroid_chunks_filtered({ arte = area, limit = 40 })
-        --Log.logBlock(chunks, function(m)log(m)end, Log.FINE)
-        --for _,chunk in pairs(chunks) do
-        --    local D = targeting(surface.platform, chunk)
-        --
-        --    local color
-        --
-        --    if (D < 0) then
-        --        color = { 0, 0.5, 0, 0.5 }
-        --    elseif (D == 0) then
-        --        color = { 0.5, 0.5, 0, 0.5 }
-        --    else
-        --        color = { 0.5, 0, 0, 0.5 }
-        --    end
-        --
-        --    rendering.draw_circle({
-        --        target = chunk.position,
-        --        color = color,
-        --        time_to_live = 55,
-        --        surface = surface,
-        --        radius = 0.8,
-        --    })
-        --end
+        if show_turrets then
+            local turrets = surface.find_entities_filtered( { is_military_target = true })
+            for _, turret in pairs(turrets) do
+                Log.logBlock(dumpEntity(turret), function(m)log(m)end, Log.FINE)
+                turrets[#turrets] = turret
+            end
 
+            show_turrets = false
+        end
+
+        Log.log(platform.speed, function(m)log(m)end, Log.FINE)
         local entities = surface.find_entities_filtered({ position = {0, 0}, radius = square, type ={ "asteroid" } })
-        Log.log(#entities, function(m)log(m)end, Log.FINE)
+        Log.log(#entities, function(m)log(m)end, Log.FINER)
         for _, entity in pairs(entities) do
             if entity.force.name ~= "player" then
                 Log.logBlock(dumpEntity(entity), function(m)log(m)end, Log.FINE)
 
-                --local D = targeting(surface.platform, entity)
-                --
-                --local color
-                --
-                --if (D < 0) then
-                --color = { 0, 0.5, 0, 0.5 }
-                --elseif (D == 0) then
-                --color = { 0.5, 0.5, 0, 0.5 }
-                --else
-                --color = { 0.5, 0, 0, 0.5 }
-                --end
-                --
-                --rendering.draw_circle({
-                --target = entity.position,
-                --color = color,
-                --time_to_live = 55,
-                --surface = surface,
-                --radius = 0.8,
-                --})
+                local unit_number = entity.unit_number
+                if (targets[unit_number]) then
+                    -- well known asteroid
+                    local target = targets[unit_number]
+
+                    target.movement.x = target.position.x - entity.position.x
+                    target.movement.y = target.position.y - entity.position.y
+                    target.position = entity.position
+
+                    local D = targeting(surface.platform, target)
+
+                    local color
+
+                    if (D < 0) then
+                        color = { 0, 0.5, 0, 0.5 }
+                    elseif (D == 0) then
+                        color = { 0.5, 0.5, 0, 0.5 }
+                    else
+                        color = { 0.5, 0, 0, 0.5 }
+                    end
+
+                    rendering.draw_circle({
+                        target = target.position,
+                        color = color,
+                        time_to_live = 55,
+                        surface = surface,
+                        radius = 0.8,
+                    })
+                else
+                    -- new asteroid
+                    local target = {
+                        position = entity.position,
+                        movement = {},
+                        size = string.sub(entity.name, string.find(entity.name, "%a*"))
+                    }
+                    targets[unit_number] = target
+                end
+
             end
         end
     else
@@ -274,5 +294,13 @@ end)
 script.on_event(defines.events.on_space_platform_changed_state, function(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
     Log.logBlock(event.platform.speed, function(m)log(m)end, Log.FINE)
-
 end)
+
+script.on_event(defines.events.on_entity_died, function(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    Log.logBlock(dumpEntity(event.entity), function(m)log(m)end, Log.FINE)
+end
+, {{ filter = "type", type = "asteroid" }}
+)
+
+)
