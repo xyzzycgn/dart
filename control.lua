@@ -164,7 +164,7 @@ script.on_load(dart_load)
 local function dart_config_changed()
     Log.log('D.A.R.T config_changed', function(m)log(m)end)
     dumpSurfaces(game.surfaces, Log.FINE)
-    dumpPrototypes(Log.FINE)
+    dumpPrototypes(Log.FINER)
 end
 
 -- init fast-nav on every mod update or change
@@ -214,7 +214,74 @@ local show_turrets = true -- TODO später löschen
 
 local targets = {}
 
-local turrets = {}
+local managedTurrets = {}
+
+local function distToTurret(target, turret)
+    local dx = target.position.x - turret.position.x
+    local dy = target.position.y - turret.position.y
+    return math.sqrt(dx * dx + dy * dy)
+end
+
+
+local function reorganizePrio()
+    -- reorganize prio
+    for _, v in pairs(managedTurrets) do
+        local turret = v.turret
+
+        local prios = {}
+        -- create array with unit_numbers of targets
+        for tun, _ in pairs(v.targetsOfTurret) do
+            prios[#prios + 1] = tun
+        end
+
+        -- sort it by distance (ascending)
+        table.sort(prios, function(i, j)
+            return v.targetsOfTurret[i] < v.targetsOfTurret[j]
+        end)
+
+        -- save new priorities
+        v.prios = prios
+
+        -- and here occurs the miracle
+        if (#prios > 0) then
+            Log.log("setting shooting_target=" .. (prios[1] or "<NIL>") ..
+                    " for turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINE)
+            local entity = targets[prios[1]].entity
+            Log.logBlock(entity, function(m)log(m)end, Log.FINE)
+            turret.shooting_target = entity
+        else
+            -- TODO disable turret
+        end
+    end
+
+    Log.logBlock(managedTurrets, function(m)log(m)end, Log.FINE)
+end
+
+
+
+local function assign(target, D)
+    if D >= 0 then
+        -- target enters or touches protected area
+        Log.logBlock(target.unit_number, function(m)log(m)end, Log.FINE)
+
+        for _, v in pairs(managedTurrets) do
+            local turret = v.turret
+            local dist = distToTurret(target, turret)
+            -- remember distance to for each target in range of this turret
+            if dist <= 18 then -- TODO quality
+                -- in range
+                v.targetsOfTurret[target.unit_number] = dist
+            else
+                -- (no longer) in range
+                v.targetsOfTurret[target.unit_number] = nil
+            end
+        end
+
+        reorganizePrio()
+    end
+end
+-- ###############################################################
+
 
 
 script.on_nth_tick(60, function(event)
@@ -222,16 +289,17 @@ script.on_nth_tick(60, function(event)
     Log.logBlock(surface, function(m)log(m)end, Log.FINER)
 
     local square = 35
-    local area = {{ -square, -square }, { square, square }}
-
     local platform = surface and surface.platform
 
     if platform then
         if show_turrets then
             local turrets = surface.find_entities_filtered( { is_military_target = true })
             for _, turret in pairs(turrets) do
-                Log.logBlock(dumpEntity(turret), function(m)log(m)end, Log.FINE)
-                turrets[#turrets] = turret
+                Log.logBlock(turret, function(m)log(m)end, Log.FINE)
+                managedTurrets[turret.unit_number] = {
+                    turret = turret,
+                    targetsOfTurret = {}
+                }
             end
 
             show_turrets = false
@@ -272,12 +340,15 @@ script.on_nth_tick(60, function(event)
                         surface = surface,
                         radius = 0.8,
                     })
+
+                    assign(entity, D)
                 else
                     -- new asteroid
                     local target = {
                         position = entity.position,
                         movement = {},
-                        size = string.sub(entity.name, string.find(entity.name, "%a*"))
+                        size = string.sub(entity.name, string.find(entity.name, "%a*")),
+                        entity = entity,
                     }
                     targets[unit_number] = target
                 end
@@ -299,8 +370,14 @@ end)
 script.on_event(defines.events.on_entity_died, function(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
     Log.logBlock(dumpEntity(event.entity), function(m)log(m)end, Log.FINE)
+
+    for _, v in pairs(managedTurrets) do
+        Log.log(event.entity.unit_number, function(m)log(m)end, Log.FINE)
+        v.targetsOfTurret[event.entity.unit_number] = nil
+    end
+
+    reorganizePrio()
 end
 , {{ filter = "type", type = "asteroid" }}
 )
 
-)
