@@ -9,18 +9,15 @@ local data_util = require('__flib__.data-util')
 Log.logBlock(mods, function(m)log(m)end, Log.CONFIG)
 Log.logBlock(data.raw["technology"], function(m)log(m)end, Log.FINER)
 
-local function recipes()
-    --local dart_radar = data_util.copy_prototype(data.raw["recipe"]["radar"], "dart-radar")
-    local dart_radar = table.deepcopy(data.raw["recipe"]["radar"])
-    dart_radar.name = "dart-radar"
-    dart_radar.ingredients = {
+    local dart_radar_recipe = data_util.copy_prototype(data.raw["recipe"]["radar"], "dart-radar")
+    dart_radar_recipe.ingredients = {
         { type = "item", name = "radar", amount = 1 },
         { type = "item", name = "electronic-circuit", amount = 4 },
         { type = "item", name = "advanced-circuit", amount = 2 },
     }
-    dart_radar.results = {{ type = "item", name = 'dart-radar', amount = 1 }}
-    dart_radar.enabled = true -- TODO tech
+    dart_radar_recipe.enabled = true -- TODO tech
 
+    -- TODO?
     --local dart_radar_recycle = {
     --    allow_decomposition = false,
     --    category = "recycling",
@@ -51,12 +48,8 @@ local function recipes()
     --    type = "recipe",
     --    unlock_results = false
     --}
-    --return dart_radar, dart_radar_recycle
 
-    return dart_radar
-end
 
-local function entities()
     local dartio = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
     dartio.name = 'dart-io'
     dartio.minable = nil
@@ -70,16 +63,16 @@ local function entities()
     dartio.sprites = empty4
     dartio.activity_led_sprites = empty4
 
-    local dart_radar = data_util.copy_prototype(data.raw["radar"]["radar"], "dart-radar")
-    dart_radar.icon = "__base__/graphics/icons/radar.png" -- TODO
-    dart_radar.icon_size = 64
-    dart_radar.icon_mipmaps = 4
-    dart_radar.next_upgrade = nil
+    local dart_radar_entity = data_util.copy_prototype(data.raw["radar"]["radar"], "dart-radar")
+    dart_radar_entity.icon = "__base__/graphics/icons/radar.png" -- TODO
+    dart_radar_entity.icon_size = 64
+    dart_radar_entity.icon_mipmaps = 4
+    dart_radar_entity.next_upgrade = nil
     --dart_hub.selection_box = {{-0.6, -0.6}, {0.6, 0.6}}
-    dart_radar.sprites = make_4way_animation_from_spritesheet({
+    dart_radar_entity.sprites = make_4way_animation_from_spritesheet({
         layers = {
             {
-                scale = 0.333,
+                scale = 0.5,
                 filename = "__base__/graphics/entity/radar/radar.png",
                 width = 196,
                 height = 254,
@@ -89,7 +82,7 @@ local function entities()
                 --shift = util.by_pixel(0, 5),
             },
             {
-                scale = 0.333,
+                scale = 0.5,
                 filename = "__base__/graphics/entity/radar/radar-shadow.png",
                 width = 196,
                 height = 254,
@@ -102,24 +95,16 @@ local function entities()
         },
     })
 
-    return dartio, dart_radar
-end
+    local dart_radar_item = data_util.copy_prototype(data.raw["item"]["radar"], "dart-radar")
+    dart_radar_item.icon = "__base__/graphics/entity/radar/radar.png" -- TODO
+    dart_radar_item.icon_size = 64
+    dart_radar_item.icon_mipmaps = 4
+    dart_radar_item.order = (dart_radar_item.order or "dart") .. "-c"
 
-local function item()
-    --local dart_radar = data_util.copy_prototype(data.raw["item"]["radar"], "dart-radar")
-    local dart_radar = table.deepcopy(data.raw["item"]["radar"])
-    dart_radar.name = "dart-radar"
-    --dart_radar.place_result = "dart-radar"
-    dart_radar.icon = "__base__/graphics/entity/radar/radar.png" -- TODO
-    dart_radar.icon_size = 64
-    dart_radar.icon_mipmaps = 4
-    dart_radar.order = (dart_radar.order or "dart") .. "-c"
-
-    return dart_radar
-end
 
 data:extend({
-    item(),
-    entities(),
-    recipes(),
+    dart_radar_item,
+    dartio,
+    dart_radar_entity,
+    dart_radar_recipe
 })
