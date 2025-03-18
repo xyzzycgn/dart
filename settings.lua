@@ -4,7 +4,7 @@ data:extend({
     name = "dart-logLevel",
     order = "za",
     setting_type = "runtime-global",
-    localised_description = "Log Level für D.A.R.T",
+    localised_description = { "mod-setting-description.dart-logLevel" },
     default_value = "FINE",
     allowed_values = {
       "FATAL",
@@ -22,7 +22,7 @@ data:extend({
     name = "dart-mark-targets",
     order = "zb",
     setting_type = "runtime-global",
-    localised_description = "Ziele für D.A.R.T hervorheben",
+    localised_description = { "mod-setting-description.dart-mark-targets" },
     default_value = false,
   },
 })

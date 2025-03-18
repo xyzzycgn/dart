@@ -15,39 +15,6 @@ Log.logBlock(data.raw["technology"], function(m)log(m)end, Log.FINER)
         { type = "item", name = "electronic-circuit", amount = 4 },
         { type = "item", name = "advanced-circuit", amount = 2 },
     }
-    dart_radar_recipe.enabled = true -- TODO tech
-
-    -- TODO?
-    --local dart_radar_recycle = {
-    --    allow_decomposition = false,
-    --    category = "recycling",
-    --    crafting_machine_tint = {
-    --        primary =    { 0.5, 0.5, 0.5, 0.5 },
-    --        secondary =  { 0.5, 0.5, 0.5, 0.5 },
-    --        tertiary =   { 0.5, 0.5, 0.5, 0.5 },
-    --        quaternary = { 0.5, 0.5, 0.5, 0.5 },
-    --    },
-    --    energy_required = 0.0625,
-    --    hidden = true,
-    --    icons = {
-    --        { icon = "__quality__/graphics/icons/recycling.png" },
-    --        { icon = "__base__/graphics/icons/radar.png", scale = 0.4 },
-    --        { icon = "__quality__/graphics/icons/recycling-top.png" }
-    --    },
-    --    ingredients = {
-    --        { name = "dart-radar", type = "item", amount = 1, }
-    --    },
-    --    localised_name = { "recipe-name.recycling", { "entity-name.dart-radar" } },
-    --    name = "dart-radar-recycling",
-    --    results = {
-    --        { name = "electronic-circuit", type = "item", amount = 1.25, extra_count_fraction = 0.25, },
-    --        { name = "advanced-circuit",   type = "item", amount = 0.75, extra_count_fraction = 0.25, },
-    --        { name = "radar",              type = "item", amount = 0.5,  extra_count_fraction = 0.5, }
-    --    },
-    --    subgroup = "other",
-    --    type = "recipe",
-    --    unlock_results = false
-    --}
 
 
     local dartio = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
@@ -101,10 +68,41 @@ Log.logBlock(data.raw["technology"], function(m)log(m)end, Log.FINER)
     dart_radar_item.icon_mipmaps = 4
     dart_radar_item.order = (dart_radar_item.order or "dart") .. "-c"
 
+    local dart_tech = {
+        name = 'dart-radar',
+        type = 'technology',
+
+        -- Technology icons are quite large, so it is important
+        -- to specify the size. As all icons are squares this is only one number.
+        icon = "__base__/graphics/technology/radar.png", -- TODO
+        icon_size = 128, -- TODO
+
+        prerequisites = { "circuit-network", "radar", "space-platform" },
+
+        effects = {
+            { type = 'unlock-recipe',
+              recipe = 'dart-radar'
+            },
+        },
+
+        unit = {
+            count = 100,
+            ingredients = {
+                { "automation-science-pack", 2 },
+                { "military-science-pack", 1 },
+                { "space-science-pack", 1 },
+            },
+            time = 30,
+        },
+
+        order = "c-e-b2",
+    }
+
 
 data:extend({
     dart_radar_item,
     dartio,
     dart_radar_entity,
-    dart_radar_recipe
+    dart_radar_recipe,
+    dart_tech,
 })
