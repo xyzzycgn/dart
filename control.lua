@@ -134,6 +134,82 @@ local function dumpEntity(entity, is_turret)
     return de
 end
 
+local function dumpControlBehavior(cb)
+
+    local cn = cb.get_circuit_network(defines.wire_connector_id.circuit_red)
+
+    local dcb = {
+        circuit_condition = cb.circuit_condition,
+        circuit_network = cn,
+        disabled = cb.disabled,
+        type = cb.type,
+    }
+
+    return dcb
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function OnEntityCreated(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+
+    local entity = event.entity or event.destination
+    if not entity or not entity.valid then return end
+
+    if entity.name == "dart-radar" then
+       local output = entity.surface.create_entity {
+            name = "dart-output",
+            position = entity.position,
+            force = entity.force
+        }
+
+        Log.logBlock(output, function(m)log(m)end, Log.FINE)
+
+        local un = entity.unit_number
+        local dart = {
+            radar = un,
+            output = output
+        }
+
+        if not storage.dart then
+            storage.dart = {} -- TODO nach init schieben!!!
+        end
+
+        storage.dart[un] = dart
+    end
+end
+
+local function OnEntityRemoved(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+
+    local entity = event.entity
+    local un = entity.unit_number
+
+    local dart = storage.LogisticTrainStops[un]
+    dart.output.destroy()
+end
+
+
+
+-- register events
+local function registerEvents()
+    local filters_on_built = { { filter = 'type', type = 'radar' } }
+    local filters_on_mined = { { filter = 'type', type = 'radar' } }
+
+    -- always track built/removed train stops for duplicate name list
+    script.on_event(defines.events.on_built_entity, OnEntityCreated, filters_on_built)
+    script.on_event(defines.events.on_robot_built_entity, OnEntityCreated, filters_on_built)
+    script.on_event({ defines.events.script_raised_built, defines.events.script_raised_revive, defines.events.on_entity_cloned }, OnEntityCreated)
+
+    script.on_event(defines.events.on_pre_player_mined_item, OnEntityRemoved, filters_on_mined)
+    script.on_event(defines.events.on_robot_pre_mined, OnEntityRemoved, filters_on_mined)
+    --script.on_event(defines.events.on_entity_died, function(event) OnEntityRemoved(event, true) end, filters_on_mined) -- TODO
+    script.on_event(defines.events.script_raised_destroy, OnEntityRemoved)
+
+    -- TODO ??
+    --script.on_event({ defines.events.on_pre_surface_deleted, defines.events.on_pre_surface_cleared }, OnSurfaceRemoved)
+    --script.on_event(defines.events.on_runtime_mod_setting_changed, LtnSettings.on_config_changed)
+end
+
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 -- complete initialization of fast-nav for new map/save-file
@@ -147,6 +223,7 @@ local function dart_initializer()
 
     dumpSurfaces(game.surfaces, Log.FINE)
     dumpPrototypes(Log.FINER)
+    registerEvents()
 end
 
 script.on_init(dart_initializer)
@@ -156,6 +233,7 @@ script.on_init(dart_initializer)
 local function dart_load()
     Log.log('D.A.R.T_load', function(m)log(m)end)
 
+    registerEvents()
 end
 
 script.on_load(dart_load)
@@ -165,6 +243,8 @@ local function dart_config_changed()
     Log.log('D.A.R.T config_changed', function(m)log(m)end)
     dumpSurfaces(game.surfaces, Log.FINE)
     dumpPrototypes(Log.FINER)
+
+    registerEvents()
 end
 
 -- init fast-nav on every mod update or change
@@ -250,6 +330,7 @@ local function reorganizePrio()
             Log.logBlock(entity, function(m)log(m)end, Log.FINE)
             turret.shooting_target = entity
         else
+            Log.log("try to disable turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINE)
             -- TODO disable turret
         end
     end
@@ -296,9 +377,13 @@ script.on_nth_tick(60, function(event)
             local turrets = surface.find_entities_filtered( { is_military_target = true })
             for _, turret in pairs(turrets) do
                 Log.logBlock(turret, function(m)log(m)end, Log.FINE)
+                local cb = turret.get_or_create_control_behavior()
+                Log.logBlock(dumpControlBehavior(cb), function(m)log(m)end, Log.FINE)
+
                 managedTurrets[turret.unit_number] = {
                     turret = turret,
-                    targetsOfTurret = {}
+                    targetsOfTurret = {},
+                    controlBehavior = cb
                 }
             end
 
@@ -380,4 +465,14 @@ script.on_event(defines.events.on_entity_died, function(event)
 end
 , {{ filter = "type", type = "asteroid" }}
 )
+
+script.on_event(defines.events.on_mod_item_opened, function(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+end)
+
+script.on_event(defines.events.on_gui_opened, function(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+end)
+
+
 

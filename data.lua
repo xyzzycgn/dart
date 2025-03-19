@@ -5,6 +5,7 @@
 local Log = require("__log4factorio__.Log")
 Log.setSeverity(Log.FINE)
 local data_util = require('__flib__.data-util')
+local meld = require('meld') -- from lualib
 
 -- fields for scaling
 local fields = {
@@ -60,18 +61,61 @@ dart_radar_recipe.ingredients = {
 }
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local dartio = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
-dartio.name = 'dart-io'
-dartio.minable = nil
-dartio.item_slot_count = 300
-dartio.draw_cargo = false
-dartio.draw_circuit_wires = false
-dartio.selection_box = { { -0.0, -0.0 }, { 0.0, 0.0 } }
-dartio.collision_box = { { -0.0, -0.0 }, { 0.0, 0.0 } }
-dartio.collision_mask = { layers = {} }
-dartio.flags = { "placeable-off-grid", "not-on-map", "not-blueprintable", "hide-alt-info" }
-dartio.sprites = empty4
-dartio.activity_led_sprites = empty4
+
+---@type data.ConstantCombinatorPrototype
+local dart_out = data_util.copy_prototype(data.raw['constant-combinator']['constant-combinator'], 'dart-output')
+
+local dart_out_update = {
+    icon = '__core__/graphics/empty.png',
+    icon_size = 64,
+    next_upgrade = meld.delete(),
+    minable = meld.delete(),
+    selection_box = { { -0.6, -0.6 }, { 0.6, 0.6 } },
+    selection_priority = (dart_out.selection_priority or 50) + 10, -- increase priority to default + 10
+    collision_box = { { 0, 0 }, { 0, 0 } },
+    --collision_mask = { layers = { rail = true } },                     -- collide only with rail entities
+    hidden_in_factoriopedia = true,
+    -----@diagnostic disable-next-line: undefined-global
+    --sprites = make_4way_animation_from_spritesheet {
+    --    layers = {
+    --        {
+    --            scale = 0.5,
+    --            filename = '__LogisticTrainNetwork__/graphics/entity/output.png',
+    --            width = 114,
+    --            height = 102,
+    --            frame_count = 1,
+    --            shift = util.by_pixel(0, 5),
+    --        },
+    --        {
+    --            scale = 0.5,
+    --            filename = '__base__/graphics/entity/combinator/constant-combinator-shadow.png',
+    --            width = 98,
+    --            height = 66,
+    --            frame_count = 1,
+    --            shift = util.by_pixel(8.5, 5.5),
+    --            draw_as_shadow = true,
+    --        },
+    --    },
+    --},
+}
+
+dart_out = meld(dart_out, dart_out_update)
+
+
+
+
+--local dartio = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
+--dartio.name = 'dart-io'
+--dartio.minable = nil
+--dartio.item_slot_count = 300
+--dartio.draw_cargo = false
+--dartio.draw_circuit_wires = false
+--dartio.selection_box = { { -0.0, -0.0 }, { 0.0, 0.0 } }
+--dartio.collision_box = { { -0.0, -0.0 }, { 0.0, 0.0 } }
+--dartio.collision_mask = { layers = {} }
+--dartio.flags = { "placeable-off-grid", "not-on-map", "not-blueprintable", "hide-alt-info" }
+--dartio.sprites = empty4
+--dartio.activity_led_sprites = empty4
 
 local dart_radar_entity = data_util.copy_prototype(data.raw["radar"]["radar"], "dart-radar")
 
@@ -86,9 +130,9 @@ dart_radar_entity.energy_usage = "100kW"
 
 rescale_entity(dart_radar_entity, 1 / 3)
 
-dart_radar_entity.selection_box = {{ -0.6, -0.6 }, { 0.6, 0.6 }}
+--dart_radar_entity.selection_box = {{ -0.6, -0.6 }, { 0.6, 0.6 }}
+dart_radar_entity.selection_box = {{ 0, 0 }, { 0, 0 }}
 dart_radar_entity.collision_box = {{ -0.4, -0.4 }, { 0.4, 0.4 }}
-dart_radar_entity.selection_box = {{ -0.5, -0.5 }, { 0.5, 0.5 }}
 dart_radar_entity.circuit_connector = {
     points = {
         shadow = {
@@ -140,7 +184,7 @@ local dart_tech = {
 
 data:extend({
     dart_radar_item,
-    dartio,
+    dart_out,
     dart_radar_entity,
     dart_radar_recipe,
     dart_tech,
