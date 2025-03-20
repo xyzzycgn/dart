@@ -170,10 +170,6 @@ local function OnEntityCreated(event)
             output = output
         }
 
-        if not storage.dart then
-            storage.dart = {} -- TODO nach init schieben!!!
-        end
-
         storage.dart[un] = dart
     end
 end
@@ -184,11 +180,18 @@ local function OnEntityRemoved(event)
     local entity = event.entity
     local un = entity.unit_number
 
-    local dart = storage.LogisticTrainStops[un]
-    dart.output.destroy()
+    local dart = storage.dart[un]
+    local output = dart and dart.output
+    if (output) then
+        output.destroy()
+    end
 end
 
-
+local function initDart()
+    if not storage.dart then
+        storage.dart = {}
+    end
+end
 
 -- register events
 local function registerEvents()
@@ -221,15 +224,16 @@ local function dart_initializer()
     --        -> planets
     --        -> surfaces
 
-    dumpSurfaces(game.surfaces, Log.FINE)
+    dumpSurfaces(game.surfaces, Log.FINER)
     dumpPrototypes(Log.FINER)
+    initDart()
     registerEvents()
 end
 
 script.on_init(dart_initializer)
 --###############################################################
 
--- initialization of fast-nav for save-file which already contained this mod
+-- initialization of dart for save-file which already contained this mod
 local function dart_load()
     Log.log('D.A.R.T_load', function(m)log(m)end)
 
@@ -241,9 +245,10 @@ script.on_load(dart_load)
 
 local function dart_config_changed()
     Log.log('D.A.R.T config_changed', function(m)log(m)end)
-    dumpSurfaces(game.surfaces, Log.FINE)
+    dumpSurfaces(game.surfaces, Log.FINER)
     dumpPrototypes(Log.FINER)
 
+    initDart()
     registerEvents()
 end
 
