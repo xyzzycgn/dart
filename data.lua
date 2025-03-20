@@ -54,6 +54,7 @@ local function rescale_entity(entity, factor)
 end
 -- ###############################################################
 
+--- create the D.A.R.T-radar recipe
 local dart_radar_recipe = data_util.copy_prototype(data.raw["recipe"]["radar"], "dart-radar")
 dart_radar_recipe.ingredients = {
     { type = "item", name = "radar", amount = 1 },
@@ -62,15 +63,14 @@ dart_radar_recipe.ingredients = {
 }
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- create the invisble constant-combinator needed for the gui and the business logic
 ---@type data.ConstantCombinatorPrototype
 local dart_out = data_util.copy_prototype(data.raw['constant-combinator']['constant-combinator'], 'dart-output')
-Log.logBlock(dart_out, function(m)log(m)end, Log.FINE)
-
 local dart_out_update = {
     icon = '__core__/graphics/empty.png',
     icon_size = 64,
     next_upgrade = meld.delete(),
-    -- neat trick ;-) make it minable, but retrieve no result
+    -- neat trick ;-) make it minable, but retrieve no result and use dart-radar item to avoid a separate item
     minable = { count = 0, result = "dart-radar" },
     fast_replaceable_group = meld.delete(),
     selection_box = { { -0.6, -0.6 }, { 0.6, 0.6 } },
@@ -87,12 +87,10 @@ local dart_out_update = {
 }
 
 dart_out = meld(dart_out, dart_out_update)
-Log.logBlock(dart_out, function(m)log(m)end, Log.FINE)
+Log.logBlock(dart_out, function(m)log(m)end, Log.FINER)
 
+--- create the visible D.A.R.T-radar entity and shrink it to 1x1 tiles
 local dart_radar_entity = data_util.copy_prototype(data.raw["radar"]["radar"], "dart-radar")
-
-Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINE)
-
 dart_radar_entity.icon = "__base__/graphics/icons/radar.png" -- TODO
 dart_radar_entity.icon_size = 64
 dart_radar_entity.icon_mipmaps = 4
@@ -117,9 +115,10 @@ dart_radar_entity.circuit_connector = {
     }
 }
 
-Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINE)
+Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINER)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- create the D.A.R.T-radar item
 local dart_radar_item = data_util.copy_prototype(data.raw["item"]["radar"], "dart-radar")
 dart_radar_item.icon = "__base__/graphics/icons/radar.png" -- TODO
 dart_radar_item.icon_size = 64
@@ -127,6 +126,7 @@ dart_radar_item.icon_mipmaps = 4
 dart_radar_item.order = (dart_radar_item.order or "dart") .. "-c"
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- create the D.A.R.T-radar technology
 local dart_tech = {
     name = 'dart-radar',
     type = 'technology',
@@ -149,9 +149,9 @@ local dart_tech = {
 
     order = "c-e-b2",
 }
-
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+-- make all usable
 data:extend({
     dart_radar_item,
     dart_out,

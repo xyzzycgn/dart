@@ -1,73 +1,229 @@
 ---
 --- Created by xyzzycgn.
---- DateTime: 04.03.25 21:27
+--- DateTime: 20.03.25 12:49
 ---
---- Build the D.A.R.T Main UI window
---- @param player LuaPlayer @ Player object that is opening the combinator
---- @return GuiElemDef
----@diagnostic disable:missing-fields
+--- D.A.R.T.s business logic
+local Log = require("__log4factorio__.Log")
+local dump = require("scripts.dump")
 
-local flib_gui = require("__flib__.gui")
+local show_turrets = true -- TODO substitute and delete (use storage)
+
+-- vvv TODO move to storage
+local targets = {}
+local managedTurrets = {} -- TODO assignment via GUI to a dart-radar
+-- ^^^ TODO move to storage
+
 
 local dart = {}
 
-function dart.build(player)
-  local elems, gui = flib_gui.add(player.gui.screen, {
-      {
-          type = "frame",
-          direction = "vertical",
-          visible = false,
-          --style = "rldman_top_frame",
-          {
-              type = "flow",
-              direction = "horizontal",
-              name = "titlebar",
-              {
-                  type = "label",
-                  style = "frame_title",
-                  caption = { "mod-name.dart" },
-                  ignored_by_interaction = true,
-              },
-              { type = "empty-widget", style = "flib_titlebar_drag_handle", ignored_by_interaction = true },
-              {
-                  type = "sprite-button",
-                  name = "gui_close_button",
-                  style = "close_button",
-                  sprite = "utility/close",
-                  hovered_sprite = "utility/close_black",
-                  tooltip = { "gui.dart-close-button-tt" },
-              },
-          },
-          { type = "frame", name = "content_frame", direction = "vertical", -- style = "rldman_content_frame",
-            {
-                type = "label",
-                caption = "Huhu GUI",
-                name = "main_label_TBDel"
-            }
-          }
-      }
-  })
-  return elems, gui
+--- Calculates whether an asteroid hits, grazes or passes the defended area.
+--- Defended area is defined by a circle with radius r and centerpoint at <xc, xc>
+--- equation (x - xc)² + (y - yc)² = r²
+---
+--- The course of the asteroid is defined as half-line starting at <x0, y0> with
+--- a movement vector of <dx, dy>.
+--- P(t) = <x0, y0> + t * <dx, dy>
+---
+--- Combining the two equations for the circle and the half-line yields a quadratic equation
+--- (x0 + t dx - xc)² + (y0 + t dy - yc)² = r²
+--- transformed to
+--- A t² + B t + C = 0
+--- with
+--- A = dx² + dy²
+--- B = 2 ((x0 - xc) dx + (y0 - yc) * dy)
+--- C = (x0 - xc)² + (y0 - yc)² - r²
+--- whose discriminant is D = B² - 4 A C
+--- Decisions:
+--- If D < 0: the half-line does not intersect the circle - asteroid passes
+--- If D = 0: the half-line touches the circle (one intersection) - asteroid grazes
+--- If D > 0: the half-line intersect the circle twice - asteroid hits.
+---
+--- assuming center of defended area = center of hub on platform simplifies with xc = yc = 0
+-- TODO use position of a certain dart-radar instead of center of hub
+local function targeting(platform, chunk)
+    local x0 = chunk.position.x
+    local y0 = chunk.position.y
+
+    local dx = chunk.movement.x
+    local dy = chunk.movement.y + platform.speed
+
+    local A = dx * dx + dy * dy
+    local B = 2 * (x0 * dx + y0 * dy)
+    local C = x0 * x0 + y0 * y0 - 15 * 15
+
+    return B * B - 4 * A * C
+end
+
+local function distToTurret(target, turret)
+    local dx = target.position.x - turret.position.x
+    local dy = target.position.y - turret.position.y
+    return math.sqrt(dx * dx + dy * dy)
+end
+--###############################################################
+
+--- assign target to turrets depending on prio (nearest asteroid first)
+-- TODO rewrite for use by a certain dart-radar
+local function reorganizePrio()
+    -- reorganize prio
+    for _, v in pairs(managedTurrets) do
+        local turret = v.turret
+
+        local prios = {}
+        -- create array with unit_numbers of targets
+        for tun, _ in pairs(v.targetsOfTurret) do
+            prios[#prios + 1] = tun
+        end
+
+        -- sort it by distance (ascending)
+        table.sort(prios, function(i, j)
+            return v.targetsOfTurret[i] < v.targetsOfTurret[j]
+        end)
+
+        -- save new priorities
+        v.prios = prios
+
+        -- and here occurs the miracle
+        if (#prios > 0) then
+            Log.log("setting shooting_target=" .. (prios[1] or "<NIL>") ..
+                    " for turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINE)
+            local entity = targets[prios[1]].entity
+            Log.logBlock(entity, function(m)log(m)end, Log.FINE)
+            turret.shooting_target = entity
+        else
+            Log.log("try to disable turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINE)
+            -- TODO disable turret using circuit network
+        end
+    end
+
+    Log.logBlock(managedTurrets, function(m)log(m)end, Log.FINE)
 end
 -- ###############################################################
 
+--- calculate prio (based on distance) and (un)assign targets to turrets within range
+local function assign(target, D)
+    if D >= 0 then
+        -- target enters or touches protected area
+        Log.logBlock(target.unit_number, function(m)log(m)end, Log.FINE)
 
---- Handle opening the custom GUI to replace the builtin one when it opens.
---- @param e EventData.on_gui_opened
-function dart.on_gui_opened(e)
-    local player = game.get_player(e.player_index)
-    if not player or player.opened_gui_type ~= defines.gui_type.entity then
-        return
+        for _, v in pairs(managedTurrets) do
+            local turret = v.turret
+            local dist = distToTurret(target, turret)
+            -- remember distance for each target in range of this turret
+            if dist <= 18 then -- TODO quality
+                Log.logBlock(target, function(m)log(m)end, Log.FINE)
+                -- in range
+                v.targetsOfTurret[target.unit_number] = dist
+            else
+                -- (no longer) in range
+                Log.logBlock(target, function(m)log(m)end, Log.FINE)
+                v.targetsOfTurret[target.unit_number] = nil
+            end
+        end
+
+        reorganizePrio()
     end
-
-    local entity = e.entity
-    if not entity or not entity.valid or entity.name ~= "dart-radar" then
-        return
-    end
-
-    open_gui(player, entity)
 end
 -- ###############################################################
+
+-- TODO rewrite to use certain dart-radar and not hardcoded platform
+function dart.doit()
+    local surface = game.get_surface("platform-2")
+    Log.logBlock(surface, function(m)log(m)end, Log.FINER)
+
+    local square = 35
+    local platform = surface and surface.platform
+
+    if platform then
+        if show_turrets then -- TODO assignment of turrets via GUI - not all on surface
+            local turrets = surface.find_entities_filtered( { name = "gun-turret", is_military_target = true })
+            for _, turret in pairs(turrets) do
+                Log.logBlock(turret, function(m)log(m)end, Log.FINE)
+                local cb = turret.get_or_create_control_behavior()
+                Log.logBlock(dump.dumpControlBehavior(cb), function(m)log(m)end, Log.FINE)
+
+                managedTurrets[turret.unit_number] = {
+                    turret = turret,
+                    targetsOfTurret = {},
+                    controlBehavior = cb
+                }
+            end
+
+            show_turrets = false
+        end
+
+        Log.log(platform.speed, function(m)log(m)end, Log.FINE)
+        local entities = surface.find_entities_filtered({ position = {0, 0}, radius = square, type ={ "asteroid" } })
+        Log.log(#entities, function(m)log(m)end, Log.FINER)
+        for _, entity in pairs(entities) do
+            if entity.force.name ~= "player" then
+                Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
+
+                local unit_number = entity.unit_number
+                if (targets[unit_number]) then
+                    -- well known asteroid
+                    local target = targets[unit_number]
+
+                    target.movement.x = target.position.x - entity.position.x
+                    target.movement.y = target.position.y - entity.position.y
+                    target.position = entity.position
+
+                    local D = targeting(surface.platform, target)
+
+                    local color
+
+                    if (D < 0) then
+                        color = { 0, 0.5, 0, 0.5 }
+                    elseif (D == 0) then
+                        color = { 0.5, 0.5, 0, 0.5 }
+                    else
+                        color = { 0.5, 0, 0, 0.5 }
+                    end
+
+                    rendering.draw_circle({
+                        target = target.position,
+                        color = color,
+                        time_to_live = 55,
+                        surface = surface,
+                        radius = 0.8,
+                    })
+
+                    assign(entity, D)
+                else
+                    -- new asteroid
+                    local target = {
+                        position = entity.position,
+                        movement = {},
+                        size = string.sub(entity.name, string.find(entity.name, "%a*")),
+                        entity = entity,
+                    }
+                    targets[unit_number] = target
+                end
+
+            end
+        end
+    else
+        Log.log("no surface / platform", function(m)log(m)end, Log.WARN)
+    end
+end
+-- ###############################################################
+
+script.on_event(defines.events.on_space_platform_changed_state, function(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    Log.logBlock(event.platform.speed, function(m)log(m)end, Log.FINER)
+end)
+
+script.on_event(defines.events.on_entity_died, function(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    Log.logBlock(dump.dumpEntity(event.entity), function(m)log(m)end, Log.FINER)
+
+    for _, v in pairs(managedTurrets) do -- TODO rewrite - take surface and dart-radar into account
+        v.targetsOfTurret[event.entity.unit_number] = nil
+    end
+
+    reorganizePrio()
+end
+, {{ filter = "type", type = "asteroid" }}
+)
 
 
 return dart
