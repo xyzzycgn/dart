@@ -6,6 +6,8 @@
 local Log = require("__log4factorio__.Log")
 Log.setFromSettings("dart-logLevel")
 
+local dart = require("scripts.dart")
+
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function dumpPlatform(surface)
@@ -477,7 +479,23 @@ end)
 
 script.on_event(defines.events.on_gui_opened, function(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
-end)
+    Log.logBlock(defines.gui_type, function(m)log(m)end, Log.FINE)
 
+    local entity = event.entity
+    if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-output" then
+        local player = game.get_player(event.player_index)
+        Log.logBlock(player, function(m)log(m)end, Log.FINE)
+        --local custom_frame = player.gui.screen.add{type="frame", caption="Custom Inserter Interface"}
+        local elems, gui = dart.build(player)
+        Log.logBlock(gui, function(m)log(m)end, Log.FINE)
+        Log.logBlock(elems, function(m)log(m)end, Log.FINE)
+        player.opened = gui
+
+        elems.titlebar.drag_target = gui
+        gui.force_auto_center()
+        gui.bring_to_front()
+        gui.visible = true
+    end
+end)
 
 
