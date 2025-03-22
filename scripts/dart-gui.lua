@@ -7,16 +7,45 @@
 --- @return GuiElemDef
 ---@diagnostic disable:missing-fields
 
+local Log = require("__log4factorio__.Log")
+local global_data = require("scripts.global_data")
+local PlayerData = require("scripts.player_data")
+
 local flib_gui = require("__flib__.gui")
 
-local dart = {}
+local function close(gui, event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    Log.logBlock(gui, function(m)log(m)end, Log.FINE)
+    local pd = global_data.getPlayer_data(event.player_index)
+    pd.guis.main = nil
+    gui.visible = false
+    gui.destroy()
+end
 
-function dart.build(player)
+local handlers = {
+    close_gui = close
+}
+
+flib_gui.add_handlers(handlers, function(e, handler)
+    local self = global_data.getPlayer_data(e.player_index).guis.main
+    if self then
+        handler(self, e)
+    end
+end)
+
+
+-- ###############################################################
+
+--- creates the custom gui
+--- @param player LuaPlayer who opens the entity
+--- @param entity Entity to be shown in the GUI
+local function build(player, entity)
   local elems, gui = flib_gui.add(player.gui.screen, {
       {
           type = "frame",
           direction = "vertical",
           visible = false,
+          handler = { [defines.events.on_gui_closed] = handlers.close_gui},
           --style = "rldman_top_frame",
           {
               type = "flow",
@@ -36,7 +65,8 @@ function dart.build(player)
                   sprite = "utility/close",
                   hovered_sprite = "utility/close_black",
                   tooltip = { "gui.dart-close-button-tt" },
-              },
+                  handler = { [defines.events.on_gui_click] = handlers.close_gui },
+             },
           },
           { type = "frame", name = "content_frame", direction = "vertical", -- style = "rldman_content_frame",
             {
@@ -47,27 +77,54 @@ function dart.build(player)
           }
       }
   })
-  return elems, gui
+
+   elems.titlebar.drag_target = gui
+
+
+    return elems, gui
 end
 -- ###############################################################
 
-
---- Handle opening the custom GUI to replace the builtin one when it opens.
---- @param e EventData.on_gui_opened
-function dart.on_gui_opened(e)
-    local player = game.get_player(e.player_index)
-    if not player or player.opened_gui_type ~= defines.gui_type.entity then
-        return
-    end
-
-    local entity = e.entity
-    if not entity or not entity.valid or entity.name ~= "dart-radar" then
-        return
-    end
-
-    open_gui(player, entity)
+local function open(gui)
+    gui.force_auto_center()
+    gui.bring_to_front()
+    gui.visible = true
 end
 -- ###############################################################
 
+local function gui_open(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    Log.logBlock(defines.gui_type, function(m)log(m)end, Log.FINEST)
 
-return dart
+    local pd = global_data.getPlayer_data(event.player_index)
+    Log.logBlock(pd, function(m)log(m)end, Log.FINER)
+
+    if (pd == nil) then
+        local p = game.get_player(event.player_index)
+        pd = PlayerData.init_player_data(p)
+        global_data.addPlayer_data(p, pd)
+    end
+
+    local entity = event.entity
+    if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-output" then
+        local player = game.get_player(event.player_index)
+        Log.logBlock(player, function(m)log(m)end, Log.FINE)
+        local elems, gui = build(player, entity)
+        Log.logBlock(gui, function(m)log(m)end, Log.FINE)
+        Log.logBlock(elems, function(m)log(m)end, Log.FINE)
+        player.opened = gui
+        -- store reference to gui in storage
+        pd.guis.main = gui
+
+        open(gui)
+    end
+end
+
+-- GUI events - TBC
+local dart_gui = {}
+
+dart_gui.events = {
+    [defines.events.on_gui_opened] = gui_open,
+}
+
+return dart_gui

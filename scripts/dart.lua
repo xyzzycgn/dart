@@ -5,6 +5,10 @@
 --- D.A.R.T.s business logic
 local Log = require("__log4factorio__.Log")
 local dump = require("scripts.dump")
+local global_data = require("scripts.global_data")
+
+
+
 
 local show_turrets = true -- TODO substitute and delete (use storage)
 
@@ -14,7 +18,24 @@ local managedTurrets = {} -- TODO assignment via GUI to a dart-radar
 -- ^^^ TODO move to storage
 
 
-local dart = {}
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function dumpSurfaces(table, sev)
+    Log.log("surfaces", function(m)log(m)end, sev)
+
+    for k, v in pairs(table) do
+        Log.log(k .. " -> " .. serpent.block(dump.dumpSurface(v)), function(m)log(m)end, sev)
+    end
+end
+
+local function dumpPrototypes(sev)
+    Log.log("###### prototypes.surface_property", function(m)log(m)end, sev)
+
+    for k, v in pairs(prototypes.asteroid_chunk) do
+        Log.log(k .. " -> " .. serpent.block(dump.dumpAsteroidPropertyPrototype(v)), function(m)log(m)end, sev)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- Calculates whether an asteroid hits, grazes or passes the defended area.
 --- Defended area is defined by a circle with radius r and centerpoint at <xc, xc>
@@ -125,8 +146,8 @@ local function assign(target, D)
 end
 -- ###############################################################
 
--- TODO rewrite to use certain dart-radar and not hardcoded platform
-function dart.doit()
+-- TODO rewrite to use the existing dart-radar entities and not hardcoded platform
+local function businessLogic()
     local surface = game.get_surface("platform-2")
     Log.logBlock(surface, function(m)log(m)end, Log.FINER)
 
@@ -151,7 +172,7 @@ function dart.doit()
             show_turrets = false
         end
 
-        Log.log(platform.speed, function(m)log(m)end, Log.FINE)
+        Log.log(platform.speed, function(m)log(m)end, Log.FINER)
         local entities = surface.find_entities_filtered({ position = {0, 0}, radius = square, type ={ "asteroid" } })
         Log.log(#entities, function(m)log(m)end, Log.FINER)
         for _, entity in pairs(entities) do
@@ -207,12 +228,13 @@ function dart.doit()
 end
 -- ###############################################################
 
-script.on_event(defines.events.on_space_platform_changed_state, function(event)
+local function space_platform_changed_state(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
     Log.logBlock(event.platform.speed, function(m)log(m)end, Log.FINER)
-end)
+end
+-- ###############################################################
 
-script.on_event(defines.events.on_entity_died, function(event)
+local function entity_died(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
     Log.logBlock(dump.dumpEntity(event.entity), function(m)log(m)end, Log.FINER)
 
@@ -222,8 +244,125 @@ script.on_event(defines.events.on_entity_died, function(event)
 
     reorganizePrio()
 end
-, {{ filter = "type", type = "asteroid" }}
-)
+-- ###############################################################
 
+local function entityCreated(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+
+    local entity = event.entity or event.destination
+    if not entity or not entity.valid then return end
+
+    if entity.name == "dart-radar" then
+       local output = entity.surface.create_entity {
+            name = "dart-output",
+            position = entity.position,
+            force = entity.force
+        }
+
+        Log.logBlock(output, function(m)log(m)end, Log.FINE)
+
+        local un = entity.unit_number
+        local dart = {
+            radar = un,
+            output = output
+        }
+
+        storage.dart[un] = dart -- TODO move to global_data
+    end
+end
+-- ###############################################################
+
+local function entityRemoved(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+
+    local entity = event.entity
+    local un = entity.unit_number
+
+    local dart = storage.dart[un]       -- TODO move to global_data
+    local output = dart and dart.output
+    if (output) then
+        output.destroy()
+    end
+end
+--###############################################################
+
+-- register complexer events with additional filters
+local function registerEvents()
+    local filters_on_built = { { filter = 'type', type = 'radar' } }
+    local filters_on_mined = { { filter = 'type', type = 'radar' } }
+
+    script.on_event(defines.events.on_built_entity, entityCreated, filters_on_built)
+    script.on_event(defines.events.on_robot_built_entity, entityCreated, filters_on_built)
+
+    script.on_event(defines.events.on_pre_player_mined_item, entityRemoved, filters_on_mined)
+    script.on_event(defines.events.on_robot_pre_mined, entityRemoved, filters_on_mined)
+    script.on_event(defines.events.on_entity_died, entity_died, {{ filter = "type", type = "asteroid" }})
+
+    -- TODO ??
+    --script.on_event({ defines.events.on_pre_surface_deleted, defines.events.on_pre_surface_cleared }, OnSurfaceRemoved)
+    --script.on_event(defines.events.on_runtime_mod_setting_changed, LtnSettings.on_config_changed)
+end
+--###############################################################
+
+local function initLogging()
+    --Log.setFromSettings("dart-logLevel")       -- TODO enable
+    Log.setSeverity(Log.FINE)                    -- TODO delete
+end
+--###############################################################
+
+
+-- complete initialization of D.A.R.T for new map/save-file
+local function dart_initializer()
+    initLogging()
+    Log.log('D.A.R.T on_init', function(m)log(m)end)
+
+    --dumpSurfaces(game.surfaces, Log.FINER) TODO delete
+    --dumpPrototypes(Log.FINER)
+
+    global_data.init();
+    registerEvents()
+end
+--###############################################################
+
+-- initialization of D.A.R.T for save-file which already contained this mod
+local function dart_load()
+    initLogging()
+    Log.log('D.A.R.T_load', function(m)log(m)end)
+
+    registerEvents()
+end
+--###############################################################
+
+-- init D.A.R.T on every mod update or change
+local function dart_config_changed()
+    Log.log('D.A.R.T config_changed', function(m)log(m)end)
+    --dumpSurfaces(game.surfaces, Log.FINER) TODO delete
+    --dumpPrototypes(Log.FINER)
+
+    global_data.init();
+    registerEvents()
+end
+--###############################################################
+
+local dart = {}
+
+-- mod initialization
+dart.on_init = dart_initializer
+dart.on_load = dart_load
+dart.on_configuration_changed = dart_config_changed
+
+-- event without filters
+dart.events = {
+    [defines.events.script_raised_built]             = entityCreated,
+    [defines.events.script_raised_revive]            = entityCreated,
+    [defines.events.on_entity_cloned]                = entityCreated,
+    [defines.events.script_raised_destroy]           = entityRemoved,
+    [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
+}
+
+-- handling of business logic
+dart.on_nth_tick = {
+    [60] = businessLogic,
+}
 
 return dart
