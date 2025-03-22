@@ -1,8 +1,7 @@
 ---
---- Created by xyzzycgn.
---- DateTime: 22.12.24 13:32
----
 --- encapsulates the storage (formerly global) table
+--- Created by xyzzycgn.
+---
 
 local Log = require("__log4factorio__.Log")
 
@@ -26,6 +25,41 @@ end
 
 function global_data.getPlayer_data(playerindex)
     return storage.players[playerindex]
+end
+
+--- create (or get) LuaConstantCombinatorControlBehavior from dart-output and
+--- save it +  dart-radar + dart-output entities in storage as array
+--- @param radar LuaEntity (dart-radar)
+--- @param output LuaEntity (dart-output)
+function global_data.setDart(radar, output)
+    local run = radar.unit_number
+    local oun = output.unit_number
+
+    local dart = {
+        radar_un = run,
+        output_un = oun,
+        output = output,
+        control_behavior = output.get_or_create_control_behavior(),
+    }
+
+    -- save twice - with uns of dart-radar and dart-output
+    storage.dart[run] = dart
+    storage.dart[oun] = dart
+
+    Log.logBlock(storage.dart, function(m)log(m)end, Log.FINE)
+end
+
+-- get dart array for unit_number
+-- @param un unit_number of dart-radar
+function global_data.getDart(un)
+    return storage.dart[un]
+end
+
+-- remove dart array for unit_number from storage
+-- @param un unit_number of dart-radar
+function global_data.clearDart(un)
+    Log.logBlock(un, function(m)log(m)end, Log.FINE)
+    storage.dart[un] = nil
 end
 
 return global_data

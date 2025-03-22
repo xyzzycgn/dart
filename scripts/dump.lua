@@ -105,16 +105,42 @@ function dump.dumpEntity(entity, is_turret)
 end
 -- ###############################################################
 
+local function dumpCircuitNetwork(cn)
+    local dcn = cn and {
+        entity = cn.entity,
+        network_id = cn.network_id,
+        signals = serpent.block(cn.signals),
+        connected_circuit_count = cn.connected_circuit_count,
+    } or {}
+
+    return dcn
+end
+
+local function dumpCircuitNetworks(cb)
+    local dcn = {}
+
+    for cn in pairs {
+        defines.wire_connector_id.circuit_red,
+        defines.wire_connector_id.circuit_green,
+        defines.wire_connector_id.combinator_input_red,
+        defines.wire_connector_id.combinator_input_green,
+        defines.wire_connector_id.combinator_output_red,
+        defines.wire_connector_id.combinator_output_green,
+    } do
+        dcn[cn] = dumpCircuitNetwork(cb.get_circuit_network(cn))
+    end
+
+    return dcn
+end
+
 function dump.dumpControlBehavior(cb)
-
-    local cn = cb.get_circuit_network(defines.wire_connector_id.circuit_red)
-
-    local dcb = {
-        circuit_condition = cb.circuit_condition,
-        circuit_network = cn,
-        disabled = cb.disabled,
+    local dcb = cb and {
+        circuit_networks = dumpCircuitNetworks(cb),
         type = cb.type,
-    }
+-- TODO only if LuaTurretControlBehavior
+        --circuit_condition = cb.circuit_condition,
+        --disabled = cb.disabled,
+   } or {}
 
     return dcb
 end

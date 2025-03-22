@@ -159,13 +159,11 @@ local function businessLogic()
             local turrets = surface.find_entities_filtered( { name = "gun-turret", is_military_target = true })
             for _, turret in pairs(turrets) do
                 Log.logBlock(turret, function(m)log(m)end, Log.FINE)
-                local cb = turret.get_or_create_control_behavior()
-                Log.logBlock(dump.dumpControlBehavior(cb), function(m)log(m)end, Log.FINE)
 
                 managedTurrets[turret.unit_number] = {
                     turret = turret,
                     targetsOfTurret = {},
-                    controlBehavior = cb
+                    controlBehavior = turret.get_or_create_control_behavior()
                 }
             end
 
@@ -261,13 +259,7 @@ local function entityCreated(event)
 
         Log.logBlock(output, function(m)log(m)end, Log.FINE)
 
-        local un = entity.unit_number
-        local dart = {
-            radar = un,
-            output = output
-        }
-
-        storage.dart[un] = dart -- TODO move to global_data
+        global_data.setDart(entity, output)
     end
 end
 -- ###############################################################
@@ -275,13 +267,18 @@ end
 local function entityRemoved(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
 
+    -- removed dart-radar
     local entity = event.entity
     local un = entity.unit_number
 
-    local dart = storage.dart[un]       -- TODO move to global_data
-    local output = dart and dart.output
-    if (output) then
-        output.destroy()
+    local dart = global_data.getDart(un)
+    if (dart) then
+        local output = dart and dart.output
+        global_data.clearDart(dart.output_un)
+        global_data.clearDart(dart.radar_un)
+        if (output and output.valid) then
+            output.destroy()
+        end
     end
 end
 --###############################################################

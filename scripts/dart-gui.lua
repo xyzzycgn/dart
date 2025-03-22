@@ -8,6 +8,7 @@
 ---@diagnostic disable:missing-fields
 
 local Log = require("__log4factorio__.Log")
+local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
 local PlayerData = require("scripts.player_data")
 
@@ -115,6 +116,12 @@ local function gui_open(event)
         player.opened = gui
         -- store reference to gui in storage
         pd.guis.main = gui
+
+        -- dart-output
+        local un = entity.unit_number
+        Log.logBlock(un, function(m)log(m)end, Log.FINE)
+        local dart = global_data.getDart(un)
+        Log.logBlock(dump.dumpControlBehavior(dart.control_behavior), function(m)log(m)end, Log.FINE)
 
         open(gui)
     end
