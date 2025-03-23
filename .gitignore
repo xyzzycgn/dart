@@ -1,3 +1,5 @@
 .idea/
 *.iml
-factorio.def.lua
+factorio_def.lua
+dart-luacov.report.html
+luacov.stats.out
