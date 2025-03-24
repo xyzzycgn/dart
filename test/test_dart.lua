@@ -7,11 +7,17 @@ local lu = require('lib.luaunit')
 
 require('factorio_def')
 local dart = require('scripts.dart')
+local serpent = require('lib.serpent')
 
 
 TestDart = {}
+local on_event_called = 0
+
 
 function TestDart:setUp()
+    -- clear call count
+    on_event_called = 0
+
     -- simulated (global) storage object
     storage = {
         dart = {}
@@ -20,9 +26,21 @@ function TestDart:setUp()
     player = {}
 
     -- mock the game object
-    game = {}
+    game = {
+        surfaces = {}
+    }
     --game.tick = 4711
     --game.connected_players = {}
+
+    -- mock the prototypes
+    prototypes = {
+        asteroid_chunk = {}
+    }
+
+    -- mock the script object
+    script.on_event = function()
+        on_event_called = on_event_called + 1
+    end
 end
 
 function TestDart:test_entityCreated()
@@ -55,7 +73,7 @@ function TestDart:test_entityCreated()
     }
 
     -- test
-    local eventhandler =  dart.events [defines.events.script_raised_built]
+    local eventhandler =  dart.events[defines.events.on_space_platform_built_entity]
     lu.assertEquals(type(eventhandler), "function")
 
     eventhandler(event)
@@ -115,6 +133,43 @@ end
 
 function TestDart:test_entityRemovedWithInvalidOutput()
     entityRemovedWithValidOutput(false, 0)
+end
+-- ###############################################################
+
+function TestDart:test_on_init()
+    -- here we start with an empty storage
+    storage = {}
+
+    dart.on_init()
+
+    lu.assertNotNil(storage.dart)
+    lu.assertNotNil(storage.players)
+    lu.assertEquals(on_event_called, 5)
+end
+-- ###############################################################
+
+function TestDart:test_on_load()
+    dart.on_load()
+
+    lu.assertNotNil(storage.dart)
+    lu.assertEquals(on_event_called, 5)
+end
+-- ###############################################################
+
+function TestDart:test_on_config_changed()
+    -- here we start with a filled storage
+    storage.player = { set = true }
+    storage.dart.set = true
+
+    dart.on_configuration_changed()
+
+    -- storage should be unchanged
+    lu.assertNotNil(storage.dart)
+    lu.assertTrue(storage.dart.set)
+    lu.assertNotNil(storage.player)
+    lu.assertTrue(storage.player.set)
+
+    lu.assertEquals(on_event_called, 0)
 end
 -- ###############################################################
 

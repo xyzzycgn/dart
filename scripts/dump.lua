@@ -64,7 +64,7 @@ local function dumpGroup(group)
 end
 
 function dump.dumpAsteroidPropertyPrototype(prototype)
-    local dp = {
+    local dp = prototype and {
         name = prototype.name,
         object_name = prototype.object_name,
         type = prototype.type,
@@ -72,7 +72,7 @@ function dump.dumpAsteroidPropertyPrototype(prototype)
         hidden = prototype.hidden,
         localised_name = prototype.localised_name,
         group = dumpGroup(prototype.group),
-    }
+    } or {}
 
     return dp
 end
@@ -109,7 +109,7 @@ local function dumpCircuitNetwork(cn)
     local dcn = cn and {
         entity = cn.entity,
         network_id = cn.network_id,
-        signals = serpent.block(cn.signals),
+        signals = cn.signals,
         connected_circuit_count = cn.connected_circuit_count,
     } or {}
 
@@ -132,15 +132,22 @@ local function dumpCircuitNetworks(cb)
 
     return dcn
 end
+-- ###############################################################
+
+local function turretOnly(cb, dcb)
+    if cb and (cb.type == defines.control_behavior.type.turret) then
+        dcb.circuit_condition = cb.circuit_condition
+        dcb.disabled = cb.disabled
+    end
+end
 
 function dump.dumpControlBehavior(cb)
     local dcb = cb and {
         circuit_networks = dumpCircuitNetworks(cb),
         type = cb.type,
--- TODO only if LuaTurretControlBehavior
-        --circuit_condition = cb.circuit_condition,
-        --disabled = cb.disabled,
-   } or {}
+    } or {}
+
+    turretOnly(cb, dcb)
 
     return dcb
 end

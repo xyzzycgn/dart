@@ -20,19 +20,27 @@ local managedTurrets = {} -- TODO assignment via GUI to a dart-radar
 
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+local function dumpOneSurface(k, v)
+    return k .. " -> " .. serpent.block(dump.dumpSurface(v))
+end
+
 local function dumpSurfaces(table, sev)
     Log.log("surfaces", function(m)log(m)end, sev)
 
     for k, v in pairs(table) do
-        Log.log(k .. " -> " .. serpent.block(dump.dumpSurface(v)), function(m)log(m)end, sev)
+        Log.log(dumpOneSurface(k, v), function(m)log(m)end, sev)
     end
+end
+
+local function dumpOnePrototype(k, surface)
+    return k .. " -> " .. serpent.block(dump.dumpAsteroidPropertyPrototype(surface))
 end
 
 local function dumpPrototypes(sev)
     Log.log("###### prototypes.surface_property", function(m)log(m)end, sev)
 
     for k, v in pairs(prototypes.asteroid_chunk) do
-        Log.log(k .. " -> " .. serpent.block(dump.dumpAsteroidPropertyPrototype(v)), function(m)log(m)end, sev)
+        Log.log(dumpOnePrototype(k, v), function(m)log(m)end, sev)
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -144,7 +152,7 @@ local function assign(target, D)
         reorganizePrio()
     end
 end
--- ###############################################################
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 -- TODO rewrite to use the existing dart-radar entities and not hardcoded platform
 local function businessLogic()
@@ -165,6 +173,7 @@ local function businessLogic()
                     targetsOfTurret = {},
                     controlBehavior = turret.get_or_create_control_behavior()
                 }
+                Log.logBlock(dump.dumpControlBehavior(managedTurrets[turret.unit_number].controlBehavior), function(m)log(m)end, Log.FINE)
             end
 
             show_turrets = false
@@ -244,6 +253,7 @@ local function entity_died(event)
 end
 -- ###############################################################
 
+--- new dart-radar created?
 local function entityCreated(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
 
@@ -251,7 +261,8 @@ local function entityCreated(event)
     if not entity or not entity.valid then return end
 
     if entity.name == "dart-radar" then
-       local output = entity.surface.create_entity {
+        -- yes - create also corresponding dart-output
+        local output = entity.surface.create_entity {
             name = "dart-output",
             position = entity.position,
             force = entity.force
@@ -283,61 +294,64 @@ local function entityRemoved(event)
 end
 --###############################################################
 
--- register complexer events with additional filters
+--
+-- Mod initialization
+--
+--- register complexer events with additional filters
 local function registerEvents()
     local filters_on_built = { { filter = 'type', type = 'radar' } }
     local filters_on_mined = { { filter = 'type', type = 'radar' } }
 
+    -- TODO needed?
     script.on_event(defines.events.on_built_entity, entityCreated, filters_on_built)
     script.on_event(defines.events.on_robot_built_entity, entityCreated, filters_on_built)
+    script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_on_built)
 
     script.on_event(defines.events.on_pre_player_mined_item, entityRemoved, filters_on_mined)
     script.on_event(defines.events.on_robot_pre_mined, entityRemoved, filters_on_mined)
+
     script.on_event(defines.events.on_entity_died, entity_died, {{ filter = "type", type = "asteroid" }})
 
     -- TODO ??
     --script.on_event({ defines.events.on_pre_surface_deleted, defines.events.on_pre_surface_cleared }, OnSurfaceRemoved)
     --script.on_event(defines.events.on_runtime_mod_setting_changed, LtnSettings.on_config_changed)
 end
---###############################################################
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function initLogging()
     --Log.setFromSettings("dart-logLevel")       -- TODO enable
     Log.setSeverity(Log.FINE)                    -- TODO delete
 end
---###############################################################
-
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 -- complete initialization of D.A.R.T for new map/save-file
 local function dart_initializer()
     initLogging()
     Log.log('D.A.R.T on_init', function(m)log(m)end)
 
-    --dumpSurfaces(game.surfaces, Log.FINER) TODO delete
-    --dumpPrototypes(Log.FINER)
+    dumpSurfaces(game.surfaces, Log.FINEST)
+    dumpPrototypes(Log.FINEST)
 
     global_data.init();
     registerEvents()
 end
---###############################################################
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
--- initialization of D.A.R.T for save-file which already contained this mod
+--- initialization of D.A.R.T for save-file which already contained this mod
 local function dart_load()
     initLogging()
-    Log.log('D.A.R.T_load', function(m)log(m)end)
+    Log.log('D.A.R.T on_load', function(m)log(m)end)
 
     registerEvents()
 end
---###############################################################
 
--- init D.A.R.T on every mod update or change
+--- init D.A.R.T on every mod update or change
 local function dart_config_changed()
     Log.log('D.A.R.T config_changed', function(m)log(m)end)
-    --dumpSurfaces(game.surfaces, Log.FINER) TODO delete
-    --dumpPrototypes(Log.FINER)
+    dumpSurfaces(game.surfaces, Log.FINEST)
+    dumpPrototypes(Log.FINEST)
 
     global_data.init();
-    registerEvents()
 end
 --###############################################################
 
@@ -350,9 +364,9 @@ dart.on_configuration_changed = dart_config_changed
 
 -- event without filters
 dart.events = {
-    [defines.events.script_raised_built]             = entityCreated,
-    [defines.events.script_raised_revive]            = entityCreated,
-    [defines.events.on_entity_cloned]                = entityCreated,
+    [defines.events.script_raised_built]             = entityCreated, -- TODO delete?
+    [defines.events.script_raised_revive]            = entityCreated, -- TODO delete?
+    [defines.events.on_entity_cloned]                = entityCreated, -- TODO delete?
     [defines.events.script_raised_destroy]           = entityRemoved,
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
 }
