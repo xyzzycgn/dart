@@ -20,14 +20,16 @@ function TestDart:setUp()
 
     -- simulated (global) storage object
     storage = {
-        dart = {}
+        dart = {},
+        players = {},
     }
     -- and the player
     player = {}
 
     -- mock the game object
     game = {
-        surfaces = {}
+        surfaces = {},
+        platforms = {}
     }
     --game.tick = 4711
     --game.connected_players = {}
@@ -73,7 +75,7 @@ function TestDart:test_entityCreated()
     }
 
     -- test
-    local eventhandler =  dart.events[defines.events.on_space_platform_built_entity]
+    local eventhandler = dart.events[defines.events.script_raised_built]
     lu.assertEquals(type(eventhandler), "function")
 
     eventhandler(event)
@@ -144,7 +146,7 @@ function TestDart:test_on_init()
 
     lu.assertNotNil(storage.dart)
     lu.assertNotNil(storage.players)
-    lu.assertEquals(on_event_called, 5)
+    lu.assertEquals(on_event_called, 6)
 end
 -- ###############################################################
 
@@ -152,7 +154,7 @@ function TestDart:test_on_load()
     dart.on_load()
 
     lu.assertNotNil(storage.dart)
-    lu.assertEquals(on_event_called, 5)
+    lu.assertEquals(on_event_called, 6)
 end
 -- ###############################################################
 

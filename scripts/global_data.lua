@@ -11,8 +11,9 @@ function global_data.init()
     Log.log('global_data.init', function(m)log(m)end, Log.FINE)
     storage.players = storage.players or {}
     storage.dart = storage.dart or {}
+    storage.platforms = storage.platforms or {}
 end
-
+-- ###############################################################
 
 function global_data.addPlayer_data(player, pd)
     local pi = player.index
@@ -26,6 +27,7 @@ end
 function global_data.getPlayer_data(playerindex)
     return storage.players[playerindex]
 end
+-- ###############################################################
 
 --- create (or get) LuaConstantCombinatorControlBehavior from dart-output and
 --- save it +  dart-radar + dart-output entities in storage as array
@@ -50,7 +52,7 @@ function global_data.setDart(radar, output)
 end
 
 -- get dart array for unit_number
--- @param un unit_number of dart-radar
+-- @param un unit_number of dart-radar/dart-output
 function global_data.getDart(un)
     return storage.dart[un]
 end
@@ -60,6 +62,11 @@ end
 function global_data.clearDart(un)
     Log.logBlock(un, function(m)log(m)end, Log.FINE)
     storage.dart[un] = nil
+end
+-- ###############################################################
+
+function global_data.getPlatforms()
+    return storage.platforms
 end
 
 return global_data

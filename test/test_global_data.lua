@@ -31,6 +31,7 @@ end
 function TestGlobalData:test_init()
     lu.assertEquals({}, storage.players)
     lu.assertEquals({}, storage.dart)
+    lu.assertEquals({}, storage.platforms)
 end
 -- ###############################################################
 
@@ -70,7 +71,6 @@ local function checkDart(dart, output, run, oun, cb)
     lu.assertEquals(dart.output, output)
 end
 
-
 function TestGlobalData:test_setDart()
     local dart_radar = {
         unit_number = 4711
@@ -90,7 +90,7 @@ function TestGlobalData:test_setDart()
     local gdrun = storage.dart[4711]
     checkDart(gdrun, dart_output)
 end
-
+-- ###############################################################
 
 function TestGlobalData:test_getDart()
     local dart_radar = {
@@ -120,7 +120,7 @@ function TestGlobalData:test_getDart()
     local gd_dart= gd.getDart(4711)
     checkDart(gd_dart, dart_output)
 end
-
+-- ###############################################################
 
 function TestGlobalData:test_clearDart()
     local dart_radar = {

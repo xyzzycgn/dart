@@ -7,9 +7,6 @@ local Log = require("__log4factorio__.Log")
 local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
 
-
-
-
 local show_turrets = true -- TODO substitute and delete (use storage)
 
 -- vvv TODO move to storage
@@ -154,6 +151,11 @@ local function assign(target, D)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+local function newbusinessLogic()
+
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 -- TODO rewrite to use the existing dart-radar entities and not hardcoded platform
 local function businessLogic()
     local surface = game.get_surface("platform-2")
@@ -166,7 +168,7 @@ local function businessLogic()
         if show_turrets then -- TODO assignment of turrets via GUI - not all on surface
             local turrets = surface.find_entities_filtered( { name = "gun-turret", is_military_target = true })
             for _, turret in pairs(turrets) do
-                Log.logBlock(turret, function(m)log(m)end, Log.FINE)
+                Log.logBlock(turret, function(m)log(m)end, Log.FINER)
 
                 managedTurrets[turret.unit_number] = {
                     turret = turret,
@@ -265,13 +267,40 @@ local function entityCreated(event)
         local output = entity.surface.create_entity {
             name = "dart-output",
             position = entity.position,
-            force = entity.force
+            force = entity.force,
+            player = event.player_index
         }
 
         Log.logBlock(output, function(m)log(m)end, Log.FINE)
 
         global_data.setDart(entity, output)
     end
+end
+-- ###############################################################
+
+local function surfaceCreated(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    local surface = game.surfaces[event.surface_index]
+
+    if (surface.platform) then
+        Log.log("add new platform " .. event.surface_index, function(m)log(m)end, Log.FINE)
+
+        local gdp = global_data.getPlatforms()
+
+        gdp[event.surface_index] = {
+            surface = surface,
+            platform = surface.platform,
+        }
+    end
+end
+-- ###############################################################
+
+local function surfaceDeleted(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    -- remove references to platform or objects on it
+    global_data.getPlatforms()[event.surface_index] = nil
+    global_data.getTurrets()[event.surface_index] = nil
+
 end
 -- ###############################################################
 
@@ -294,6 +323,54 @@ local function entityRemoved(event)
 end
 --###############################################################
 
+local function searchPlatforms()
+    local gdp = global_data.getPlatforms()
+
+    for _, surface in pairs(game.surfaces) do
+        if surface.platform then
+            gdp[surface.index] = {
+                surface = surface,
+                platform = surface.platform,
+                turretsOnPlatform = {},
+            }
+        end
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function searchTurrets(pons)
+    Log.logBlock(pons, function(m)log(m)end, Log.FINE)
+
+    local turretsOnPlatform = pons.turretsOnPlatform
+
+    for _, turret in pairs(pons.surface.find_entities_filtered({ type = "ammo-turret" })) do
+        Log.logBlock(turret, function(m)log(m)end, Log.FINE)
+        turretsOnPlatform[turret.unit_number] = {
+            turret = turret,
+            targetsOfTurret = {},
+            controlBehavior = turret.get_or_create_control_behavior(),
+        }
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- searches D.A.R.T. components on existing platforms
+--- as this is called from on_init, there can't be any dart-radar enties
+--- that's why we only look for turrets on platforms
+local function searchDartInfrastructure()
+    Log.log("searchDartInfrastructure", function(m)log(m)end, Log.FINE)
+
+    searchPlatforms()
+
+    -- iterate platforms on surfaces
+    for _, pons in pairs(global_data.getPlatforms()) do
+        searchTurrets(pons)
+    end
+
+     Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINE)
+end
+--###############################################################
+
 --
 -- Mod initialization
 --
@@ -302,13 +379,14 @@ local function registerEvents()
     local filters_on_built = { { filter = 'type', type = 'radar' } }
     local filters_on_mined = { { filter = 'type', type = 'radar' } }
 
-    -- TODO needed?
-    script.on_event(defines.events.on_built_entity, entityCreated, filters_on_built)
-    script.on_event(defines.events.on_robot_built_entity, entityCreated, filters_on_built)
     script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_on_built)
 
+    -- vvv TODO still needed later?
+    script.on_event(defines.events.on_built_entity, entityCreated, filters_on_built)
+    script.on_event(defines.events.on_robot_built_entity, entityCreated, filters_on_built)
     script.on_event(defines.events.on_pre_player_mined_item, entityRemoved, filters_on_mined)
     script.on_event(defines.events.on_robot_pre_mined, entityRemoved, filters_on_mined)
+    -- ^^^ TODO still needed later?
 
     script.on_event(defines.events.on_entity_died, entity_died, {{ filter = "type", type = "asteroid" }})
 
@@ -333,6 +411,7 @@ local function dart_initializer()
     dumpPrototypes(Log.FINEST)
 
     global_data.init();
+    searchDartInfrastructure()
     registerEvents()
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -352,6 +431,12 @@ local function dart_config_changed()
     dumpPrototypes(Log.FINEST)
 
     global_data.init();
+    searchDartInfrastructure() -- TODO delete - only for test
+end
+--###############################################################
+
+local function tbd(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
 end
 --###############################################################
 
@@ -368,7 +453,12 @@ dart.events = {
     [defines.events.script_raised_revive]            = entityCreated, -- TODO delete?
     [defines.events.on_entity_cloned]                = entityCreated, -- TODO delete?
     [defines.events.script_raised_destroy]           = entityRemoved,
+    [defines.events.on_surface_created]              = surfaceCreated,
+    [defines.events.on_pre_surface_deleted]          = surfaceDeleted,
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
+    [defines.events.on_player_joined_game] = tbd,
+    [defines.events.on_player_left_game] = tbd,
+    [defines.events.on_player_removed] = tbd,
 }
 
 -- handling of business logic
