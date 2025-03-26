@@ -22,6 +22,15 @@ local function getTableSize(t)
     return count
 end
 
+local function init_storagePlatforms()
+    local platform = { index = 4711 }
+    local surface = { platform = platform, index = 2 }
+    storage.platforms[2] = {
+        surface = surface,
+        platform = platform,
+        dartsOnPlatform = {},
+    }
+end
 
 function TestDart:setUp()
     -- clear call count
@@ -64,6 +73,7 @@ function TestDart:test_entityCreated()
         position = { 1, 2 },
         force = "A-Team",
         surface = {
+            index = 2,
             create_entity = function(arg)
                 lu.assertEquals(arg.name, "dart-output")
                 lu.assertEquals(arg.position, { 1, 2 })
@@ -79,6 +89,13 @@ function TestDart:test_entityCreated()
         }
     }
 
+    storage.platforms = {
+        [2] = {
+            turrets = {},
+            dartsOnPlatform = {}
+        }
+    }
+
     -- mock event
     local event = {
         entity = entity,
@@ -87,11 +104,14 @@ function TestDart:test_entityCreated()
     -- test
     local eventhandler = dart.events[defines.events.script_raised_built]
     lu.assertEquals(type(eventhandler), "function")
-
     eventhandler(event)
 
-    lu.assertNotNil(storage.dart[0815])
-    lu.assertNotNil(storage.dart[4711])
+    local dart = storage.platforms[2].dartsOnPlatform[4711]
+    lu.assertNotNil(dart)
+    lu.assertEquals(dart.control_behavior, "mocked CB")
+    local out = dart.output
+    lu.assertNotNil(out)
+    lu.assertEquals(out.unit_number, 0815)
 end
 -- ###############################################################
 
@@ -115,13 +135,15 @@ end
 
 local function entityRemovedWithValidOutput(valid, expected)
     -- prepare storage entries
-    local dartarray = createDart(valid)
-    storage.dart[4711] = dartarray
-    storage.dart[0815] = dartarray
+    init_storagePlatforms()
+    storage.platforms[2].dartsOnPlatform[4711] = createDart(valid)
 
     -- mock entity in event
     local entity = {
-        unit_number = 4711
+        unit_number = 4711,
+        surface = {
+            index = 2
+        }
     }
     -- mock event
     local event = {
@@ -190,12 +212,7 @@ function TestDart:test_surfaceDeleted()
         surface_index = 2
     }
 
-    local platform = { index = 4711 }
-    local surface = { platform = platform, index = 2 }
-    storage.platforms[2] = {
-        surface = surface,
-        platform = platform,
-    }
+    init_storagePlatforms()
 
     -- test
     dart.events[defines.events.on_pre_surface_deleted](event)

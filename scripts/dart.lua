@@ -152,7 +152,9 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function newbusinessLogic()
-
+    for _, pons in pairs(global_data.getPlatforms()) do
+        local surface = pons.surface
+    end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -273,15 +275,43 @@ local function entityCreated(event)
 
         Log.logBlock(output, function(m)log(m)end, Log.FINE)
 
-        global_data.setDart(entity, output)
+        local run = entity.unit_number
+        local oun = output.unit_number
+        -- the tuple of dart-radar and dart-output
+        local dart = {
+            radar_un = run,
+            output_un = oun,
+            output = output,
+            control_behavior = output.get_or_create_control_behavior(),
+        }
+        -- save it in platform
+        global_data.getPlatforms()[entity.surface.index].dartsOnPlatform[run] = dart
     end
+end
+-- ###############################################################
+
+local function entityRemoved(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+
+    -- removed dart-radar
+    local entity = event.entity
+    local un = entity.unit_number
+    local darts = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
+    local dart = darts[un]
+    local output = dart and dart.output
+    if (output and output.valid) then
+        -- if necessary destroy corresponding dart-output
+        output.destroy()
+    end
+    -- clear the data beloning to the deleted dart
+    darts[un] = nil
 end
 -- ###############################################################
 
 --- creates the administrative structure for a new platform
 --- @param surface LuaSurface holding the new platform
 local function newSurface(surface)
-    return { surface = surface, platform = surface.platform, turretsOnPlatform = {}, }
+    return { surface = surface, platform = surface.platform, turretsOnPlatform = {}, dartsOnPlatform = {} }
 end
 -- ###############################################################
 
@@ -292,9 +322,7 @@ local function surfaceCreated(event)
     if (surface.platform) then
         Log.log("add new platform " .. event.surface_index, function(m)log(m)end, Log.FINE)
 
-        local gdp = global_data.getPlatforms()
-
-        gdp[event.surface_index] = newSurface(surface)
+        global_data.getPlatforms()[event.surface_index] = newSurface(surface)
     end
 end
 -- ###############################################################
@@ -303,25 +331,6 @@ local function surfaceDeleted(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
     -- remove references to platform or objects on it
     global_data.getPlatforms()[event.surface_index] = nil
-end
--- ###############################################################
-
-local function entityRemoved(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
-
-    -- removed dart-radar
-    local entity = event.entity
-    local un = entity.unit_number
-
-    local dart = global_data.getDart(un)
-    if (dart) then
-        local output = dart and dart.output
-        global_data.clearDart(dart.output_un)
-        global_data.clearDart(dart.radar_un)
-        if (output and output.valid) then
-            output.destroy()
-        end
-    end
 end
 --###############################################################
 
