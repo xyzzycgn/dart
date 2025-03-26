@@ -278,6 +278,13 @@ local function entityCreated(event)
 end
 -- ###############################################################
 
+--- creates the administrative structure for a new platform
+--- @param surface LuaSurface holding the new platform
+local function newSurface(surface)
+    return { surface = surface, platform = surface.platform, turretsOnPlatform = {}, }
+end
+-- ###############################################################
+
 local function surfaceCreated(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
     local surface = game.surfaces[event.surface_index]
@@ -287,10 +294,7 @@ local function surfaceCreated(event)
 
         local gdp = global_data.getPlatforms()
 
-        gdp[event.surface_index] = {
-            surface = surface,
-            platform = surface.platform,
-        }
+        gdp[event.surface_index] = newSurface(surface)
     end
 end
 -- ###############################################################
@@ -299,8 +303,6 @@ local function surfaceDeleted(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
     -- remove references to platform or objects on it
     global_data.getPlatforms()[event.surface_index] = nil
-    global_data.getTurrets()[event.surface_index] = nil
-
 end
 -- ###############################################################
 
@@ -328,11 +330,7 @@ local function searchPlatforms()
 
     for _, surface in pairs(game.surfaces) do
         if surface.platform then
-            gdp[surface.index] = {
-                surface = surface,
-                platform = surface.platform,
-                turretsOnPlatform = {},
-            }
+            gdp[surface.index] = newSurface(surface)
         end
     end
 end

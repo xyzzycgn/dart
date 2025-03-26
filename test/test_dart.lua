@@ -13,6 +13,15 @@ local serpent = require('lib.serpent')
 TestDart = {}
 local on_event_called = 0
 
+---  utility function to get size of table
+local function getTableSize(t)
+    local count = 0
+    for _, _ in pairs(t) do
+        count = count + 1
+    end
+    return count
+end
+
 
 function TestDart:setUp()
     -- clear call count
@@ -22,6 +31,7 @@ function TestDart:setUp()
     storage = {
         dart = {},
         players = {},
+        platforms = {},
     }
     -- and the player
     player = {}
@@ -138,15 +148,101 @@ function TestDart:test_entityRemovedWithInvalidOutput()
 end
 -- ###############################################################
 
+function TestDart:test_surfaceCreatedNoPlatform()
+    local event = {
+        surface_index = 2
+    }
+    game.surfaces[event.surface_index] = {}
+
+    -- test
+    dart.events[defines.events.on_surface_created](event)
+
+    lu.assertEquals(getTableSize(storage.platforms), 0)
+end
+-- ###############################################################
+
+function TestDart:test_surfaceCreatedPlatform()
+    -- simulate event and new platform
+    local event = {
+        surface_index = 2
+    }
+    local platform = { index = 4711}
+    local surface = { platform = platform, index = 2 }
+
+
+    game.surfaces[event.surface_index] = surface
+
+    -- test
+    dart.events[defines.events.on_surface_created](event)
+
+    lu.assertEquals(getTableSize(storage.platforms), 1)
+    local pons = storage.platforms[2]
+    lu.assertNotNil(pons)
+    lu.assertEquals(pons.surface, surface)
+    lu.assertEquals(pons.platform, platform)
+    lu.assertEquals(pons.turretsOnPlatform, {})
+end
+-- ###############################################################
+
+function TestDart:test_surfaceDeleted()
+    -- simulate event and old platform
+    local event = {
+        surface_index = 2
+    }
+
+    local platform = { index = 4711 }
+    local surface = { platform = platform, index = 2 }
+    storage.platforms[2] = {
+        surface = surface,
+        platform = platform,
+    }
+
+    -- test
+    dart.events[defines.events.on_pre_surface_deleted](event)
+
+    lu.assertEquals(getTableSize(storage.platforms), 0)
+end
+-- ###############################################################
+
 function TestDart:test_on_init()
     -- here we start with an empty storage
     storage = {}
+    -- simulate 2 surfaces, one of them a platform with a turret
+    game.surfaces ={
+        nauvis = {
+            index = 1,
+        },
+        platform_1 =  {
+            index = 2,
+            platform = {},
+            find_entities_filtered = function()
+                return {
+                    tur1 = {
+                        unit_number = 4711,
+                        get_or_create_control_behavior = function()
+                            return "simulated CB"
+                        end
+                    }
+                }
+            end
+        }
+    }
 
     dart.on_init()
 
     lu.assertNotNil(storage.dart)
     lu.assertNotNil(storage.players)
     lu.assertEquals(on_event_called, 6)
+
+    -- check results from call of searchDartInfrastructure()
+    lu.assertEquals(getTableSize(storage.platforms), 1)
+    local plat = storage.platforms[2]
+    lu.assertNotNil(plat)
+    lu.assertEquals(getTableSize(plat.turretsOnPlatform), 1)
+    local tur = plat.turretsOnPlatform[4711]
+    lu.assertNotNil(tur)
+    lu.assertEquals(tur.controlBehavior, "simulated CB")
+    lu.assertEquals(tur.targetsOfTurret, {})
 end
 -- ###############################################################
 
