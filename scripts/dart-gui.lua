@@ -94,20 +94,20 @@ end
 -- ###############################################################
 
 local function gui_open(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
-    Log.logBlock(defines.gui_type, function(m)log(m)end, Log.FINEST)
-
-    local pd = global_data.getPlayer_data(event.player_index)
-    Log.logBlock(pd, function(m)log(m)end, Log.FINER)
-
-    if (pd == nil) then
-        local p = game.get_player(event.player_index)
-        pd = PlayerData.init_player_data(p)
-        global_data.addPlayer_data(p, pd)
-    end
-
     local entity = event.entity
     if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-output" then
+        Log.logBlock(event, function(m)log(m)end, Log.FINE)
+        Log.logBlock(defines.gui_type, function(m)log(m)end, Log.FINEST)
+
+        local pd = global_data.getPlayer_data(event.player_index)
+        Log.logBlock(pd, function(m)log(m)end, Log.FINER)
+
+        if (pd == nil) then
+            local p = game.get_player(event.player_index)
+            pd = PlayerData.init_player_data(p)
+            global_data.addPlayer_data(p, pd)
+        end
+
         local player = game.get_player(event.player_index)
         Log.logBlock(player, function(m)log(m)end, Log.FINE)
         local elems, gui = build(player, entity)
@@ -120,7 +120,7 @@ local function gui_open(event)
         -- dart-output
         local un = entity.unit_number
         Log.logBlock(un, function(m)log(m)end, Log.FINE)
-        local dart = global_data.getDart(un)
+        local dart = global_data.getPlatforms[entity.surface.index].dartsOnPlatform(un)
         Log.logBlock(dump.dumpControlBehavior(dart.control_behavior), function(m)log(m)end, Log.FINE)
 
         open(gui)

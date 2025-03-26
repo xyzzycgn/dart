@@ -11,7 +11,7 @@ local show_turrets = true -- TODO substitute and delete (use storage)
 
 -- vvv TODO move to storage
 local targets = {}
-local managedTurrets = {} -- TODO assignment via GUI to a dart-radar
+--local managedTurrets = {} -- TODO assignment via GUI to a dart-radar
 -- ^^^ TODO move to storage
 
 
@@ -89,7 +89,7 @@ end
 
 --- assign target to turrets depending on prio (nearest asteroid first)
 -- TODO rewrite for use by a certain dart-radar
-local function reorganizePrio()
+local function reorganizePrio(managedTurrets)
     -- reorganize prio
     for _, v in pairs(managedTurrets) do
         local turret = v.turret
@@ -126,10 +126,10 @@ end
 -- ###############################################################
 
 --- calculate prio (based on distance) and (un)assign targets to turrets within range
-local function assign(target, D)
+local function assign(managedTurrets, target, D)
     if D >= 0 then
         -- target enters or touches protected area
-        Log.logBlock(target.unit_number, function(m)log(m)end, Log.FINE)
+        Log.logBlock(target.unit_number, function(m)log(m)end, Log.FINER)
 
         for _, v in pairs(managedTurrets) do
             local turret = v.turret
@@ -146,50 +146,35 @@ local function assign(target, D)
             end
         end
 
-        reorganizePrio()
+        reorganizePrio(managedTurrets)
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function newbusinessLogic()
-    for _, pons in pairs(global_data.getPlatforms()) do
-        local surface = pons.surface
-    end
+local function getManagedTurrets(pons)
+    return pons.turretsOnPlatform -- TODO not all of platform (assignment vi gui/circuit network)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
--- TODO rewrite to use the existing dart-radar entities and not hardcoded platform
+--- perforn decision which asteroid should be targeted
 local function businessLogic()
-    local surface = game.get_surface("platform-2")
-    Log.logBlock(surface, function(m)log(m)end, Log.FINER)
+    Log.log("enter BL", function(m)log(m)end, Log.FINE)
+    Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINE)
 
-    local square = 35
-    local platform = surface and surface.platform
+    for index, pons in pairs(global_data.getPlatforms()) do
+        Log.log(index, function(m)log(m)end, Log.FINE)
 
-    if platform then
-        if show_turrets then -- TODO assignment of turrets via GUI - not all on surface
-            local turrets = surface.find_entities_filtered( { name = "gun-turret", is_military_target = true })
-            for _, turret in pairs(turrets) do
-                Log.logBlock(turret, function(m)log(m)end, Log.FINER)
+        local surface = pons.surface
+        local platform = pons.platform
+        local managedTurrets = getManagedTurrets(pons)
 
-                managedTurrets[turret.unit_number] = {
-                    turret = turret,
-                    targetsOfTurret = {},
-                    controlBehavior = turret.get_or_create_control_behavior()
-                }
-                Log.logBlock(dump.dumpControlBehavior(managedTurrets[turret.unit_number].controlBehavior), function(m)log(m)end, Log.FINE)
-            end
-
-            show_turrets = false
-        end
-
+        local square = 35
         Log.log(platform.speed, function(m)log(m)end, Log.FINER)
         local entities = surface.find_entities_filtered({ position = {0, 0}, radius = square, type ={ "asteroid" } })
         Log.log(#entities, function(m)log(m)end, Log.FINER)
+
         for _, entity in pairs(entities) do
             if entity.force.name ~= "player" then
-                Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
-
                 local unit_number = entity.unit_number
                 if (targets[unit_number]) then
                     -- well known asteroid
@@ -219,9 +204,10 @@ local function businessLogic()
                         radius = 0.8,
                     })
 
-                    assign(entity, D)
+                    assign(managedTurrets, entity, D)
                 else
                     -- new asteroid
+                    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
                     local target = {
                         position = entity.position,
                         movement = {},
@@ -233,9 +219,8 @@ local function businessLogic()
 
             end
         end
-    else
-        Log.log("no surface / platform", function(m)log(m)end, Log.WARN)
     end
+    Log.log("leave BL", function(m)log(m)end, Log.FINE)
 end
 -- ###############################################################
 
@@ -246,14 +231,17 @@ end
 -- ###############################################################
 
 local function entity_died(event)
+    local entity = event.entity
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
-    Log.logBlock(dump.dumpEntity(event.entity), function(m)log(m)end, Log.FINER)
+    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINER)
 
-    for _, v in pairs(managedTurrets) do -- TODO rewrite - take surface and dart-radar into account
-        v.targetsOfTurret[event.entity.unit_number] = nil
+    local managedTurrets = getManagedTurrets(global_data.getPlatforms()[entity.surface.index])
+
+    for _, v in pairs(managedTurrets) do
+        v.targetsOfTurret[entity.unit_number] = nil
     end
 
-    reorganizePrio()
+    reorganizePrio(managedTurrets)
 end
 -- ###############################################################
 
