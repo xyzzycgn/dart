@@ -64,7 +64,6 @@ dart_radar_recipe.ingredients = {
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- create the invisble constant-combinator needed for the gui and the business logic
----@type data.ConstantCombinatorPrototype
 local dart_out = data_util.copy_prototype(data.raw['constant-combinator']['constant-combinator'], 'dart-output')
 local dart_out_update = {
     icon = '__core__/graphics/empty.png',
@@ -113,6 +112,10 @@ dart_radar_entity.circuit_connector = {
             red = { -1.390625 / 3, -0.125 / 3 }
         }
     }
+}
+dart_radar_entity.surface_conditions = {  -- dart_radar should only be build on platforms
+    { property = "gravity", min = 0, max = 0 },
+    { property = "pressure", min = 0, max = 0 },
 }
 
 Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINER)

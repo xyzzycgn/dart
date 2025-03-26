@@ -82,6 +82,7 @@ function dump.dumpEntity(entity, is_turret)
     local de = {
         force = entity.force,
         force_index = entity.force_index,
+        surface = entity.surface,
         status = entity.status,
         name = entity.name,
         type = entity.type,

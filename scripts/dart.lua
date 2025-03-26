@@ -7,14 +7,6 @@ local Log = require("__log4factorio__.Log")
 local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
 
-local show_turrets = true -- TODO substitute and delete (use storage)
-
--- vvv TODO move to storage
-local targets = {}
---local managedTurrets = {} -- TODO assignment via GUI to a dart-radar
--- ^^^ TODO move to storage
-
-
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function dumpOneSurface(k, v)
@@ -89,7 +81,7 @@ end
 
 --- assign target to turrets depending on prio (nearest asteroid first)
 -- TODO rewrite for use by a certain dart-radar
-local function reorganizePrio(managedTurrets)
+local function reorganizePrio(knownAsteroids, managedTurrets)
     -- reorganize prio
     for _, v in pairs(managedTurrets) do
         local turret = v.turret
@@ -112,7 +104,7 @@ local function reorganizePrio(managedTurrets)
         if (#prios > 0) then
             Log.log("setting shooting_target=" .. (prios[1] or "<NIL>") ..
                     " for turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINE)
-            local entity = targets[prios[1]].entity
+            local entity = knownAsteroids[prios[1]].entity
             Log.logBlock(entity, function(m)log(m)end, Log.FINE)
             turret.shooting_target = entity
         else
@@ -126,7 +118,7 @@ end
 -- ###############################################################
 
 --- calculate prio (based on distance) and (un)assign targets to turrets within range
-local function assign(managedTurrets, target, D)
+local function assign(knownAsteroids, managedTurrets, target, D)
     if D >= 0 then
         -- target enters or touches protected area
         Log.logBlock(target.unit_number, function(m)log(m)end, Log.FINER)
@@ -146,7 +138,7 @@ local function assign(managedTurrets, target, D)
             end
         end
 
-        reorganizePrio(managedTurrets)
+        reorganizePrio(knownAsteroids, managedTurrets)
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -158,27 +150,28 @@ end
 
 --- perforn decision which asteroid should be targeted
 local function businessLogic()
-    Log.log("enter BL", function(m)log(m)end, Log.FINE)
-    Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINE)
+    Log.log("enter BL", function(m)log(m)end, Log.FINER)
+    Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINEST)
 
     for index, pons in pairs(global_data.getPlatforms()) do
-        Log.log(index, function(m)log(m)end, Log.FINE)
+        Log.log(index, function(m)log(m)end, Log.FINEST)
 
         local surface = pons.surface
         local platform = pons.platform
         local managedTurrets = getManagedTurrets(pons)
+        local knownAsteroids = pons.knownAsteroids
 
         local square = 35
-        Log.log(platform.speed, function(m)log(m)end, Log.FINER)
+        Log.log(platform.speed, function(m)log(m)end, Log.FINEST)
         local entities = surface.find_entities_filtered({ position = {0, 0}, radius = square, type ={ "asteroid" } })
-        Log.log(#entities, function(m)log(m)end, Log.FINER)
+        Log.log(#entities, function(m)log(m)end, Log.FINEST)
 
         for _, entity in pairs(entities) do
             if entity.force.name ~= "player" then
                 local unit_number = entity.unit_number
-                if (targets[unit_number]) then
+                if (knownAsteroids[unit_number]) then
                     -- well known asteroid
-                    local target = targets[unit_number]
+                    local target = knownAsteroids[unit_number]
 
                     target.movement.x = target.position.x - entity.position.x
                     target.movement.y = target.position.y - entity.position.y
@@ -196,6 +189,7 @@ local function businessLogic()
                         color = { 0.5, 0, 0, 0.5 }
                     end
 
+                    -- TODO configure drawing
                     rendering.draw_circle({
                         target = target.position,
                         color = color,
@@ -204,23 +198,23 @@ local function businessLogic()
                         radius = 0.8,
                     })
 
-                    assign(managedTurrets, entity, D)
+                    assign(knownAsteroids, managedTurrets, entity, D)
                 else
                     -- new asteroid
-                    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
+                    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINEST)
                     local target = {
                         position = entity.position,
                         movement = {},
                         size = string.sub(entity.name, string.find(entity.name, "%a*")),
                         entity = entity,
                     }
-                    targets[unit_number] = target
+                    knownAsteroids[unit_number] = target
                 end
 
             end
         end
     end
-    Log.log("leave BL", function(m)log(m)end, Log.FINE)
+    Log.log("leave BL", function(m)log(m)end, Log.FINER)
 end
 -- ###############################################################
 
@@ -230,18 +224,25 @@ local function space_platform_changed_state(event)
 end
 -- ###############################################################
 
+--- called if an asteroid is destroyed
 local function entity_died(event)
     local entity = event.entity
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
     Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINER)
 
-    local managedTurrets = getManagedTurrets(global_data.getPlatforms()[entity.surface.index])
+    local pons = global_data.getPlatforms()[entity.surface.index]
+    local managedTurrets = getManagedTurrets(pons)
+    local knownAsteroids = pons.knownAsteroids
+    
+    -- delete it from list of known targets (asteroids)
+    knownAsteroids[entity.unit_number] = nil
 
+    -- delete it from target list
     for _, v in pairs(managedTurrets) do
         v.targetsOfTurret[entity.unit_number] = nil
     end
 
-    reorganizePrio(managedTurrets)
+    reorganizePrio(knownAsteroids, managedTurrets)
 end
 -- ###############################################################
 
@@ -272,8 +273,10 @@ local function entityCreated(event)
             output = output,
             control_behavior = output.get_or_create_control_behavior(),
         }
-        -- save it in platform
-        global_data.getPlatforms()[entity.surface.index].dartsOnPlatform[run] = dart
+        -- save it in platform (twice, for dart-output too)
+        local gdp = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
+        gdp[run] = dart
+        gdp[oun] = dart
     end
 end
 -- ###############################################################
@@ -283,23 +286,37 @@ local function entityRemoved(event)
 
     -- removed dart-radar
     local entity = event.entity
-    local un = entity.unit_number
     local darts = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
-    local dart = darts[un]
+    local run = entity.unit_number
+    Log.logBlock(darts, function(m)log(m)end, Log.FINE)
+    Log.logBlock(run, function(m)log(m)end, Log.FINE)
+
+    local dart = darts[run]
+    local oun = dart.output_un
     local output = dart and dart.output
+    Log.logBlock(dart, function(m)log(m)end, Log.FINE)
+    Log.logBlock(output, function(m)log(m)end, Log.FINE)
     if (output and output.valid) then
         -- if necessary destroy corresponding dart-output
         output.destroy()
     end
-    -- clear the data beloning to the deleted dart
-    darts[un] = nil
+    -- clear both the data belonging to the dart-radar and dart-output
+    darts[run] = nil
+    darts[oun] = nil
 end
 -- ###############################################################
 
---- creates the administrative structure for a new platform
+--- creates the administrative structure for a new platform.
+--- @class Pons: any administrative structure for a platform
+--- @field surface LuaSurface surface containing the platform
+--- @field platform LuaSpacePlatform
+--- @field turretsOnPlatform any array of turrets located on the platform
+--- @field dartsOnPlatform any array of D.A.R.T. entities located on the platform
+--- @field knownAsteroids any array of asteroids currently known and in detection range 
 --- @param surface LuaSurface holding the new platform
+--- @return Pons
 local function newSurface(surface)
-    return { surface = surface, platform = surface.platform, turretsOnPlatform = {}, dartsOnPlatform = {} }
+    return { surface = surface, platform = surface.platform, turretsOnPlatform = {}, dartsOnPlatform = {}, knownAsteroids = {} }
 end
 -- ###############################################################
 
@@ -375,13 +392,13 @@ local function registerEvents()
     local filters_on_mined = { { filter = 'type', type = 'radar' } }
 
     script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_on_built)
-
-    -- vvv TODO still needed later?
-    script.on_event(defines.events.on_built_entity, entityCreated, filters_on_built)
-    script.on_event(defines.events.on_robot_built_entity, entityCreated, filters_on_built)
-    script.on_event(defines.events.on_pre_player_mined_item, entityRemoved, filters_on_mined)
-    script.on_event(defines.events.on_robot_pre_mined, entityRemoved, filters_on_mined)
-    -- ^^^ TODO still needed later?
+    script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved, filters_on_mined)
+    ---- vvv TODO still needed later?
+    --script.on_event(defines.events.on_built_entity, entityCreated, filters_on_built)
+    --script.on_event(defines.events.on_robot_built_entity, entityCreated, filters_on_built)
+    --script.on_event(defines.events.on_pre_player_mined_item, entityRemoved, filters_on_mined)
+    --script.on_event(defines.events.on_robot_pre_mined, entityRemoved, filters_on_mined)
+    ---- ^^^ TODO still needed later?
 
     script.on_event(defines.events.on_entity_died, entity_died, {{ filter = "type", type = "asteroid" }})
 
@@ -444,10 +461,9 @@ dart.on_configuration_changed = dart_config_changed
 
 -- event without filters
 dart.events = {
-    [defines.events.script_raised_built]             = entityCreated, -- TODO delete?
-    [defines.events.script_raised_revive]            = entityCreated, -- TODO delete?
     [defines.events.on_entity_cloned]                = entityCreated, -- TODO delete?
     [defines.events.script_raised_destroy]           = entityRemoved,
+    [defines.events.on_space_platform_pre_mined]     = tbd,
     [defines.events.on_surface_created]              = surfaceCreated,
     [defines.events.on_pre_surface_deleted]          = surfaceDeleted,
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,

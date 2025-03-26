@@ -63,6 +63,7 @@ function TestDart:setUp()
         on_event_called = on_event_called + 1
     end
 end
+-- ###############################################################
 
 function TestDart:test_entityCreated()
     -- mock dart-radar
@@ -102,7 +103,7 @@ function TestDart:test_entityCreated()
     }
 
     -- test
-    local eventhandler = dart.events[defines.events.script_raised_built]
+    local eventhandler = dart.events[defines.events.on_entity_cloned]
     lu.assertEquals(type(eventhandler), "function")
     eventhandler(event)
 
@@ -112,6 +113,8 @@ function TestDart:test_entityCreated()
     local out = dart.output
     lu.assertNotNil(out)
     lu.assertEquals(out.unit_number, 0815)
+    local out = storage.platforms[2].dartsOnPlatform[0815]
+    lu.assertEquals(out, dart)
 end
 -- ###############################################################
 
@@ -136,7 +139,10 @@ end
 local function entityRemovedWithValidOutput(valid, expected)
     -- prepare storage entries
     init_storagePlatforms()
-    storage.platforms[2].dartsOnPlatform[4711] = createDart(valid)
+
+    local radarAndOutput = createDart(valid)
+    storage.platforms[2].dartsOnPlatform[4711] = radarAndOutput
+    storage.platforms[2].dartsOnPlatform[0815] = radarAndOutput
 
     -- mock entity in event
     local entity = {
@@ -156,8 +162,8 @@ local function entityRemovedWithValidOutput(valid, expected)
 
     eventhandler(event)
 
-    lu.assertNil(storage.dart[0815])
-    lu.assertNil(storage.dart[4711])
+    lu.assertNil(storage.platforms[2].dartsOnPlatform[0815])
+    lu.assertNil(storage.platforms[2].dartsOnPlatform[4711])
     lu.assertEquals(called_destroy, expected)
 end
 
@@ -203,6 +209,7 @@ function TestDart:test_surfaceCreatedPlatform()
     lu.assertEquals(pons.surface, surface)
     lu.assertEquals(pons.platform, platform)
     lu.assertEquals(pons.turretsOnPlatform, {})
+    lu.assertEquals(pons.knownAsteroids, {})
 end
 -- ###############################################################
 
@@ -249,7 +256,7 @@ function TestDart:test_on_init()
 
     lu.assertNotNil(storage.dart)
     lu.assertNotNil(storage.players)
-    lu.assertEquals(on_event_called, 6)
+    lu.assertEquals(on_event_called, 3)
 
     -- check results from call of searchDartInfrastructure()
     lu.assertEquals(getTableSize(storage.platforms), 1)
@@ -267,7 +274,7 @@ function TestDart:test_on_load()
     dart.on_load()
 
     lu.assertNotNil(storage.dart)
-    lu.assertEquals(on_event_called, 6)
+    lu.assertEquals(on_event_called, 3)
 end
 -- ###############################################################
 
