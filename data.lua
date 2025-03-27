@@ -61,7 +61,48 @@ dart_radar_recipe.ingredients = {
     { type = "item", name = "electronic-circuit", amount = 4 },
     { type = "item", name = "advanced-circuit", amount = 2 },
 }
+local dart_radar_recipe2 = data_util.copy_prototype(data.raw["recipe"]["radar"], "dart-radar2")
+dart_radar_recipe2.ingredients = {
+    { type = "item", name = "radar", amount = 1 },
+    { type = "item", name = "electronic-circuit", amount = 4 },
+    { type = "item", name = "advanced-circuit", amount = 2 },
+}
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- create the invisble constant-combinator needed for the gui and the business logic
+local dart_radar2 = data_util.copy_prototype(data.raw['constant-combinator']['constant-combinator'], 'dart-radar2')
+local dart_radar2_update = {
+    icon = '__core__/graphics/empty.png',
+    icon_size = 64,
+    next_upgrade = meld.delete(),
+    fast_replaceable_group = meld.delete(),
+    selection_box = { { -0.6, -0.6 }, { 0.6, 0.6 } },
+    selection_priority = (dart_radar2.selection_priority or 50) + 10, -- increase priority to default + 10
+    sprites = meld.delete(),
+    activity_led_sprites = meld.delete(),
+    graphics_set = {
+        animation = {
+            stripes = {
+                filename = "__base__/graphics/entity/radar/radar.png", width_in_frames = 8, height_in_frames = 8
+            },
+            animation_speed = 0.02,
+            frame_count = 64,
+        }
+    },
+    working_sound = {
+        max_sounds_per_type = 3,
+        sound = {
+          filename = "__base__/sound/radar.ogg",
+          volume = 0.8
+        },
+        use_doppler_shift = false
+    }
+}
+
+dart_radar2 = meld(dart_radar2, dart_radar2_update)
+rescale_entity(dart_radar2, 1 / 3)
+
+Log.logBlock(dart_radar2, function(m)log(m)end, Log.FINE)
 
 --- create the invisble constant-combinator needed for the gui and the business logic
 local dart_out = data_util.copy_prototype(data.raw['constant-combinator']['constant-combinator'], 'dart-output')
@@ -127,6 +168,12 @@ dart_radar_item.icon = "__base__/graphics/icons/radar.png" -- TODO
 dart_radar_item.icon_size = 64
 dart_radar_item.icon_mipmaps = 4
 dart_radar_item.order = (dart_radar_item.order or "dart") .. "-c"
+
+local dart_radar_item2 = data_util.copy_prototype(data.raw["item"]["radar"], "dart-radar2")
+dart_radar_item2.icon = "__base__/graphics/icons/radar.png" -- TODO
+dart_radar_item2.icon_size = 64
+dart_radar_item2.icon_mipmaps = 4
+dart_radar_item2.order = (dart_radar_item2.order or "dart") .. "-d"
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- create the D.A.R.T-radar technology
@@ -138,7 +185,7 @@ local dart_tech = {
     icon_mipmaps = 4,
 
     prerequisites = { "circuit-network", "radar", "space-platform" },
-    effects = { { type = 'unlock-recipe', recipe = 'dart-radar' }, },
+    effects = { { type = 'unlock-recipe', recipe = 'dart-radar' }, { type = 'unlock-recipe', recipe = 'dart-radar2' },},
 
     unit = {
         count = 100,
@@ -157,8 +204,11 @@ local dart_tech = {
 -- make all usable
 data:extend({
     dart_radar_item,
+    dart_radar_item2,
     dart_out,
+    dart_radar2,
     dart_radar_entity,
     dart_radar_recipe,
+    dart_radar_recipe2,
     dart_tech,
 })
