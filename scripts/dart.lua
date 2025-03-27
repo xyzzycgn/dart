@@ -143,8 +143,38 @@ local function assign(knownAsteroids, managedTurrets, target, D)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param pons Pons
 local function getManagedTurrets(pons)
     return pons.turretsOnPlatform -- TODO not all of platform (assignment vi gui/circuit network)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param pons Pons
+local function manageTurrets(pons)
+    local turrets = pons.turretsOnPlatform
+
+    -- determine circuit networks of turrets
+    local cnOfTurrets = {}
+    for tid, top in pairs(turrets) do
+        local cb = top.controlBehavior
+        -- turrets only have simple green or red wire connectors
+        for _, wc in pairs({ defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }) do
+            local network = cb.get_circuit_network(wc)
+
+            if network then
+                -- circuit_condition of turret
+                local cot = cnOfTurrets[network.network_id] or {}
+                cot[tid] = {
+                    turret = top.turret,
+                    circuit_condition = cb.circuit_condition,
+                }
+                cnOfTurrets[network.network_id] = cot
+            end
+        end
+    end
+    Log.logBlock(cnOfTurrets, function(m)log(m)end, Log.FINE)
+
+    return cnOfTurrets
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -351,8 +381,6 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function searchTurrets(pons)
-    Log.logBlock(pons, function(m)log(m)end, Log.FINE)
-
     local turretsOnPlatform = pons.turretsOnPlatform
 
     for _, turret in pairs(pons.surface.find_entities_filtered({ type = "ammo-turret" })) do
@@ -363,6 +391,9 @@ local function searchTurrets(pons)
             controlBehavior = turret.get_or_create_control_behavior(),
         }
     end
+    Log.logBlock(pons, function(m)log(m)end, Log.FINER)
+
+    manageTurrets(pons) -- TODO temp. for investigating
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

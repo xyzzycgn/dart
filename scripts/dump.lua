@@ -110,6 +110,7 @@ local function dumpCircuitNetwork(cn)
     local dcn = cn and {
         entity = cn.entity,
         network_id = cn.network_id,
+        wire_type = cn.wire_type,
         signals = cn.signals,
         connected_circuit_count = cn.connected_circuit_count,
     } or {}
