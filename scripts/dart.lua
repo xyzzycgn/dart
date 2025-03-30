@@ -88,13 +88,13 @@ local function reorganizePrio(knownAsteroids, managedTurrets)
 
         local prios = {}
         -- create array with unit_numbers of targets
-        for tun, _ in pairs(v.targetsOfTurret) do
+        for tun, _ in pairs(v.targets_of_turret) do
             prios[#prios + 1] = tun
         end
 
         -- sort it by distance (ascending)
         table.sort(prios, function(i, j)
-            return v.targetsOfTurret[i] < v.targetsOfTurret[j]
+            return v.targets_of_turret[i] < v.targets_of_turret[j]
         end)
 
         -- save new priorities
@@ -130,11 +130,11 @@ local function assign(knownAsteroids, managedTurrets, target, D)
             if dist <= 18 then -- TODO quality
                 Log.logBlock(target, function(m)log(m)end, Log.FINE)
                 -- in range
-                v.targetsOfTurret[target.unit_number] = dist
+                v.targets_of_turret[target.unit_number] = dist
             else
                 -- (no longer) in range
                 Log.logBlock(target, function(m)log(m)end, Log.FINE)
-                v.targetsOfTurret[target.unit_number] = nil
+                v.targets_of_turret[target.unit_number] = nil
             end
         end
 
@@ -156,7 +156,7 @@ local function manageTurrets(pons)
     -- determine circuit networks of turrets
     local cnOfTurrets = {}
     for tid, top in pairs(turrets) do
-        local cb = top.controlBehavior
+        local cb = top.control_behavior
         -- turrets only have simple green or red wire connectors
         for _, wc in pairs({ defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }) do
             local network = cb.get_circuit_network(wc)
@@ -178,6 +178,33 @@ local function manageTurrets(pons)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param pons Pons
+local function manageDarts(pons)
+    local darts = pons.dartsOnPlatform
+
+    -- determine circuit networks of darts
+    local cnOfDarts = {}
+    for did, dop in pairs(darts) do
+        if (did == dop.radar_un) then
+            -- only use entry of dart-radar (ignore corresponding dart-output)
+            local cb = dop.control_behavior
+            -- darts only have simple green or red wire connectors
+            for _, wc in pairs({ defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }) do
+                local network = cb.get_circuit_network(wc)
+
+                if network then
+                    -- dart beloging to network
+                    cnOfDarts[network.network_id] = dop
+                end
+            end
+        end
+    end
+    Log.logBlock(cnOfDarts, function(m)log(m)end, Log.FINE)
+
+    return cnOfDarts
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- perforn decision which asteroid should be targeted
 local function businessLogic()
     Log.log("enter BL", function(m)log(m)end, Log.FINER)
@@ -186,12 +213,16 @@ local function businessLogic()
     for index, pons in pairs(global_data.getPlatforms()) do
         Log.log(index, function(m)log(m)end, Log.FINEST)
 
+        local cnOfDarts = manageDarts(pons)
+        local cnOfTurrets = manageTurrets(pons)
+
+
         local surface = pons.surface
         local platform = pons.platform
         local managedTurrets = getManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
 
-        local square = 35
+        local square = 35 -- TODO configurable or depending on quality?
         Log.log(platform.speed, function(m)log(m)end, Log.FINEST)
         local entities = surface.find_entities_filtered({ position = {0, 0}, radius = square, type ={ "asteroid" } })
         Log.log(#entities, function(m)log(m)end, Log.FINEST)
@@ -269,7 +300,7 @@ local function entity_died(event)
 
     -- delete it from target list
     for _, v in pairs(managedTurrets) do
-        v.targetsOfTurret[entity.unit_number] = nil
+        v.targets_of_turret[entity.unit_number] = nil
     end
 
     reorganizePrio(knownAsteroids, managedTurrets)
@@ -322,17 +353,19 @@ local function entityRemoved(event)
     Log.logBlock(run, function(m)log(m)end, Log.FINE)
 
     local dart = darts[run]
-    local oun = dart.output_un
-    local output = dart and dart.output
-    Log.logBlock(dart, function(m)log(m)end, Log.FINE)
-    Log.logBlock(output, function(m)log(m)end, Log.FINE)
-    if (output and output.valid) then
-        -- if necessary destroy corresponding dart-output
-        output.destroy()
+    if dart then
+        local oun = dart.output_un
+        local output = dart and dart.output
+        Log.logBlock(dart, function(m)log(m)end, Log.FINE)
+        Log.logBlock(output, function(m)log(m)end, Log.FINE)
+        if (output and output.valid) then
+            -- if necessary destroy corresponding dart-output
+            output.destroy()
+        end
+        -- clear both the data belonging to the dart-radar and dart-output
+        darts[run] = nil
+        darts[oun] = nil
     end
-    -- clear both the data belonging to the dart-radar and dart-output
-    darts[run] = nil
-    darts[oun] = nil
 end
 -- ###############################################################
 
@@ -387,13 +420,12 @@ local function searchTurrets(pons)
         Log.logBlock(turret, function(m)log(m)end, Log.FINE)
         turretsOnPlatform[turret.unit_number] = {
             turret = turret,
-            targetsOfTurret = {},
-            controlBehavior = turret.get_or_create_control_behavior(),
+            targets_of_turret = {},
+            control_behavior = turret.get_or_create_control_behavior(),
         }
     end
     Log.logBlock(pons, function(m)log(m)end, Log.FINER)
 
-    manageTurrets(pons) -- TODO temp. for investigating
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
