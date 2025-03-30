@@ -265,8 +265,8 @@ function TestDart:test_on_init()
     lu.assertEquals(getTableSize(plat.turretsOnPlatform), 1)
     local tur = plat.turretsOnPlatform[4711]
     lu.assertNotNil(tur)
-    lu.assertEquals(tur.controlBehavior, "simulated CB")
-    lu.assertEquals(tur.targetsOfTurret, {})
+    lu.assertEquals(tur.control_behavior, "simulated CB")
+    lu.assertEquals(tur.targets_of_turret, {})
 end
 -- ###############################################################
 
