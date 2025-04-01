@@ -7,6 +7,40 @@ local Log = require("__log4factorio__.Log")
 local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
 
+-- Type definitions for this file
+
+--- @class TurretOnPlatform a turret on a platform
+--- @field turret LuaEntity the turret
+--- @field control_behavior LuaTurretControlBehavior of the turret
+--- @field targets_of_turret LuaEntity[] the targets of the turret
+
+--- @class Pons: any administrative structure for a platform
+--- @field surface LuaSurface surface containing the platform
+--- @field platform LuaSpacePlatform the platform
+--- @field turretsOnPlatform TurretOnPlatform[] array of turrets located on the platform
+--- @field dartsOnPlatform LuaEntity[] array of D.A.R.T. entities located on the platform
+--- @field knownAsteroids LuaEntity[] array of asteroids currently known and in detection range
+
+--- @class CnOfDart circuit network belonging to a couple of dart-radar/dart-output
+--- @field radar_un int unit_number of dart-radar
+--- @field output_un int unit_number of corresponding dart-output
+--- @field output LuaEntity dart-output
+--- @field control_behavior LuaConstantCombinatorControlBehavior of output
+
+--- @class CnOfTurret circuit network belonging to a turret.
+--- @field turret LuaEntity turret
+--- @field circuit_condition CircuitConditionDefinition of the turret
+
+--- @class ManagedTurret turret managed by a D.A.R.T.
+--- @field output LuaEntity dart-output managing turret
+--- @field control_behavior LuaConstantCombinatorControlBehavior of output
+--- @field turret LuaEntity turret
+--- @field circuit_condition CircuitConditionDefinition of the turret
+--- @field targets_of_turret LuaEntity[] the targets of the turret
+
+-- end of Type definitions for this file
+
+
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function dumpOneSurface(k, v)
@@ -81,6 +115,8 @@ end
 
 --- assign target to turrets depending on prio (nearest asteroid first)
 -- TODO rewrite for use by a certain dart-radar
+--- @param knownAsteroids LuaEntity[]
+--- @param managedTurrets ManagedTurret[]
 local function reorganizePrio(knownAsteroids, managedTurrets)
     -- reorganize prio
     for _, v in pairs(managedTurrets) do
@@ -102,6 +138,7 @@ local function reorganizePrio(knownAsteroids, managedTurrets)
 
         -- and here occurs the miracle
         if (#prios > 0) then
+            -- TODO enable turret using circuit network
             Log.log("setting shooting_target=" .. (prios[1] or "<NIL>") ..
                     " for turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINE)
             local entity = knownAsteroids[prios[1]].entity
@@ -118,6 +155,10 @@ end
 -- ###############################################################
 
 --- calculate prio (based on distance) and (un)assign targets to turrets within range
+--- @param knownAsteroids LuaEntity[]
+--- @param managedTurrets ManagedTurret[]
+--- @param target LuaEntity asteroid which should be targeted
+--- @param D float discriminant (@see targeting())
 local function assign(knownAsteroids, managedTurrets, target, D)
     if D >= 0 then
         -- target enters or touches protected area
@@ -132,7 +173,7 @@ local function assign(knownAsteroids, managedTurrets, target, D)
                 -- in range
                 v.targets_of_turret[target.unit_number] = dist
             else
-                -- (no longer) in range
+                -- no longer / not in range
                 Log.logBlock(target, function(m)log(m)end, Log.FINE)
                 v.targets_of_turret[target.unit_number] = nil
             end
@@ -144,13 +185,7 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param pons Pons
-local function getManagedTurrets(pons)
-    return pons.turretsOnPlatform -- TODO not all of platform (assignment vi gui/circuit network)
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
---- @param pons Pons
-local function manageTurrets(pons)
+local function circuitNetworkOfTurrets(pons)
     local turrets = pons.turretsOnPlatform
 
     -- determine circuit networks of turrets
@@ -178,11 +213,13 @@ local function manageTurrets(pons)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param pons Pons
-local function manageDarts(pons)
+--- @param pons Pons platform
+--- @return CnOfDart[]
+local function circuitNetworkOfDarts(pons)
     local darts = pons.dartsOnPlatform
 
     -- determine circuit networks of darts
+    --- @type CnOfDart[]
     local cnOfDarts = {}
     for did, dop in pairs(darts) do
         if (did == dop.radar_un) then
@@ -205,18 +242,46 @@ local function manageDarts(pons)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param pons Pons
+--- @return ManagedTurret[]
+local function getManagedTurrets(pons)
+    --- @type CnOfDart[]
+    local cnOfDarts = circuitNetworkOfDarts(pons)
+    --- @type CnOfTurret[]
+    local cnOfTurrets = circuitNetworkOfTurrets(pons)
+
+    --- @type ManagedTurret[]
+    local mts = {}
+    -- iterate over all known circuit network containing a dart
+    for nwid, cnOfDart in pairs(cnOfDarts) do
+        -- iterate over all known turrets in this circuit network
+        for tid, cnOfTurret in pairs(cnOfTurrets[nwid]) do
+            -- form ManagedTurret
+            --- @type ManagedTurret
+            local mt = {
+                turret = cnOfTurret.turret,
+                circuit_condition = cnOfTurret.circuit_condition,
+                output = cnOfDart.output,
+                control_behavior = cnOfDart.control_behavior,
+                targets_of_turret = {},
+            }
+            mts[#mts + 1] = mt
+        end
+    end
+
+    Log.logBlock(mts, function(m)log(m)end, Log.FINE)
+
+    --return pons.turretsOnPlatform -- TODO not all of platform (assignment vi gui/circuit network)
+    return mts
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- perforn decision which asteroid should be targeted
 local function businessLogic()
     Log.log("enter BL", function(m)log(m)end, Log.FINER)
     Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINEST)
 
-    for index, pons in pairs(global_data.getPlatforms()) do
-        Log.log(index, function(m)log(m)end, Log.FINEST)
-
-        local cnOfDarts = manageDarts(pons)
-        local cnOfTurrets = manageTurrets(pons)
-
-
+    for _, pons in pairs(global_data.getPlatforms()) do
         local surface = pons.surface
         local platform = pons.platform
         local managedTurrets = getManagedTurrets(pons)
@@ -370,14 +435,8 @@ end
 -- ###############################################################
 
 --- creates the administrative structure for a new platform.
---- @class Pons: any administrative structure for a platform
---- @field surface LuaSurface surface containing the platform
---- @field platform LuaSpacePlatform
---- @field turretsOnPlatform any array of turrets located on the platform
---- @field dartsOnPlatform any array of D.A.R.T. entities located on the platform
---- @field knownAsteroids any array of asteroids currently known and in detection range 
 --- @param surface LuaSurface holding the new platform
---- @return Pons
+--- @return Pons created from surface
 local function newSurface(surface)
     return { surface = surface, platform = surface.platform, turretsOnPlatform = {}, dartsOnPlatform = {}, knownAsteroids = {} }
 end
@@ -413,6 +472,7 @@ local function searchPlatforms()
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param pons Pons
 local function searchTurrets(pons)
     local turretsOnPlatform = pons.turretsOnPlatform
 
@@ -522,7 +582,7 @@ dart.on_init = dart_initializer
 dart.on_load = dart_load
 dart.on_configuration_changed = dart_config_changed
 
--- event without filters
+-- events without filters
 dart.events = {
     [defines.events.on_entity_cloned]                = entityCreated, -- TODO delete?
     [defines.events.script_raised_destroy]           = entityRemoved,
