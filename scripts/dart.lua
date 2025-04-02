@@ -14,11 +14,17 @@ local global_data = require("scripts.global_data")
 --- @field control_behavior LuaTurretControlBehavior of the turret
 --- @field targets_of_turret LuaEntity[] the targets of the turret
 
+--- @class DartOnPlatform a D.A.R.T on a platform
+--- @field output LuaEntity dart-output
+--- @field control_behavior LuaConstantCombinatorControlBehavior of output
+--- @field output_un uint64 unit_number of output
+--- @field radar_un uint64 unit_number of  corresponding dart-radar
+
 --- @class Pons: any administrative structure for a platform
 --- @field surface LuaSurface surface containing the platform
 --- @field platform LuaSpacePlatform the platform
 --- @field turretsOnPlatform TurretOnPlatform[] array of turrets located on the platform
---- @field dartsOnPlatform LuaEntity[] array of D.A.R.T. entities located on the platform
+--- @field dartsOnPlatform DartOnPlatform[] array of D.A.R.T. entities located on the platform
 --- @field knownAsteroids LuaEntity[] array of asteroids currently known and in detection range
 
 --- @class CnOfDart circuit network belonging to a couple of dart-radar/dart-output
