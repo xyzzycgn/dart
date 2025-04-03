@@ -120,72 +120,106 @@ end
 --###############################################################
 
 --- assign target to turrets depending on prio (nearest asteroid first)
--- TODO rewrite for use by a certain dart-radar
+--- @param pons Pons
 --- @param knownAsteroids LuaEntity[]
 --- @param managedTurrets ManagedTurret[]
-local function reorganizePrio(knownAsteroids, managedTurrets)
+--- @return any resulting filter setting (for all dart-output of a platform)
+local function reorganizePrio(pons, knownAsteroids, managedTurrets)
+    local filter_settings = {}
+
     -- reorganize prio
-    for _, v in pairs(managedTurrets) do
-        local turret = v.turret
+    for _, managedTurret in pairs(managedTurrets) do
+        local turret = managedTurret.turret
 
         local prios = {}
         -- create array with unit_numbers of targets
-        for tun, _ in pairs(v.targets_of_turret) do
+        for tun, _ in pairs(managedTurret.targets_of_turret) do
             prios[#prios + 1] = tun
         end
 
         -- sort it by distance (ascending)
         table.sort(prios, function(i, j)
-            return v.targets_of_turret[i] < v.targets_of_turret[j]
+            return managedTurret.targets_of_turret[i] < managedTurret.targets_of_turret[j]
         end)
 
         -- save new priorities
-        v.prios = prios
+        managedTurret.prios = prios
 
         -- and here occurs the miracle
         if (#prios > 0) then
-            -- TODO enable turret using circuit network
+            -- enable turret using circuit network
             Log.log("setting shooting_target=" .. (prios[1] or "<NIL>") ..
                     " for turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINE)
-            local entity = knownAsteroids[prios[1]].entity
-            Log.logBlock(entity, function(m)log(m)end, Log.FINE)
-            turret.shooting_target = entity
+            local asteroid = knownAsteroids[prios[1]].entity
+            Log.logBlock(asteroid, function(m)log(m)end, Log.FINE)
+            turret.shooting_target = asteroid
+            -- unit number of dart-output managing this turret
+            local oun = managedTurret.output.unit_number
+            -- filter_settings for this dart-output
+            local filter_setting_by_oun = filter_settings[oun] or {}
+
+            -- now prepare to set the CircuitConditions
+            -- @wube why simple if could be complicated ;-)
+            --- @type CircuitCondition
+            Log.logBlock(managedTurret.circuit_condition, function(m)log(m)end, Log.FINE)
+            local cc = managedTurret.circuit_condition
+            local filter = {
+                value = { type = cc.first_signal.type,
+                          name = cc.first_signal.name,
+                          quality = cc.first_signal.quality or 'normal',
+                        },
+                min = 1,
+            }
+            filter_setting_by_oun[#filter_setting_by_oun + 1] = filter
+            filter_settings[oun] = filter_setting_by_oun
         else
+            -- set no filter => disable turret using circuit network
             Log.log("try to disable turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINE)
-            -- TODO disable turret using circuit network
+            turret.shooting_target = nil
         end
     end
 
-    Log.logBlock(managedTurrets, function(m)log(m)end, Log.FINE)
+    Log.logBlock(filter_settings, function(m)log(m)end, Log.FINE)
+
+    -- now set the CircuitConditions
+    -- @wube why simple if could be complicated - part 2 ;-)
+    for ndx, dop in pairs(pons.dartsOnPlatform) do
+        -- only dart-output
+        if (ndx == dop.output_un) then
+            local lls = dop.control_behavior.get_section(1)
+            lls.filters = filter_settings[ndx] or {} -- if nothing is set => reset
+        end
+    end
+
+    return filter_settings
 end
 -- ###############################################################
 
 --- calculate prio (based on distance) and (un)assign targets to turrets within range
---- @param knownAsteroids LuaEntity[]
 --- @param managedTurrets ManagedTurret[]
 --- @param target LuaEntity asteroid which should be targeted
 --- @param D float discriminant (@see targeting())
-local function assign(knownAsteroids, managedTurrets, target, D)
-    if D >= 0 then
+local function assign(managedTurrets, target, D)
+    local tun = target.unit_number
+    for _, v in pairs(managedTurrets) do
         -- target enters or touches protected area
-        Log.logBlock(target.unit_number, function(m)log(m)end, Log.FINER)
+        Log.logBlock(tun, function(m)log(m)end, Log.FINER)
 
-        for _, v in pairs(managedTurrets) do
-            local turret = v.turret
-            local dist = distToTurret(target, turret)
-            -- remember distance for each target in range of this turret
+        local inRange = false
+        if D >= 0 then
+            local dist = distToTurret(target, v.turret)
+            -- remember distance for each turret to target if in range
             if dist <= 18 then -- TODO quality
                 Log.logBlock(target, function(m)log(m)end, Log.FINE)
-                -- in range
-                v.targets_of_turret[target.unit_number] = dist
-            else
-                -- no longer / not in range
-                Log.logBlock(target, function(m)log(m)end, Log.FINE)
-                v.targets_of_turret[target.unit_number] = nil
+                v.targets_of_turret[tun] = dist
+                inRange = true
             end
         end
-
-        reorganizePrio(knownAsteroids, managedTurrets)
+        if not inRange then
+            -- no longer or not in range / not hitting
+            Log.logBlock(target, function(m)log(m)end, Log.FINE)
+            v.targets_of_turret[tun] = nil
+        end
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -219,12 +253,12 @@ local function circuitNetworkOfTurrets(pons)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- determine circuit networks of darts
 --- @param pons Pons platform
 --- @return CnOfDart[]
 local function circuitNetworkOfDarts(pons)
     local darts = pons.dartsOnPlatform
 
-    -- determine circuit networks of darts
     --- @type CnOfDart[]
     local cnOfDarts = {}
     for did, dop in pairs(darts) do
@@ -258,7 +292,7 @@ local function getManagedTurrets(pons)
 
     --- @type ManagedTurret[]
     local mts = {}
-    -- iterate over all known circuit network containing a dart
+    -- iterate over all known circuit networks containing a dart
     for nwid, cnOfDart in pairs(cnOfDarts) do
         -- iterate over all known turrets in this circuit network
         for tid, cnOfTurret in pairs(cnOfTurrets[nwid]) do
@@ -277,7 +311,6 @@ local function getManagedTurrets(pons)
 
     Log.logBlock(mts, function(m)log(m)end, Log.FINE)
 
-    --return pons.turretsOnPlatform -- TODO not all of platform (assignment vi gui/circuit network)
     return mts
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -293,12 +326,14 @@ local function businessLogic()
         local managedTurrets = getManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
 
+        local filters = {}
+
         local square = 35 -- TODO configurable or depending on quality?
         Log.log(platform.speed, function(m)log(m)end, Log.FINEST)
-        local entities = surface.find_entities_filtered({ position = {0, 0}, radius = square, type ={ "asteroid" } })
-        Log.log(#entities, function(m)log(m)end, Log.FINEST)
+        local asteroids = surface.find_entities_filtered({ position = {0, 0}, radius = square, type ={ "asteroid" } })
+        Log.log(#asteroids, function(m)log(m)end, Log.FINEST)
 
-        for _, entity in pairs(entities) do
+        for _, entity in pairs(asteroids) do
             if entity.force.name ~= "player" then
                 local unit_number = entity.unit_number
                 if (knownAsteroids[unit_number]) then
@@ -330,7 +365,7 @@ local function businessLogic()
                         radius = 0.8,
                     })
 
-                    assign(knownAsteroids, managedTurrets, entity, D)
+                    assign(managedTurrets, entity, D)
                 else
                     -- new asteroid
                     Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINEST)
@@ -342,9 +377,9 @@ local function businessLogic()
                     }
                     knownAsteroids[unit_number] = target
                 end
-
             end
         end
+        reorganizePrio(pons, knownAsteroids, managedTurrets)
     end
     Log.log("leave BL", function(m)log(m)end, Log.FINER)
 end
@@ -374,7 +409,7 @@ local function entity_died(event)
         v.targets_of_turret[entity.unit_number] = nil
     end
 
-    reorganizePrio(knownAsteroids, managedTurrets)
+    reorganizePrio(pons, knownAsteroids, managedTurrets)
 end
 -- ###############################################################
 
