@@ -78,31 +78,36 @@ function dump.dumpAsteroidPropertyPrototype(prototype)
 end
 -- ###############################################################
 
+--- @param entity LuaEntity
+--- @param is_turret boolean
 function dump.dumpEntity(entity, is_turret)
-    local de = {
-        force = entity.force,
-        force_index = entity.force_index,
-        surface = entity.surface,
-        status = entity.status,
-        name = entity.name,
-        type = entity.type,
-        position = entity.position,
-        prototype = entity.prototype,
-        gps_tag = entity.gps_tag,
-        destructible = entity.destructible,
-        direction = entity.direction,
-        speed = entity.speed,
-        is_military_target = entity.is_military_target,
-        --shooting_state = entity.shooting_state,
-        get_radius = entity.get_radius(),
-        unit_number = entity.unit_number,
-    }
+    if entity.valid then
+        local de = {
+            force = entity.force,
+            force_index = entity.force_index,
+            surface = entity.surface,
+            status = entity.status,
+            name = entity.name,
+            type = entity.type,
+            position = entity.position,
+            prototype = entity.prototype,
+            gps_tag = entity.gps_tag,
+            destructible = entity.destructible,
+            direction = entity.direction,
+            speed = entity.speed,
+            is_military_target = entity.is_military_target,
+            get_radius = entity.get_radius(),
+            unit_number = entity.unit_number,
+        }
 
-    if is_turret then
-        de.shooting_target = entity.shooting_target
+        if is_turret then
+            de.shooting_target = entity.shooting_target
+        end
+
+        return de
+    else
+        return serpent.block(entity)
     end
-
-    return de
 end
 -- ###############################################################
 
