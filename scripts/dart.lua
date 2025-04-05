@@ -465,7 +465,20 @@ local function entityCreated(event)
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
 
-    if entity.name == "dart-radar" then
+    if entity.name == "dart-radar2" then
+        Log.log("###### dart-radar2", function(m)log(m)end, Log.FINE)
+        Log.logBlock(entity.surface, function(m)log(m)end, Log.FINE)
+
+        local dart_anim = rendering.draw_animation({
+            animation = "dart-radar-animation",
+            surface = entity.surface,
+            target = entity,
+            render_layer = "item"
+        })
+        -- TODO local gdp = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
+        Log.logBlock(dart_anim, function(m)log(m)end, Log.FINE)
+
+    elseif entity.name == "dart-radar" then
         -- yes - create also corresponding dart-output
         local output = entity.surface.create_entity {
             name = "dart-output",
@@ -596,13 +609,13 @@ end
 --
 --- register complexer events with additional filters
 local function registerEvents()
-    local filters_on_built = { { filter = 'type', type = 'radar' } }
+    local filters_on_built = { { filter = 'type', type = 'radar' }, { filter = 'name', name = 'dart-radar2', mode = "or" } }
     local filters_on_mined = { { filter = 'type', type = 'radar' } }
 
     script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_on_built)
     script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved, filters_on_mined)
     ---- vvv TODO still needed later?
-    --script.on_event(defines.events.on_built_entity, entityCreated, filters_on_built)
+    script.on_event(defines.events.on_built_entity, entityCreated, filters_on_built)
     --script.on_event(defines.events.on_robot_built_entity, entityCreated, filters_on_built)
     --script.on_event(defines.events.on_pre_player_mined_item, entityRemoved, filters_on_mined)
     --script.on_event(defines.events.on_robot_pre_mined, entityRemoved, filters_on_mined)

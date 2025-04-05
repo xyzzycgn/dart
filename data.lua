@@ -70,41 +70,6 @@ dart_radar_recipe2.ingredients = {
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- create the invisble constant-combinator needed for the gui and the business logic
-local dart_radar2 = data_util.copy_prototype(data.raw['constant-combinator']['constant-combinator'], 'dart-radar2')
-local dart_radar2_update = {
-    icon = '__core__/graphics/empty.png',
-    icon_size = 64,
-    next_upgrade = meld.delete(),
-    fast_replaceable_group = meld.delete(),
-    selection_box = { { -0.6, -0.6 }, { 0.6, 0.6 } },
-    selection_priority = (dart_radar2.selection_priority or 50) + 10, -- increase priority to default + 10
-    sprites = meld.delete(),
-    activity_led_sprites = meld.delete(),
-    graphics_set = {
-        animation = {
-            stripes = {
-                filename = "__base__/graphics/entity/radar/radar.png", width_in_frames = 8, height_in_frames = 8
-            },
-            animation_speed = 0.02,
-            frame_count = 64,
-        }
-    },
-    working_sound = {
-        max_sounds_per_type = 3,
-        sound = {
-          filename = "__base__/sound/radar.ogg",
-          volume = 0.8
-        },
-        use_doppler_shift = false
-    }
-}
-
-dart_radar2 = meld(dart_radar2, dart_radar2_update)
-rescale_entity(dart_radar2, 1 / 3)
-
-Log.logBlock(dart_radar2, function(m)log(m)end, Log.FINE)
-
---- create the invisble constant-combinator needed for the gui and the business logic
 local dart_out = data_util.copy_prototype(data.raw['constant-combinator']['constant-combinator'], 'dart-output')
 local dart_out_update = {
     icon = '__core__/graphics/empty.png',
@@ -160,6 +125,38 @@ dart_radar_entity.surface_conditions = {  -- dart_radar should only be build on 
 }
 
 Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINER)
+
+--- create the VISIBLE D.A.R.T-radar entity and shrink it to 1x1 tiles
+local dart_radar_entity2 = data_util.copy_prototype(data.raw['constant-combinator']['constant-combinator'], "dart-radar2")
+dart_radar_entity2.icon = "__base__/graphics/icons/radar.png" -- TODO
+dart_radar_entity2.icon_size = 64
+dart_radar_entity2.icon_mipmaps = 4
+dart_radar_entity2.next_upgrade = nil
+dart_radar_entity2.rotation_speed = 0.02
+dart_radar_entity2.energy_usage = "100kW"
+
+rescale_entity(dart_radar_entity2, 1 / 3)
+
+dart_radar_entity2.selection_box = {{ -0.6, -0.6 }, { 0.6, 0.6 }}
+dart_radar_entity2.collision_box = {{ -0.4, -0.4 }, { 0.4, 0.4 }}
+dart_radar_entity2.circuit_connector = {
+    points = {
+        shadow = {
+            green = { -1.375 / 3, 0.203125 / 3 },
+            red = { -1.09375 / 3, 0.203125 / 3 }
+        },
+        wire = {
+            green = { -1.484375 / 3, 0.03125 / 3 },
+            red = { -1.390625 / 3, -0.125 / 3 }
+        }
+    }
+}
+--dart_radar_entity2.surface_conditions = {  -- dart_radar should only be build on platforms
+--    { property = "gravity", min = 0, max = 0 },
+--    { property = "pressure", min = 0, max = 0 },
+--}
+
+Log.logBlock(dart_radar_entity2, function(m)log(m)end, Log.FINE)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- create the D.A.R.T-radar item
@@ -201,13 +198,29 @@ local dart_tech = {
 }
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
+data:extend({
+    { type = "animation",
+      name = "dart-radar-animation",
+      stripes = {
+          { filename = "__base__/graphics/entity/radar/radar.png", width_in_frames = 8, height_in_frames = 8 },
+      },
+      animation_speed = 1.4,
+      frame_count = 64,
+      width = 196,
+      height = 254,
+      scale = 1 / 6,
+      run_mode = "backward",
+    }
+})
+
 -- make all usable
 data:extend({
     dart_radar_item,
     dart_radar_item2,
     dart_out,
-    dart_radar2,
     dart_radar_entity,
+    dart_radar_entity2,
     dart_radar_recipe,
     dart_radar_recipe2,
     dart_tech,
