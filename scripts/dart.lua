@@ -14,10 +14,9 @@ local global_data = require("scripts.global_data")
 --- @field control_behavior LuaTurretControlBehavior of the turret
 
 --- @class DartOnPlatform a D.A.R.T on a platform
---- @field output LuaEntity dart-output
---- @field control_behavior LuaConstantCombinatorControlBehavior of output
---- @field output_un uint64 unit_number of output
---- @field radar_un uint64 unit_number of  corresponding dart-radar
+--- @field radar LuaEntity dart-radar
+--- @field control_behavior LuaConstantCombinatorControlBehavior of radar
+--- @field radar_un uint64 unit_number of dart-radar
 
 --- @class KnownAsteroid any describes an asteroid tracked by D.A.R.T
 --- @field position MapPosition
@@ -32,19 +31,18 @@ local global_data = require("scripts.global_data")
 --- @field dartsOnPlatform DartOnPlatform[] array of D.A.R.T. entities located on the platform
 --- @field knownAsteroids KnownAsteroid[] array of asteroids currently known and in detection range
 
---- @class CnOfDart circuit network belonging to a couple of dart-radar/dart-output
+--- @class CnOfDart circuit network belonging to a dart-radar
 --- @field radar_un int unit_number of dart-radar
---- @field output_un int unit_number of corresponding dart-output
---- @field output LuaEntity dart-output
---- @field control_behavior LuaConstantCombinatorControlBehavior of output
+--- @field radar LuaEntity dart-radar
+--- @field control_behavior LuaConstantCombinatorControlBehavior of radar
 
 --- @class CnOfTurret circuit network belonging to a turret.
 --- @field turret LuaEntity turret
 --- @field circuit_condition CircuitConditionDefinition of the turret
 
 --- @class ManagedTurret turret managed by a D.A.R.T.
---- @field output LuaEntity dart-output managing turret
---- @field control_behavior LuaConstantCombinatorControlBehavior of output
+--- @field radar LuaEntity dart-radar managing turret
+--- @field control_behavior LuaConstantCombinatorControlBehavior of radar
 --- @field turret LuaEntity turret
 --- @field circuit_condition CircuitConditionDefinition of the turret
 --- @field targets_of_turret LuaEntity[] the targets of the turret
@@ -128,7 +126,7 @@ end
 --- @param pons Pons
 --- @param knownAsteroids LuaEntity[]
 --- @param managedTurrets ManagedTurret[]
---- @return any resulting filter setting (for all dart-output of a platform)
+--- @return any resulting filter setting (for all darts of a platform)
 local function reorganizePrio(pons, knownAsteroids, managedTurrets)
     local filter_settings = {}
 
@@ -160,10 +158,10 @@ local function reorganizePrio(pons, knownAsteroids, managedTurrets)
             local asteroid = knownAsteroids[prios[1]].entity
             Log.logBlock(asteroid, function(m)log(m)end, Log.FINER)
             turret.shooting_target = asteroid
-            -- unit number of dart-output managing this turret
-            local oun = managedTurret.output.unit_number
-            -- filter_settings for this dart-output
-            local filter_setting_by_oun = filter_settings[oun] or {}
+            -- unit number of dart-radar managing this turret
+            local un = managedTurret.radar.unit_number
+            -- filter_settings for this dart
+            local filter_setting_by_un = filter_settings[un] or {}
 
             -- now prepare to set the CircuitConditions
             -- @wube why simple if could be complicated ;-)
@@ -177,8 +175,8 @@ local function reorganizePrio(pons, knownAsteroids, managedTurrets)
                         },
                 min = 1,
             }
-            filter_setting_by_oun[#filter_setting_by_oun + 1] = filter
-            filter_settings[oun] = filter_setting_by_oun
+            filter_setting_by_un[#filter_setting_by_un + 1] = filter
+            filter_settings[un] = filter_setting_by_un
         else
             -- set no filter => disable turret using circuit network
             Log.log("try to disable turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINER)
@@ -187,16 +185,13 @@ local function reorganizePrio(pons, knownAsteroids, managedTurrets)
        end
     end
 
-    Log.logBlock(filter_settings, function(m)log(m)end, Log.FINE)
+    Log.logBlock(filter_settings, function(m)log(m)end, Log.FINER)
 
-    -- now set the CircuitConditions
+    -- now set the CircuitConditions from the filter_settings
     -- @wube why simple if could be complicated - part 2 ;-)
-    for ndx, dop in pairs(pons.dartsOnPlatform) do
-        -- only dart-output
-        if (ndx == dop.output_un) then
-            local lls = dop.control_behavior.get_section(1)
-            lls.filters = filter_settings[ndx] or {} -- if nothing is set => reset
-        end
+    for ndx, dart in pairs(pons.dartsOnPlatform) do
+        local lls = dart.control_behavior.get_section(1)
+        lls.filters = filter_settings[ndx] or {} -- if nothing is set => reset
     end
 end
 -- ###############################################################
@@ -267,18 +262,15 @@ local function circuitNetworkOfDarts(pons)
 
     --- @type CnOfDart[]
     local cnOfDarts = {}
-    for did, dop in pairs(darts) do
-        if (did == dop.radar_un) then
-            -- only use entry of dart-radar (ignore corresponding dart-output)
-            local cb = dop.control_behavior
-            -- darts only have simple green or red wire connectors
-            for _, wc in pairs({ defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }) do
-                local network = cb.get_circuit_network(wc)
+    for _, dart in pairs(darts) do
+        local cb = dart.control_behavior
+        -- darts only have simple green or red wire connectors
+        for _, wc in pairs({ defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }) do
+            local network = cb.get_circuit_network(wc)
 
-                if network then
-                    -- dart beloging to network
-                    cnOfDarts[network.network_id] = dop
-                end
+            if network then
+                -- dart belonging to network
+                cnOfDarts[network.network_id] = dart
             end
         end
     end
@@ -307,7 +299,7 @@ local function getManagedTurrets(pons)
             local mt = {
                 turret = cnOfTurret.turret,
                 circuit_condition = cnOfTurret.circuit_condition,
-                output = cnOfDart.output,
+                radar = cnOfDart.radar,
                 control_behavior = cnOfDart.control_behavior,
                 targets_of_turret = {},
             }
@@ -465,44 +457,25 @@ local function entityCreated(event)
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
 
-    if entity.name == "dart-radar2" then
-        Log.log("###### dart-radar2", function(m)log(m)end, Log.FINE)
-        Log.logBlock(entity.surface, function(m)log(m)end, Log.FINE)
+    local dart_anim = rendering.draw_animation({
+        animation = "dart-radar-animation",
+        surface = entity.surface,
+        target = entity,
+        render_layer = "item"
+    })
+    Log.logBlock(dart_anim, function(m)log(m)end, Log.FINE)
 
-        local dart_anim = rendering.draw_animation({
-            animation = "dart-radar-animation",
-            surface = entity.surface,
-            target = entity,
-            render_layer = "item"
-        })
-        -- TODO local gdp = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
-        Log.logBlock(dart_anim, function(m)log(m)end, Log.FINE)
-
-    elseif entity.name == "dart-radar" then
-        -- yes - create also corresponding dart-output
-        local output = entity.surface.create_entity {
-            name = "dart-output",
-            position = entity.position,
-            force = entity.force,
-            player = event.player_index
-        }
-
-        Log.logBlock(output, function(m)log(m)end, Log.FINE)
-
-        local run = entity.unit_number
-        local oun = output.unit_number
-        -- the tuple of dart-radar and dart-output
-        local dart = {
-            radar_un = run,
-            output_un = oun,
-            output = output,
-            control_behavior = output.get_or_create_control_behavior(),
-        }
-        -- save it in platform (twice, for dart-output too)
-        local gdp = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
-        gdp[run] = dart
-        gdp[oun] = dart
-    end
+    local run = entity.unit_number
+    -- the tuple of dart-radar and its control_behavior
+    local dart = {
+        radar_un = run,
+        radar = entity,
+        control_behavior = entity.get_or_create_control_behavior(),
+        animation = dart_anim,
+    }
+    -- save it in platform
+    local gdp = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
+    gdp[run] = dart
 end
 -- ###############################################################
 
@@ -516,20 +489,8 @@ local function entityRemoved(event)
     Log.logBlock(darts, function(m)log(m)end, Log.FINE)
     Log.logBlock(run, function(m)log(m)end, Log.FINE)
 
-    local dart = darts[run]
-    if dart then
-        local oun = dart.output_un
-        local output = dart and dart.output
-        Log.logBlock(dart, function(m)log(m)end, Log.FINE)
-        Log.logBlock(output, function(m)log(m)end, Log.FINE)
-        if (output and output.valid) then
-            -- if necessary destroy corresponding dart-output
-            output.destroy()
-        end
-        -- clear both the data belonging to the dart-radar and dart-output
-        darts[run] = nil
-        darts[oun] = nil
-    end
+    -- clear the data belonging to the dart-radar
+    darts[run] = nil
 end
 -- ###############################################################
 
@@ -609,13 +570,12 @@ end
 --
 --- register complexer events with additional filters
 local function registerEvents()
-    local filters_on_built = { { filter = 'type', type = 'radar' }, { filter = 'name', name = 'dart-radar2', mode = "or" } }
-    local filters_on_mined = { { filter = 'type', type = 'radar' } }
+    local filters_on_built = { { filter = 'name', name = 'dart-radar' } }
+    local filters_on_mined = { { filter = 'name', name = 'dart-radar' } }
 
     script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_on_built)
     script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved, filters_on_mined)
     ---- vvv TODO still needed later?
-    script.on_event(defines.events.on_built_entity, entityCreated, filters_on_built)
     --script.on_event(defines.events.on_robot_built_entity, entityCreated, filters_on_built)
     --script.on_event(defines.events.on_pre_player_mined_item, entityRemoved, filters_on_mined)
     --script.on_event(defines.events.on_robot_pre_mined, entityRemoved, filters_on_mined)
