@@ -5,9 +5,8 @@
 local Log = require("__log4factorio__.Log")
 Log.setSeverity(Log.FINE)
 local data_util = require('__flib__.data-util')
-local meld = require('meld') -- from lualib
 
--- fields for scaling
+-- fields for scaling (as long as we have only 2 possibilities the neat trick in scale() works)
 local fields = {
     shift = true,
     scale = true,
@@ -24,7 +23,7 @@ local function scale(object, factor)
     if type(object) == "number" then
         return object * factor
     else
-        -- must be shift
+        -- must be shift - neat trick as we have only 2 possibilities ;)
         object[1] = object[1] * factor
         object[2] = object[2] * factor
 
@@ -63,17 +62,34 @@ dart_radar_recipe.ingredients = {
 }
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- create the INVISIBLE D.A.R.T-radar entity and shrink it to 1x1 tiles
+--- create the INVISIBLE D.A.R.T-radar entity and shrink it to 1x1 tiles - the animated image of the radar is produced in control
 local dart_radar_entity = data_util.copy_prototype(data.raw['constant-combinator']['constant-combinator'], "dart-radar")
 dart_radar_entity.icon = "__base__/graphics/icons/radar.png" -- TODO
 dart_radar_entity.icon_size = 64
 dart_radar_entity.icon_mipmaps = 4
 dart_radar_entity.next_upgrade = nil
-dart_radar_entity.rotation_speed = 0.02
-dart_radar_entity.energy_usage = "100kW"
 dart_radar_entity.fast_replaceable_group = nil
---dart_radar_entity.sprites = nil
---dart_radar_entity.activity_led_sprites = nil
+
+-- at the moment there seems to be no solution for the problem that there is either a static image disturbing the animation
+-- or no ghost / no image in gui. Obviously sprites is controlling both the static image and the ghost / image in gui, so
+-- that it's not possible to have no static image but the ghost and image in gui
+
+-- this has the flaw, that it shows no ghost and no image in gui (out of the box), but there is no static image
+-- disturbing the animation
+dart_radar_entity.sprites = nil
+
+-- alternative solution which shows a ghost and an image in gui (out of the box), but a disturbing static image
+-- together with the animation :(
+-- dart_radar_entity.sprites = {
+--   filename = "__base__/graphics/entity/radar/radar.png",
+--   width = 196,
+--   height = 254,
+--   scale = 0.5,
+--   flags = { "gui" }
+--}
+dart_radar_entity.activity_led_sprites = nil
+dart_radar_entity.activity_led_light = nil
+dart_radar_entity.working_sound = "__base__/sound/radar.ogg"
 
 rescale_entity(dart_radar_entity, 1 / 3)
 

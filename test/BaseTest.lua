@@ -17,10 +17,8 @@ end
 
 -- mock several global objects - normally provided by game
 settings = {
-    global ={
-        ["rldman-logLevel"] = { value = 3 },
-        ["rldman-num-alerts"] = { value = 20 },
-        ["rldman-num-histories"] = { value = 20 },
+    global = {
+        ["dart-logLevel"] = { value = 5 }, -- == Log.INFO
     }
 }
 
@@ -45,6 +43,14 @@ defines = {
         destination_full = 9,
     }
 }
+
+-- simulating internal events - normally created in internalEvents
+on_target_assigned_event = 1704
+on_target_unassigned_event = 1705
+on_target_destroyed_event = 1706
+on_asteroid_detected_event = 1707
+on_asteroid_lost_event = 1708
+
 
 
 --########################################################

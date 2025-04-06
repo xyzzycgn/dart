@@ -461,7 +461,7 @@ local function entityCreated(event)
         animation = "dart-radar-animation",
         surface = entity.surface,
         target = entity,
-        render_layer = "item"
+        render_layer = "object"
     })
     Log.logBlock(dart_anim, function(m)log(m)end, Log.FINE)
 
@@ -570,28 +570,18 @@ end
 --
 --- register complexer events with additional filters
 local function registerEvents()
-    local filters_on_built = { { filter = 'name', name = 'dart-radar' } }
-    local filters_on_mined = { { filter = 'name', name = 'dart-radar' } }
+    local filters_on_built    = {{ filter = 'name', name = 'dart-radar' }}
+    local filters_on_mined    = {{ filter = 'name', name = 'dart-radar' }}
+    local filters_entity_died = {{ filter = "type", type = "asteroid" }}
 
     script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_on_built)
     script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved, filters_on_mined)
-    ---- vvv TODO still needed later?
-    --script.on_event(defines.events.on_robot_built_entity, entityCreated, filters_on_built)
-    --script.on_event(defines.events.on_pre_player_mined_item, entityRemoved, filters_on_mined)
-    --script.on_event(defines.events.on_robot_pre_mined, entityRemoved, filters_on_mined)
-    ---- ^^^ TODO still needed later?
-
-    script.on_event(defines.events.on_entity_died, entity_died, {{ filter = "type", type = "asteroid" }})
-
-    -- TODO ??
-    --script.on_event({ defines.events.on_pre_surface_deleted, defines.events.on_pre_surface_cleared }, OnSurfaceRemoved)
-    --script.on_event(defines.events.on_runtime_mod_setting_changed, LtnSettings.on_config_changed)
+    script.on_event(defines.events.on_entity_died, entity_died, filters_entity_died)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function initLogging()
-    --Log.setFromSettings("dart-logLevel")       -- TODO enable
-    Log.setSeverity(Log.FINE)                    -- TODO delete
+    Log.setFromSettings("dart-logLevel")
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

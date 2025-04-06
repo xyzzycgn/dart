@@ -53,6 +53,13 @@ function TestDart:setUp()
     --game.tick = 4711
     --game.connected_players = {}
 
+
+    rendering = {
+        draw_animation = function()
+            return "mocked Animation"
+        end
+    }
+
     -- mock the prototypes
     prototypes = {
         asteroid_chunk = {}
@@ -75,19 +82,10 @@ function TestDart:test_entityCreated()
         force = "A-Team",
         surface = {
             index = 2,
-            create_entity = function(arg)
-                lu.assertEquals(arg.name, "dart-output")
-                lu.assertEquals(arg.position, { 1, 2 })
-                lu.assertEquals(arg.force, "A-Team")
-
-                return {
-                    unit_number = 0815,
-                    get_or_create_control_behavior = function()
-                        return "mocked CB"
-                    end
-                }
-            end
-        }
+        },
+        get_or_create_control_behavior = function()
+            return "mocked CB"
+        end
     }
 
     storage.platforms = {
@@ -110,26 +108,14 @@ function TestDart:test_entityCreated()
     local dart = storage.platforms[2].dartsOnPlatform[4711]
     lu.assertNotNil(dart)
     lu.assertEquals(dart.control_behavior, "mocked CB")
-    local out = dart.output
-    lu.assertNotNil(out)
-    lu.assertEquals(out.unit_number, 0815)
-    local out = storage.platforms[2].dartsOnPlatform[0815]
-    lu.assertEquals(out, dart)
 end
 -- ###############################################################
 
-local called_destroy = 0
-
 local function createDart(valid)
-    called_destroy = 0
     local dart = {
         radar_un = 4711,
-        output_un = 0815,
-        output =  {
+        radar =  {
             valid = valid,
-            destroy = function()
-                called_destroy = called_destroy + 1
-            end
         },
     }
 
@@ -142,7 +128,6 @@ local function entityRemovedWithValidOutput(valid, expected)
 
     local radarAndOutput = createDart(valid)
     storage.platforms[2].dartsOnPlatform[4711] = radarAndOutput
-    storage.platforms[2].dartsOnPlatform[0815] = radarAndOutput
 
     -- mock entity in event
     local entity = {
@@ -162,9 +147,7 @@ local function entityRemovedWithValidOutput(valid, expected)
 
     eventhandler(event)
 
-    lu.assertNil(storage.platforms[2].dartsOnPlatform[0815])
     lu.assertNil(storage.platforms[2].dartsOnPlatform[4711])
-    lu.assertEquals(called_destroy, expected)
 end
 
 function TestDart:test_entityRemovedWithValidOutput()
@@ -266,7 +249,6 @@ function TestDart:test_on_init()
     local tur = plat.turretsOnPlatform[4711]
     lu.assertNotNil(tur)
     lu.assertEquals(tur.control_behavior, "simulated CB")
-    lu.assertEquals(tur.targets_of_turret, {})
 end
 -- ###############################################################
 
