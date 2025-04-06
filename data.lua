@@ -59,6 +59,7 @@ dart_radar_recipe.ingredients = {
     { type = "item", name = "radar", amount = 1 },
     { type = "item", name = "electronic-circuit", amount = 4 },
     { type = "item", name = "advanced-circuit", amount = 2 },
+    { type = "item", name = "processing-unit", amount = 1 },
 }
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
