@@ -3,3 +3,4 @@
 factorio_def.lua
 dart-luacov.report.html
 luacov.stats.out
+luacov.sh

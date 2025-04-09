@@ -12,6 +12,7 @@ BaseTest.hooked = true
 require('test.test_player_data')
 require('test.test_global_data')
 require('test.test_dart')
+require('test.test_asyncHandler')
 
 BaseTest.hooked = false
 BaseTest:hookTests()
