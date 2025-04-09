@@ -12,6 +12,7 @@ function global_data.init()
     storage.players = storage.players or {}
     storage.dart = storage.dart or {}
     storage.platforms = storage.platforms or {}
+    storage.queued = storage.queued or {}
 end
 -- ###############################################################
 
@@ -32,6 +33,13 @@ end
 --- structure containing all data concerning the darts and turrets of all platforms
 function global_data.getPlatforms()
     return storage.platforms
+end
+
+-- ###############################################################
+
+--- structure containing all data concerning queued async functions
+function global_data.getQueued()
+    return storage.queued
 end
 
 return global_data
