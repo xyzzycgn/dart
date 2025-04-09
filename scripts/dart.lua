@@ -48,6 +48,12 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @field circuit_condition CircuitConditionDefinition of the turret
 --- @field targets_of_turret LuaEntity[] the targets of the turret
 
+--- @class DestroyedTarget contains data of a destroyed asteroid which are used to find the fragments arising from it
+--- @field aun uint unit_number of destroyed asteroid
+--- @field position MapPosition  last known position of destroyed asteroid
+--- @field surface LuaSurface where destruction of an asteroid happened
+--- @field knownAsteroids KnownAsteroid[] list of actual known asteroids in this surface
+
 -- end of Type definitions for this file
 -- ###############################################################
 
@@ -415,18 +421,18 @@ local function space_platform_changed_state(event)
 end
 -- ###############################################################
 
+--- add new asteroid fragments arising from the destroyed one (will be called asynchronusly after destruction of an asteroid)
+--- @param dest_target DestroyedTarget
+local function fragments(dest_target)
+    local knownAsteroids = dest_target.knownAsteroids
 
---- add new asteroid fragments arising from the destroyed one
-local function fragments(arg)
-    local knownAsteroids = arg.knownAsteroids
-
-    local cands = arg.surface.find_entities_filtered({ position = arg.position, radius = 2, type ={ "asteroid" } })
+    local cands = dest_target.surface.find_entities_filtered({ position = dest_target.position, radius = 2, type ={ "asteroid" } })
     Log.logLine(cands, function(m)log(m)end, Log.FINER)
     for _, cand in pairs(cands) do
         -- ignore the asteroid just destroyed (which may still exist in game), those already invalid or already known
         if cand.valid then
             local cun = cand.unit_number
-            if (cun ~= arg.aun) and not knownAsteroids[cun] then
+            if (cun ~= dest_target.aun) and not knownAsteroids[cun] then
                 Log.logBlock(function()dump.dumpEntity(cand)end, function(m)log(m)end, Log.FINEST)
 
                 newAsteroid(knownAsteroids, cand, true)
@@ -436,12 +442,11 @@ local function fragments(arg)
 end
 -- ###############################################################
 
---- called if an asteroid is destroyed
+--- event handler called if an asteroid is destroyed
 local function entity_died(event)
     --- @type LuaEntity
     local entity = event.entity
-    Log.logBlock(event, function(m)log(m)end, Log.FINER)
-    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINER)
+    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINEST)
 
     script.raise_event(on_target_destroyed_event, { entity=entity, un=entity.unit_number, reason="destroy" } )
 
@@ -476,7 +481,7 @@ local function entity_died(event)
 end
 -- ###############################################################
 
---- new dart-radar created
+--- event handler called if a new dart-radar is created on a platform
 local function entityCreated(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINER)
 
@@ -505,6 +510,7 @@ local function entityCreated(event)
 end
 -- ###############################################################
 
+--- event handler called if new dart-radar is removed from platform
 local function entityRemoved(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINER)
 
@@ -547,6 +553,7 @@ local function surfaceDeleted(event)
 end
 --###############################################################
 
+-- part of initialization
 local function searchPlatforms()
     local gdp = global_data.getPlatforms()
 
