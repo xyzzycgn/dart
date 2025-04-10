@@ -125,9 +125,9 @@ local function gui_open(event)
         Log.logBlock(gdp, function(m)log(m)end, Log.FINE)
         Log.logBlock(entity.surface.index, function(m)log(m)end, Log.FINE)
         Log.logBlock(un, function(m)log(m)end, Log.FINE)
-        Log.logBlock(gdp[entity.surface.index].dartsOnPlatform, function(m)log(m)end, Log.FINE)
+        Log.logBlock(gdp[entity.surface.index].fccsOnPlatform, function(m)log(m)end, Log.FINE)
 
-        local dart = gdp[entity.surface.index].dartsOnPlatform[un]
+        local dart = gdp[entity.surface.index].fccsOnPlatform[un]
         Log.logBlock(dump.dumpControlBehavior(dart.control_behavior), function(m)log(m)end, Log.FINE)
 
         open(gui)

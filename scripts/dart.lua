@@ -14,11 +14,16 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @field turret LuaEntity the turret
 --- @field control_behavior LuaTurretControlBehavior of the turret
 
---- @class DartOnPlatform a D.A.R.T fcc on a platform
+--- @class FccOnPlatform a dart-fcc on a platform
 --- @alias CnOfDart
 --- @field fcc LuaEntity dart-fcc
 --- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
 --- @field fcc_un uint64 unit_number of dart-fcc
+
+--- @class RadarOnPlatform a dart-radar on a platform
+--- @field radar LuaEntity dart-radar
+--- @field radar_un uint64 unit_number of dart-radar
+--- @field range uint detection range -- TODO set via GUI
 
 --- @class KnownAsteroid any describes an asteroid tracked by D.A.R.T
 --- @field position MapPosition
@@ -30,7 +35,8 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @field surface LuaSurface surface containing the platform
 --- @field platform LuaSpacePlatform the platform
 --- @field turretsOnPlatform TurretOnPlatform[] array of turrets located on the platform
---- @field dartsOnPlatform DartOnPlatform[] array of D.A.R.T. entities located on the platform
+--- @field fccsOnPlatform FccOnPlatform[] array of D.A.R.T. fcc entities located on the platform
+--- @field radarsOnPlatform RadarOnPlatform[] array of D.A.R.T. radar entities located on the platform
 --- @field knownAsteroids KnownAsteroid[] array of asteroids currently known and in detection range
 
 
@@ -86,6 +92,12 @@ local function dumpPrototypes(sev)
 end
 -- ###############################################################
 
+-- constants
+local defense_radius = 16 -- TODO gui or at least configurable
+local detectionRange = 35 -- TODO configurable or depending on quality?
+
+-- ###############################################################
+
 --- Calculates whether an asteroid hits, grazes or passes the defended area.
 --- Defended area is defined by a circle with radius r and centerpoint at <xc, xc>
 --- equation (x - xc)² + (y - yc)² = r²
@@ -109,10 +121,7 @@ end
 --- If D > 0: the half-line intersect the circle twice - asteroid hits.
 ---
 --- assuming center of defended area = center of hub on platform simplifies with xc = yc = 0
--- TODO use position of a certain dart-fcc instead of center of hub
-
-local defense_radius = 16 -- TODO gui or at least configurable
-
+-- TODO use position of a certain dart-radar instead of center of hub
 local function targeting(platform, chunk)
     local x0 = chunk.position.x
     local y0 = chunk.position.y
@@ -201,7 +210,7 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
 
     -- now set the CircuitConditions from the filter_settings
     -- @wube why simple if it could be complicated - part 2 ;-)
-    for ndx, dart in pairs(pons.dartsOnPlatform) do
+    for ndx, dart in pairs(pons.fccsOnPlatform) do
         local lls = dart.control_behavior.get_section(1)
         lls.filters = filter_settings[ndx] or {} -- if nothing is set => reset
     end
@@ -238,6 +247,7 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param pons Pons
+--- @return CnOfTurret[][] indexed by network id, unit_number of turret
 local function circuitNetworkOfTurrets(pons)
     local turrets = pons.turretsOnPlatform
 
@@ -250,7 +260,7 @@ local function circuitNetworkOfTurrets(pons)
             local network = cb.get_circuit_network(wc)
 
             if network then
-                -- circuit_condition of turret
+                --- @type CnOfTurret
                 local cot = cnOfTurrets[network.network_id] or {}
                 cot[tid] = {
                     turret = top.turret,
@@ -268,9 +278,9 @@ end
 
 --- determine circuit networks of darts
 --- @param pons Pons platform
---- @return CnOfDart[]
+--- @return CnOfDart[] indexed by network id
 local function circuitNetworkOfDarts(pons)
-    local darts = pons.dartsOnPlatform
+    local darts = pons.fccsOnPlatform
 
     --- @type CnOfDart[]
     local cnOfDarts = {}
@@ -297,7 +307,7 @@ end
 local function getManagedTurrets(pons)
     --- @type CnOfDart[]
     local cnOfDarts = circuitNetworkOfDarts(pons)
-    --- @type CnOfTurret[]
+    --- @type CnOfTurret[][]
     local cnOfTurrets = circuitNetworkOfTurrets(pons)
 
     --- @type ManagedTurret[]
@@ -305,8 +315,7 @@ local function getManagedTurrets(pons)
     -- iterate over all known circuit networks containing a dart
     for nwid, cnOfDart in pairs(cnOfDarts) do
         -- iterate over all known turrets in this circuit network
-        for tid, cnOfTurret in pairs(cnOfTurrets[nwid]) do
-            -- form ManagedTurret
+        for _, cnOfTurret in pairs(cnOfTurrets[nwid]) do
             --- @type ManagedTurret
             local mt = {
                 turret = cnOfTurret.turret,
@@ -354,11 +363,10 @@ local function businessLogic()
         local managedTurrets = getManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
 
-        -- would be nice if only done when hovering over a dart-radar - unforunately there seems to be no suitable event
-        local detectionRange = 35 -- TODO configurable or depending on quality?
+        -- would be nice if only done when hovering over a dart-radar - unfortunately there seems to be no suitable event
         if settings.global["dart-show-detection-area"].value then
             rendering.draw_circle({
-                target = {0, 0}, -- platform.position
+                target = {0, 0}, -- platform.position - TODO should be position of dart-radar(s)
                 color = { 0, 0, 0.5, 0.5 },
                 surface = surface,
                 radius = detectionRange,
@@ -366,7 +374,7 @@ local function businessLogic()
         end
         if settings.global["dart-show-defended-area"].value then
             rendering.draw_circle({
-                target = {0, 0}, -- platform.position
+                target = {0, 0}, -- platform.position - TODO should be position of dart-radar(s)
                 color = { 0, 0.5, 0.5, 0.5 },
                 surface = surface,
                 radius = defense_radius,
@@ -501,43 +509,83 @@ local function entity_died(event)
 end
 -- ###############################################################
 
---- event handler called if a new dart-fcc is created on a platform
+local function newRadar(entity)
+    local radar_un = entity.unit_number
+    --- @type RadarOnPlatform
+    local dart = {
+        radar_un = radar_un,
+        fcc = entity,
+        range = detectionRange,
+    }
+    -- save it in platform
+    local gdp = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform
+    gdp[radar_un] = dart
+    Log.logBlock(dart, function(m)log(m)end, Log.FINER)
+end
+
+local function newFcc(entity)
+    local fccun = entity.unit_number
+    -- the tuple of dart-fcc and its control_behavior
+    --- @type FccOnPlatform
+    local dart = {
+        fcc_un = fccun,
+        fcc = entity,
+        control_behavior = entity.get_or_create_control_behavior(),
+    }
+    -- save it in platform
+    local gdp = global_data.getPlatforms()[entity.surface.index].fccsOnPlatform
+    gdp[fccun] = dart
+    Log.logBlock(dart, function(m)log(m)end, Log.FINER)
+end
+
+local createFuncs = {
+    ["dart-fcc"] = newFcc,
+    ["dart-radar"] = newRadar
+}
+
+
+--- event handler called if a new dart-fcc/dart-radar is created on a platform
 local function entityCreated(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINER)
 
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
 
-    if entity.name == "dart-fcc" then
-        local fccun = entity.unit_number
-        -- the tuple of dart-fcc and its control_behavior
-        --- @type DartOnPlatform
-        local dart = {
-            fcc_un = fccun,
-            fcc = entity,
-            control_behavior = entity.get_or_create_control_behavior(),
-        }
-        -- save it in platform
-        local gdp = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
-        gdp[fccun] = dart
-    end
+    local func = createFuncs[entity.name]
+
+    _= func and func(entity)
 end
 -- ###############################################################
 
---- event handler called if new dart-fcc is removed from platform
+local function removedRadar(entity)
+    local darts = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform
+    local fccun = entity.unit_number
+    Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
+
+    -- clear the data belonging to the dart-radar
+    darts[fccun] = nil
+end
+
+local function removedFcc(entity)
+    local darts = global_data.getPlatforms()[entity.surface.index].fccsOnPlatform
+    local fccun = entity.unit_number
+    Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
+
+    -- clear the data belonging to the dart-fcc
+    darts[fccun] = nil
+end
+
+local removedFuncs = {
+    ["dart-fcc"] = removedFcc,
+    ["dart-radar"] = removedRadar
+}
+
+--- event handler called if a dart-fcc/dart-radar is removed from platform
 local function entityRemoved(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINER)
-
     local entity = event.entity
-    -- removed dart-fcc
-    if entity.name == "dart-fcc" then
-        local darts = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
-        local fccun = entity.unit_number
-        Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINEST)
+    local func = removedFuncs[entity.name]
 
-        -- clear the data belonging to the dart-fcc
-        darts[fccun] = nil
-    end
+    _= func and func(entity)
 end
 -- ###############################################################
 
@@ -545,7 +593,8 @@ end
 --- @param surface LuaSurface holding the new platform
 --- @return Pons created from surface
 local function newSurface(surface)
-    return { surface = surface, platform = surface.platform, turretsOnPlatform = {}, dartsOnPlatform = {}, knownAsteroids = {} }
+    return { surface = surface, platform = surface.platform, turretsOnPlatform = {},
+             fccsOnPlatform = {}, radarsOnPlatform = {}, knownAsteroids = {} }
 end
 -- ###############################################################
 
