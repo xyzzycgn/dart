@@ -14,10 +14,11 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @field turret LuaEntity the turret
 --- @field control_behavior LuaTurretControlBehavior of the turret
 
---- @class DartOnPlatform a D.A.R.T on a platform
---- @field radar LuaEntity dart-radar
---- @field control_behavior LuaConstantCombinatorControlBehavior of radar
---- @field radar_un uint64 unit_number of dart-radar
+--- @class DartOnPlatform a D.A.R.T fcc on a platform
+--- @alias CnOfDart
+--- @field fcc LuaEntity dart-fcc
+--- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
+--- @field fcc_un uint64 unit_number of dart-fcc
 
 --- @class KnownAsteroid any describes an asteroid tracked by D.A.R.T
 --- @field position MapPosition
@@ -32,18 +33,14 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @field dartsOnPlatform DartOnPlatform[] array of D.A.R.T. entities located on the platform
 --- @field knownAsteroids KnownAsteroid[] array of asteroids currently known and in detection range
 
---- @class CnOfDart circuit network belonging to a dart-radar
---- @field radar_un int unit_number of dart-radar
---- @field radar LuaEntity dart-radar
---- @field control_behavior LuaConstantCombinatorControlBehavior of radar
 
 --- @class CnOfTurret circuit network belonging to a turret.
 --- @field turret LuaEntity turret
 --- @field circuit_condition CircuitConditionDefinition of the turret
 
 --- @class ManagedTurret turret managed by a D.A.R.T.
---- @field radar LuaEntity dart-radar managing turret
---- @field control_behavior LuaConstantCombinatorControlBehavior of radar
+--- @field fcc LuaEntity dart-fcc managing turret
+--- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
 --- @field turret LuaEntity turret
 --- @field circuit_condition CircuitConditionDefinition of the turret
 --- @field targets_of_turret LuaEntity[] the targets of the turret
@@ -112,7 +109,7 @@ end
 --- If D > 0: the half-line intersect the circle twice - asteroid hits.
 ---
 --- assuming center of defended area = center of hub on platform simplifies with xc = yc = 0
--- TODO use position of a certain dart-radar instead of center of hub
+-- TODO use position of a certain dart-fcc instead of center of hub
 local function targeting(platform, chunk)
     local x0 = chunk.position.x
     local y0 = chunk.position.y
@@ -170,9 +167,9 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
             local asteroid = knownAsteroids[prios[1]].entity
             Log.logBlock(asteroid, function(m)log(m)end, Log.FINER)
             turret.shooting_target = asteroid
-            -- unit number of dart-radar managing this turret
-            local un = managedTurret.radar.unit_number
-            -- filter_settings for this dart-radar
+            -- unit number of dart-fcc managing this turret
+            local un = managedTurret.fcc.unit_number
+            -- filter_settings for this dart-fcc
             local filter_setting_by_un = filter_settings[un] or {}
 
             -- now prepare to set the CircuitConditions
@@ -311,7 +308,7 @@ local function getManagedTurrets(pons)
             local mt = {
                 turret = cnOfTurret.turret,
                 circuit_condition = cnOfTurret.circuit_condition,
-                radar = cnOfDart.radar,
+                fcc = cnOfDart.fcc,
                 control_behavior = cnOfDart.control_behavior,
                 targets_of_turret = {},
             }
@@ -481,48 +478,43 @@ local function entity_died(event)
 end
 -- ###############################################################
 
---- event handler called if a new dart-radar is created on a platform
+--- event handler called if a new dart-fcc is created on a platform
 local function entityCreated(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINER)
 
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
 
-    local dart_anim = rendering.draw_animation({
-        animation = "dart-radar-animation",
-        surface = entity.surface,
-        target = entity,
-        render_layer = "object"
-    })
-    Log.logBlock(dart_anim, function(m)log(m)end, Log.FINER)
-
-    local run = entity.unit_number
-    -- the tuple of dart-radar and its control_behavior
-    local dart = {
-        radar_un = run,
-        radar = entity,
-        control_behavior = entity.get_or_create_control_behavior(),
-        animation = dart_anim,
-    }
-    -- save it in platform
-    local gdp = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
-    gdp[run] = dart
+    if entity.name == "dart-fcc" then
+        local fccun = entity.unit_number
+        -- the tuple of dart-fcc and its control_behavior
+        --- @type DartOnPlatform
+        local dart = {
+            fcc_un = fccun,
+            fcc = entity,
+            control_behavior = entity.get_or_create_control_behavior(),
+        }
+        -- save it in platform
+        local gdp = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
+        gdp[fccun] = dart
+    end
 end
 -- ###############################################################
 
---- event handler called if new dart-radar is removed from platform
+--- event handler called if new dart-fcc is removed from platform
 local function entityRemoved(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINER)
 
-    -- removed dart-radar
     local entity = event.entity
-    local darts = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
-    local run = entity.unit_number
-    Log.logBlock(darts, function(m)log(m)end, Log.FINEST)
-    Log.logBlock(run, function(m)log(m)end, Log.FINEST)
+    -- removed dart-fcc
+    if entity.name == "dart-fcc" then
+        local darts = global_data.getPlatforms()[entity.surface.index].dartsOnPlatform
+        local fccun = entity.unit_number
+        Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINEST)
 
-    -- clear the data belonging to the dart-radar
-    darts[run] = nil
+        -- clear the data belonging to the dart-fcc
+        darts[fccun] = nil
+    end
 end
 -- ###############################################################
 
@@ -581,8 +573,8 @@ local function searchTurrets(pons)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- searches D.A.R.T. components on existing platforms
---- as this is called from on_init, there can't be any dart-radar enties
+--- searches turrets on existing platforms
+--- as this is called from on_init, there can't be any dart-radar/dart-fcc enties
 --- that's why we only look for turrets on platforms
 local function searchDartInfrastructure()
     Log.log("searchDartInfrastructure", function(m)log(m)end, Log.FINER)
@@ -604,8 +596,8 @@ end
 
 --- register complexer events with additional filters
 local function registerEvents()
-    local filters_on_built    = {{ filter = 'name', name = 'dart-radar' }}
-    local filters_on_mined    = {{ filter = 'name', name = 'dart-radar' }}
+    local filters_on_built    = {{ filter = 'name', name = 'dart-radar' }, { filter = 'name', name = 'dart-fcc' }}
+    local filters_on_mined    = {{ filter = 'name', name = 'dart-radar' }, { filter = 'name', name = 'dart-fcc' }}
     local filters_entity_died = {{ filter = "type", type = "asteroid" }}
 
     script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_on_built)
