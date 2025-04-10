@@ -31,6 +31,7 @@ end
 -- ###############################################################
 
 --- structure containing all data concerning the darts and turrets of all platforms
+--- @return Pons[]
 function global_data.getPlatforms()
     return storage.platforms
 end

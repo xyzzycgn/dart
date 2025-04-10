@@ -100,10 +100,10 @@ dart_radar_entity.icon_mipmaps = 4
 dart_radar_entity.next_upgrade = nil
 dart_radar_entity.rotation_speed = 0.02
 dart_radar_entity.energy_usage = "100kW"
+dart_radar_entity. fast_replaceable_group = nil
 
 rescale_entity(dart_radar_entity, 1 / 3)
 
---dart_radar_entity.selection_box = {{ -0.6, -0.6 }, { 0.6, 0.6 }}
 dart_radar_entity.collision_box = {{ -0.4, -0.4 }, { 0.4, 0.4 }}
 dart_radar_entity.selection_box = {{ -0.5, -0.5 }, { 0.5, 0.5 }}
 dart_radar_entity.circuit_connector = {
@@ -122,20 +122,26 @@ dart_radar_entity.surface_conditions = surface_conditions()
 
 Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINE)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 --- create the D.A.R.T-radar item
 local dart_radar_item = data_util.copy_prototype(data.raw["item"]["radar"], "dart-radar")
+local order = dart_radar_item.order or "dart"
 dart_radar_item.icon = "__base__/graphics/icons/radar.png" -- TODO
 dart_radar_item.icon_size = 64
 dart_radar_item.icon_mipmaps = 4
-dart_radar_item.order = (dart_radar_item.order or "dart") .. "-c"
+dart_radar_item.order = order .. "-a"
 
+-- TODO move to other tab in inventory
 --- create the D.A.R.T-fcc item
 local dart_fcc_item = data_util.copy_prototype(data.raw["item"]["constant-combinator"], "dart-fcc")
 dart_fcc_item.icon = "__base__/graphics/icons/constant-combinator.png" -- TODO
 dart_fcc_item.icon_size = 64
 dart_fcc_item.icon_mipmaps = 4
-dart_fcc_item.order = (dart_fcc_item.order or "dart") .. "-d"
+dart_fcc_item. fast_replaceable_group = nil
+-- show both near to vanilla radar
+dart_fcc_item.order = order .. "-b"
+dart_fcc_item.subgroup = dart_radar_item.subgroup
+
+Log.logBlock(dart_fcc_item, function(m)log(m)end, Log.FINE)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- create the D.A.R.T-radar technology

@@ -95,7 +95,7 @@ end
 
 local function gui_open(event)
     local entity = event.entity
-    if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-output" then
+    if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-fcc" then
         Log.logBlock(event, function(m)log(m)end, Log.FINE)
         Log.logBlock(defines.gui_type, function(m)log(m)end, Log.FINEST)
 
@@ -117,7 +117,7 @@ local function gui_open(event)
         -- store reference to gui in storage
         pd.guis.main = gui
 
-        -- dart-output
+        -- dart-fcc
         local un = entity.unit_number
         Log.logBlock(un, function(m)log(m)end, Log.FINE)
 

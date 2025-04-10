@@ -110,6 +110,9 @@ end
 ---
 --- assuming center of defended area = center of hub on platform simplifies with xc = yc = 0
 -- TODO use position of a certain dart-fcc instead of center of hub
+
+local defense_radius = 16 -- TODO gui or at least configurable
+
 local function targeting(platform, chunk)
     local x0 = chunk.position.x
     local y0 = chunk.position.y
@@ -119,7 +122,7 @@ local function targeting(platform, chunk)
 
     local A = dx * dx + dy * dy
     local B = 2 * (x0 * dx + y0 * dy)
-    local C = x0 * x0 + y0 * y0 - 15 * 15
+    local C = x0 * x0 + y0 * y0 - defense_radius * defense_radius
 
     return B * B - 4 * A * C
 end
@@ -346,13 +349,32 @@ local function businessLogic()
 
     for _, pons in pairs(global_data.getPlatforms()) do
         local surface = pons.surface
+        --- @type LuaSpacePlatform
         local platform = pons.platform
         local managedTurrets = getManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
 
+        -- would be nice if only done when hovering over a dart-radar - unforunately there seems to be no suitable event
         local detectionRange = 35 -- TODO configurable or depending on quality?
+        if settings.global["dart-show-detection-area"].value then
+            rendering.draw_circle({
+                target = {0, 0}, -- platform.position
+                color = { 0, 0, 0.5, 0.5 },
+                surface = surface,
+                radius = detectionRange,
+            })
+        end
+        if settings.global["dart-show-defended-area"].value then
+            rendering.draw_circle({
+                target = {0, 0}, -- platform.position
+                color = { 0, 0.5, 0.5, 0.5 },
+                surface = surface,
+                radius = defense_radius,
+            })
+        end
+
         Log.log(platform.speed, function(m)log(m)end, Log.FINEST)
-        -- detect all asteroids around platform - TODO do not use center of hub but position of dart
+        -- detect all asteroids around platform - TODO do not use center of hub but position of dart-radar
         local asteroids = surface.find_entities_filtered({ position = {0, 0}, radius = detectionRange, type ={ "asteroid" } })
         Log.log(#asteroids, function(m)log(m)end, Log.FINEST)
 
@@ -378,14 +400,15 @@ local function businessLogic()
                     color = { 0.5, 0, 0, 0.5 }
                 end
 
-                -- TODO configure drawing
-                rendering.draw_circle({
-                    target = target.position,
-                    color = color,
-                    time_to_live = 55,
-                    surface = surface,
-                    radius = 0.8,
-                })
+                if settings.global["dart-mark-targets"].value then
+                    rendering.draw_circle({
+                        target = target.position,
+                        color = color,
+                        time_to_live = 55,
+                        surface = surface,
+                        radius = 0.8,
+                    })
+                end
 
                 calculatePrio(managedTurrets, entity, D)
             else
