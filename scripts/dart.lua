@@ -120,22 +120,38 @@ local detectionRange = 35 -- TODO configurable or depending on quality?
 --- Decisions:
 --- If D < 0: the half-line does not intersect the circle - asteroid passes
 --- If D = 0: the half-line touches the circle (one intersection) - asteroid grazes
---- If D > 0: the half-line intersect the circle twice - asteroid hits.
+--- If D > 0: the half-line intersects the circle twice - asteroid hits.
 ---
---- assuming center of defended area = center of hub on platform simplifies with xc = yc = 0
--- TODO use position of a certain dart-radar instead of center of hub
-local function targeting(platform, chunk)
-    local x0 = chunk.position.x
-    local y0 = chunk.position.y
+--- @param pons Pons the platform for that the targeting has to be done
+--- @param asteroid LuaEntity asteroid to be checked
+local function targeting(pons, asteroid)
+    local platform = pons.platform
 
-    local dx = chunk.movement.x
-    local dy = chunk.movement.y + platform.speed
+    -- check defenseRange of all dart-radars
+    local D = -1
+    for _, rop in pairs(pons.radarsOnPlatform) do
+        local radar = rop.radar
+        local pos = radar.position
 
-    local A = dx * dx + dy * dy
-    local B = 2 * (x0 * dx + y0 * dy)
-    local C = x0 * x0 + y0 * y0 - defenseRange * defenseRange
+        local x0_xc = asteroid.position.x - pos.x
+        local y0_yc = asteroid.position.y - pos.y
 
-    return B * B - 4 * A * C
+        local dx = asteroid.movement.x
+        local dy = asteroid.movement.y + platform.speed
+
+        local A = dx * dx + dy * dy
+        local B = 2 * (x0_xc * dx + y0_yc * dy)
+        local C = x0_xc * x0_xc + y0_yc * y0_yc - rop.defenseRange * rop.defenseRange
+
+        D = B * B - 4 * A * C
+
+        if (D >= 0) then
+            -- asteroid will hit or graze
+            break
+        end
+    end
+
+    return D
 end
 
 local function distToTurret(target, turret)
@@ -387,7 +403,7 @@ local function detection(pons)
         end
     end
 
-    Log.logBlock(detectedAsteroids, function(m)log(m)end, Log.FINE)
+    Log.logBlock(detectedAsteroids, function(m)log(m)end, Log.FINER)
 
     return detectedAsteroids
 end
@@ -418,7 +434,7 @@ local function businessLogic()
                 target.movement.y = target.position.y - asteroid.position.y
                 target.position = asteroid.position
 
-                local D = targeting(surface.platform, target)
+                local D = targeting(pons, target)
 
                 local color
                 if (D < 0) then

@@ -130,7 +130,6 @@ dart_radar_item.icon_size = 64
 dart_radar_item.icon_mipmaps = 4
 dart_radar_item.order = order .. "-a"
 
--- TODO move to other tab in inventory
 --- create the D.A.R.T-fcc item
 local dart_fcc_item = data_util.copy_prototype(data.raw["item"]["constant-combinator"], "dart-fcc")
 dart_fcc_item.icon = "__base__/graphics/icons/constant-combinator.png" -- TODO
