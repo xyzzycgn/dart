@@ -23,7 +23,8 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @class RadarOnPlatform a dart-radar on a platform
 --- @field radar LuaEntity dart-radar
 --- @field radar_un uint64 unit_number of dart-radar
---- @field range uint detection range -- TODO set via GUI
+--- @field detectionRange uint radius of detection around a dart-radar
+--- @field defenseRange uint radius of defended area around a dart-radar
 
 --- @class KnownAsteroid any describes an asteroid tracked by D.A.R.T
 --- @field position MapPosition
@@ -93,7 +94,8 @@ end
 -- ###############################################################
 
 -- constants
-local defense_radius = 16 -- TODO gui or at least configurable
+local defenseRange = 16   -- TODO gui or at least configurable
+local weaponrange = 18    -- TODO entity type and quality
 local detectionRange = 35 -- TODO configurable or depending on quality?
 
 -- ###############################################################
@@ -131,7 +133,7 @@ local function targeting(platform, chunk)
 
     local A = dx * dx + dy * dy
     local B = 2 * (x0 * dx + y0 * dy)
-    local C = x0 * x0 + y0 * y0 - defense_radius * defense_radius
+    local C = x0 * x0 + y0 * y0 - defenseRange * defenseRange
 
     return B * B - 4 * A * C
 end
@@ -231,7 +233,7 @@ local function calculatePrio(managedTurrets, target, D)
         if D >= 0 then
             local dist = distToTurret(target, v.turret)
             -- remember distance for each turret to target if in range
-            if dist <= 18 then -- TODO quality
+            if dist <= weaponrange then
                 Log.logBlock(target, function(m)log(m)end, Log.FINER)
                 v.targets_of_turret[tun] = dist
                 inRange = true
@@ -351,6 +353,46 @@ local function newAsteroid(knownAsteroids, entity, fromEvent)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- all asteroids in detectionRange of at least one dart-radar
+--- @param pons Pons
+--- @return LuaEntity[] detected asteroids indexed by unit_number
+local function detection(pons)
+    local detectedAsteroids = {}
+    local surface = pons.surface
+    for _, rop in pairs(pons.radarsOnPlatform) do
+        Log.logBlock(rop, function(m)log(m)end, Log.FINER)
+        local pos = rop.radar.position
+        local asteroids = surface.find_entities_filtered({ position = pos, radius = rop.detectionRange, type ={ "asteroid" } })
+        for _, asteroid  in pairs(asteroids) do
+            detectedAsteroids[asteroid.unit_number] = asteroid
+        end
+        -- would be nice if only done when hovering over a dart-radar - unfortunately there seems to be no suitable event
+        if settings.global["dart-show-detection-area"].value then
+            rendering.draw_circle({
+                target = pos,
+                color = { 0, 0, 0.7, 1 },
+                surface = surface,
+                time_to_live = 55,
+                radius = rop.detectionRange,
+            })
+        end
+        if settings.global["dart-show-defended-area"].value then
+            rendering.draw_circle({
+                target = pos,
+                color = { 0, 0.7, 0.7, 1 },
+                surface = surface,
+                time_to_live = 55,
+                radius = rop.defenseRange,
+            })
+        end
+    end
+
+    Log.logBlock(detectedAsteroids, function(m)log(m)end, Log.FINE)
+
+    return detectedAsteroids
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- perforn decision which asteroid should be targeted
 local function businessLogic()
     Log.log("enter BL", function(m)log(m)end, Log.FINER)
@@ -363,49 +405,28 @@ local function businessLogic()
         local managedTurrets = getManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
 
-        -- would be nice if only done when hovering over a dart-radar - unfortunately there seems to be no suitable event
-        if settings.global["dart-show-detection-area"].value then
-            rendering.draw_circle({
-                target = {0, 0}, -- platform.position - TODO should be position of dart-radar(s)
-                color = { 0, 0, 0.5, 0.5 },
-                surface = surface,
-                radius = detectionRange,
-            })
-        end
-        if settings.global["dart-show-defended-area"].value then
-            rendering.draw_circle({
-                target = {0, 0}, -- platform.position - TODO should be position of dart-radar(s)
-                color = { 0, 0.5, 0.5, 0.5 },
-                surface = surface,
-                radius = defense_radius,
-            })
-        end
 
         Log.log(platform.speed, function(m)log(m)end, Log.FINEST)
-        -- detect all asteroids around platform - TODO do not use center of hub but position of dart-radar
-        local asteroids = surface.find_entities_filtered({ position = {0, 0}, radius = detectionRange, type ={ "asteroid" } })
-        Log.log(#asteroids, function(m)log(m)end, Log.FINEST)
-
+        -- detect all asteroids around platform
         local processed = {}
-        for _, entity in pairs(asteroids) do
-            local unit_number = entity.unit_number
-            if (knownAsteroids[unit_number]) then
+        for aun, asteroid in pairs(detection(pons)) do
+            if (knownAsteroids[aun]) then
                 -- well known asteroid
-                local target = knownAsteroids[unit_number]
+                local target = knownAsteroids[aun]
 
-                target.movement.x = target.position.x - entity.position.x
-                target.movement.y = target.position.y - entity.position.y
-                target.position = entity.position
+                target.movement.x = target.position.x - asteroid.position.x
+                target.movement.y = target.position.y - asteroid.position.y
+                target.position = asteroid.position
 
                 local D = targeting(surface.platform, target)
 
                 local color
                 if (D < 0) then
-                    color = { 0, 0.5, 0, 0.5 }
+                    color = { 0, 0.7, 0, 1 }
                 elseif (D == 0) then
-                    color = { 0.5, 0.5, 0, 0.5 }
+                    color = { 0.7, 0.7, 0, 1 }
                 else
-                    color = { 0.5, 0, 0, 0.5 }
+                    color = { 0.7, 0, 0, 1 }
                 end
 
                 if settings.global["dart-mark-targets"].value then
@@ -418,11 +439,11 @@ local function businessLogic()
                     })
                 end
 
-                calculatePrio(managedTurrets, entity, D)
+                calculatePrio(managedTurrets, asteroid, D)
             else
-                newAsteroid(knownAsteroids, entity)
+                newAsteroid(knownAsteroids, asteroid)
             end
-            processed[unit_number] = true
+            processed[aun] = true
         end
 
         -- prevent memory leak - remove unprocessed asteroids (should be those which left detection range)
@@ -514,13 +535,14 @@ local function newRadar(entity)
     --- @type RadarOnPlatform
     local dart = {
         radar_un = radar_un,
-        fcc = entity,
-        range = detectionRange,
+        radar = entity,
+        detectionRange = detectionRange, -- TODO set via GUI / quality
+        defenseRange = defenseRange,     -- TODO set via GUI
     }
     -- save it in platform
     local gdp = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform
     gdp[radar_un] = dart
-    Log.logBlock(dart, function(m)log(m)end, Log.FINER)
+    Log.logBlock(dart, function(m)log(m)end, Log.FINE)
 end
 
 local function newFcc(entity)
@@ -542,7 +564,6 @@ local createFuncs = {
     ["dart-fcc"] = newFcc,
     ["dart-radar"] = newRadar
 }
-
 
 --- event handler called if a new dart-fcc/dart-radar is created on a platform
 local function entityCreated(event)
@@ -705,6 +726,10 @@ local function dart_load()
     Log.log('D.A.R.T on_load', function(m)log(m)end)
 
     registerEvents()
+
+    Log.logBlock(settings.global["dart-show-detection-area"].value, function(m)log(m)end, Log.FINE)
+    Log.logBlock(settings.global["dart-show-defended-area"].value, function(m)log(m)end, Log.FINE)
+
 end
 
 --- init D.A.R.T on every mod update or change

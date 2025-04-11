@@ -87,7 +87,7 @@ dart_fcc_entity.next_upgrade = nil
 dart_fcc_entity.fast_replaceable_group = nil
 dart_fcc_entity.surface_conditions = surface_conditions()
 
-Log.logBlock(dart_fcc_entity, function(m)log(m)end, Log.FINE)
+Log.logBlock(dart_fcc_entity, function(m)log(m)end, Log.FINER)
 
 
 --- create the D.A.R.T-radar entity
@@ -100,7 +100,7 @@ dart_radar_entity.icon_mipmaps = 4
 dart_radar_entity.next_upgrade = nil
 dart_radar_entity.rotation_speed = 0.02
 dart_radar_entity.energy_usage = "100kW"
-dart_radar_entity. fast_replaceable_group = nil
+dart_radar_entity.fast_replaceable_group = nil
 
 rescale_entity(dart_radar_entity, 1 / 3)
 
@@ -141,7 +141,7 @@ dart_fcc_item. fast_replaceable_group = nil
 dart_fcc_item.order = order .. "-b"
 dart_fcc_item.subgroup = dart_radar_item.subgroup
 
-Log.logBlock(dart_fcc_item, function(m)log(m)end, Log.FINE)
+Log.logBlock(dart_fcc_item, function(m)log(m)end, Log.FINER)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- create the D.A.R.T-radar technology
