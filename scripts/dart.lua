@@ -36,7 +36,7 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @class Pons: any administrative structure for a platform
 --- @field surface LuaSurface surface containing the platform
 --- @field platform LuaSpacePlatform the platform
---- @field turretsOnPlatform TurretOnPlatform[] array of turrets located on the platform
+--- @field turretsOnPlatform TurretOnPlatform[] array of turrets located on the platform, indexed by unit_number
 --- @field fccsOnPlatform FccOnPlatform[] array of D.A.R.T. fcc entities located on the platform
 --- @field radarsOnPlatform RadarOnPlatform[] array of D.A.R.T. radar entities located on the platform
 --- @field knownAsteroids KnownAsteroid[] array of asteroids currently known and in detection range
@@ -51,6 +51,7 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @field turret LuaEntity turret
 --- @field circuit_condition CircuitConditionDefinition of the turret
 --- @field targets_of_turret LuaEntity[] the targets of the turret
+--- @field range float range of the turret
 
 --- @class DestroyedTarget contains data of a destroyed asteroid which are used to find the fragments arising from it
 --- @field aun uint unit_number of destroyed asteroid
@@ -95,7 +96,6 @@ end
 
 -- constants
 local defenseRange = 16   -- TODO gui or at least configurable
-local weaponrange = 18    -- TODO entity type and quality
 local detectionRange = 35 -- TODO configurable or depending on quality?
 
 -- ###############################################################
@@ -249,7 +249,7 @@ local function calculatePrio(managedTurrets, target, D)
         if D >= 0 then
             local dist = distToTurret(target, v.turret)
             -- remember distance for each turret to target if in range
-            if dist <= weaponrange then
+            if dist <= v.range then
                 Log.logBlock(target, function(m)log(m)end, Log.FINER)
                 v.targets_of_turret[tun] = dist
                 inRange = true
@@ -334,13 +334,16 @@ local function getManagedTurrets(pons)
     for nwid, cnOfDart in pairs(cnOfDarts) do
         -- iterate over all known turrets in this circuit network
         for _, cnOfTurret in pairs(cnOfTurrets[nwid]) do
+            local turret = cnOfTurret.turret
+
             --- @type ManagedTurret
             local mt = {
-                turret = cnOfTurret.turret,
+                turret = turret,
                 circuit_condition = cnOfTurret.circuit_condition,
                 fcc = cnOfDart.fcc,
                 control_behavior = cnOfDart.control_behavior,
                 targets_of_turret = {},
+                range = pons.turretsOnPlatform[turret.unit_number].range
             }
             mts[#mts + 1] = mt
         end
@@ -784,15 +787,6 @@ local function dart_load()
     Log.log('D.A.R.T on_load', function(m)log(m)end)
 
     registerEvents()
-
-    --local prot = prototypes.entity["ammo-turret"]
-    --Log.logBlock(prot, function(m)log(m)end, Log.FINE)
-    for k, v in pairs(prototypes.entity) do
-        if string.find(k, "turret") then
-            Log.log(k .. " -> " .. serpent.block(prototypes.entity[k]), function(m)log(m)end, Log.FINE)
-        end
-    end
-
 end
 
 --- init D.A.R.T on every mod update or change
