@@ -28,7 +28,7 @@ local function init_storagePlatforms()
     storage.platforms[2] = {
         surface = surface,
         platform = platform,
-        dartsOnPlatform = {},
+        fccsOnPlatform = {},
     }
 end
 
@@ -62,7 +62,14 @@ function TestDart:setUp()
 
     -- mock the prototypes
     prototypes = {
-        asteroid_chunk = {}
+        asteroid_chunk = {},
+        entity = {
+            ["gun-turret"] = {
+                attack_parameters = {
+                    range = 18
+                }
+            }
+        }
     }
 
     -- mock the script object
@@ -77,7 +84,7 @@ function TestDart:test_entityCreated()
     local entity = {
         valid = true,
         unit_number = 4711,
-        name = "dart-radar",
+        name = "dart-fcc",
         position = { 1, 2 },
         force = "A-Team",
         surface = {
@@ -91,7 +98,7 @@ function TestDart:test_entityCreated()
     storage.platforms = {
         [2] = {
             turrets = {},
-            dartsOnPlatform = {}
+            fccsOnPlatform = {}
         }
     }
 
@@ -105,7 +112,7 @@ function TestDart:test_entityCreated()
     lu.assertEquals(type(eventhandler), "function")
     eventhandler(event)
 
-    local dart = storage.platforms[2].dartsOnPlatform[4711]
+    local dart = storage.platforms[2].fccsOnPlatform[4711]
     lu.assertNotNil(dart)
     lu.assertEquals(dart.control_behavior, "mocked CB")
 end
@@ -127,11 +134,12 @@ local function entityRemovedWithValidOutput(valid, expected)
     init_storagePlatforms()
 
     local radarAndOutput = createDart(valid)
-    storage.platforms[2].dartsOnPlatform[4711] = radarAndOutput
+    storage.platforms[2].fccsOnPlatform[4711] = radarAndOutput
 
     -- mock entity in event
     local entity = {
         unit_number = 4711,
+        name = "dart-fcc",
         surface = {
             index = 2
         }
@@ -147,7 +155,7 @@ local function entityRemovedWithValidOutput(valid, expected)
 
     eventhandler(event)
 
-    lu.assertNil(storage.platforms[2].dartsOnPlatform[4711])
+    lu.assertNil(storage.platforms[2].fccsOnPlatform[4711])
 end
 
 function TestDart:test_entityRemovedWithValidOutput()
@@ -228,7 +236,8 @@ function TestDart:test_on_init()
                         unit_number = 4711,
                         get_or_create_control_behavior = function()
                             return "simulated CB"
-                        end
+                        end,
+                        name = "gun-turret"
                     }
                 }
             end

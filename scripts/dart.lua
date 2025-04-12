@@ -13,6 +13,7 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @class TurretOnPlatform a turret on a platform
 --- @field turret LuaEntity the turret
 --- @field control_behavior LuaTurretControlBehavior of the turret
+--- @field range float range of the turret
 
 --- @class FccOnPlatform a dart-fcc on a platform
 --- @alias CnOfDart
@@ -39,7 +40,6 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @field fccsOnPlatform FccOnPlatform[] array of D.A.R.T. fcc entities located on the platform
 --- @field radarsOnPlatform RadarOnPlatform[] array of D.A.R.T. radar entities located on the platform
 --- @field knownAsteroids KnownAsteroid[] array of asteroids currently known and in detection range
-
 
 --- @class CnOfTurret circuit network belonging to a turret.
 --- @field turret LuaEntity turret
@@ -545,6 +545,19 @@ local function entity_died(event)
     assignTargets(pons, knownAsteroids, managedTurrets)
 end
 -- ###############################################################
+--- @param turretsOnPlatform TurretOnPlatform[]
+--- @param turret LuaEntity
+local function addTurretToPons(turretsOnPlatform, turret)
+    local prot = prototypes.entity[turret.name]
+    local ap = prot.attack_parameters
+
+    turretsOnPlatform[turret.unit_number] = {
+        turret = turret,
+        control_behavior = turret.get_or_create_control_behavior(),
+        range = ap.range
+    }
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function newRadar(entity)
     local radar_un = entity.unit_number
@@ -560,6 +573,7 @@ local function newRadar(entity)
     gdp[radar_un] = dart
     Log.logBlock(dart, function(m)log(m)end, Log.FINE)
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function newFcc(entity)
     local fccun = entity.unit_number
@@ -575,22 +589,35 @@ local function newFcc(entity)
     gdp[fccun] = dart
     Log.logBlock(dart, function(m)log(m)end, Log.FINER)
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function newTurret(entity)
+    Log.log(entity.unit_number, function(m)log(m)end, Log.FINE)
+
+    local pons = global_data.getPlatforms()[entity.surface.index]
+    addTurretToPons(pons.turretsOnPlatform, entity)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local createFuncs = {
+    -- by name
     ["dart-fcc"] = newFcc,
-    ["dart-radar"] = newRadar
+    ["dart-radar"] = newRadar,
+
+    -- by type
+    ["ammo-turret"] = newTurret,
 }
 
---- event handler called if a new dart-fcc/dart-radar is created on a platform
+--- event handler called if a new dart-fcc/dart-radar or a turret is build on a platform
 local function entityCreated(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINER)
 
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
 
-    local func = createFuncs[entity.name]
+    local func = createFuncs[entity.name] or createFuncs[entity.type]
 
-    _= func and func(entity)
+    _= func and func(entity, event)
 end
 -- ###############################################################
 
@@ -602,6 +629,7 @@ local function removedRadar(entity)
     -- clear the data belonging to the dart-radar
     darts[fccun] = nil
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function removedFcc(entity)
     local darts = global_data.getPlatforms()[entity.surface.index].fccsOnPlatform
@@ -611,18 +639,34 @@ local function removedFcc(entity)
     -- clear the data belonging to the dart-fcc
     darts[fccun] = nil
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function removedTurret(entity)
+    Log.log(entity.unit_number, function(m)log(m)end, Log.FINE)
+
+    -- remove turret
+    local pons = global_data.getPlatforms()[entity.surface.index]
+    local turretsOnPlatform = pons.turretsOnPlatform
+    turretsOnPlatform[entity.unit_number] = nil
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
 local removedFuncs = {
+    -- by name
     ["dart-fcc"] = removedFcc,
-    ["dart-radar"] = removedRadar
+    ["dart-radar"] = removedRadar,
+
+    -- by type
+    ["ammo-turret"] = removedTurret,
 }
 
---- event handler called if a dart-fcc/dart-radar is removed from platform
+--- event handler called if a dart-fcc/dart-radar or a turret is removed from platform
 local function entityRemoved(event)
     local entity = event.entity
-    local func = removedFuncs[entity.name]
+    local func = removedFuncs[entity.name] or removedFuncs[entity.type]
 
-    _= func and func(entity)
+    _= func and func(entity, event)
 end
 -- ###############################################################
 
@@ -671,14 +715,9 @@ local function searchTurrets(pons)
     local turretsOnPlatform = pons.turretsOnPlatform
 
     for _, turret in pairs(pons.surface.find_entities_filtered({ type = "ammo-turret" })) do
-        Log.logBlock(turret, function(m)log(m)end, Log.FINER)
-        turretsOnPlatform[turret.unit_number] = {
-            turret = turret,
-            control_behavior = turret.get_or_create_control_behavior(),
-        }
+        addTurretToPons(turretsOnPlatform, turret)
     end
     Log.logBlock(pons, function(m)log(m)end, Log.FINER)
-
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -703,14 +742,17 @@ end
 -- Mod initialization
 --
 
---- register complexer events with additional filters
+--- register complexer events, e.g. with additional filters
 local function registerEvents()
-    local filters_on_built    = {{ filter = 'name', name = 'dart-radar' }, { filter = 'name', name = 'dart-fcc' }}
-    local filters_on_mined    = {{ filter = 'name', name = 'dart-radar' }, { filter = 'name', name = 'dart-fcc' }}
+    local filters_dart_components = { { filter = 'name', name = 'dart-radar' },
+                                      { filter = 'name', name = 'dart-fcc' },
+                                      { filter = 'type', type = 'ammo-turret' },
+    }
+
     local filters_entity_died = {{ filter = "type", type = "asteroid" }}
 
-    script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_on_built)
-    script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved, filters_on_mined)
+    script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_dart_components)
+    script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved, filters_dart_components)
     script.on_event(defines.events.on_entity_died, entity_died, filters_entity_died)
 
     asyncFragments = asyncHandler.registerAsync(fragments)
@@ -743,8 +785,13 @@ local function dart_load()
 
     registerEvents()
 
-    Log.logBlock(settings.global["dart-show-detection-area"].value, function(m)log(m)end, Log.FINE)
-    Log.logBlock(settings.global["dart-show-defended-area"].value, function(m)log(m)end, Log.FINE)
+    --local prot = prototypes.entity["ammo-turret"]
+    --Log.logBlock(prot, function(m)log(m)end, Log.FINE)
+    for k, v in pairs(prototypes.entity) do
+        if string.find(k, "turret") then
+            Log.log(k .. " -> " .. serpent.block(prototypes.entity[k]), function(m)log(m)end, Log.FINE)
+        end
+    end
 
 end
 
