@@ -8,9 +8,10 @@
 ---@diagnostic disable:missing-fields
 
 local Log = require("__log4factorio__.Log")
-local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
 local PlayerData = require("scripts.player_data")
+local radars = require("scripts.gui.radars")
+local turrets = require("scripts.gui.turrets")
 
 local flib_gui = require("__flib__.gui")
 
@@ -41,46 +42,65 @@ end)
 --- @param player LuaPlayer who opens the entity
 --- @param entity Entity to be shown in the GUI
 local function build(player, entity)
-  local elems, gui = flib_gui.add(player.gui.screen, {
-      {
-          type = "frame",
-          direction = "vertical",
-          visible = false,
-          handler = { [defines.events.on_gui_closed] = handlers.close_gui},
-          --style = "rldman_top_frame",
-          {
-              type = "flow",
-              direction = "horizontal",
-              name = "titlebar",
-              {
-                  type = "label",
-                  style = "frame_title",
-                  caption = { "mod-name.dart" },
-                  ignored_by_interaction = true,
-              },
-              { type = "empty-widget", style = "flib_titlebar_drag_handle", ignored_by_interaction = true },
-              {
-                  type = "sprite-button",
-                  name = "gui_close_button",
-                  style = "close_button",
-                  sprite = "utility/close",
-                  hovered_sprite = "utility/close_black",
-                  tooltip = { "gui.dart-close-button-tt" },
-                  handler = { [defines.events.on_gui_click] = handlers.close_gui },
-             },
-          },
-          { type = "frame", name = "content_frame", direction = "vertical", -- style = "rldman_content_frame",
+    local elems, gui = flib_gui.add(player.gui.screen, {
+        {
+            type = "frame",
+            direction = "vertical",
+            visible = false,
+            handler = { [defines.events.on_gui_closed] = handlers.close_gui },
+            --style = "rldman_top_frame",
             {
-                type = "label",
-                caption = "Huhu GUI",
-                name = "main_label_TBDel"
+                type = "flow",
+                direction = "horizontal",
+                name = "titlebar",
+                {
+                    type = "label",
+                    style = "frame_title",
+                    caption = { "mod-name.dart" },
+                    ignored_by_interaction = true,
+                },
+                { type = "empty-widget", style = "flib_titlebar_drag_handle", ignored_by_interaction = true },
+                {
+                    type = "sprite-button",
+                    name = "gui_close_button",
+                    style = "close_button",
+                    sprite = "utility/close",
+                    hovered_sprite = "utility/close_black",
+                    tooltip = { "gui.dart-close-button-tt" },
+                    handler = { [defines.events.on_gui_click] = handlers.close_gui },
+                },
+            },
+            { type = "frame", name = "content_frame", direction = "vertical", -- style = "rldman_content_frame",
+              { -- TODO löschen
+                  type = "label",
+                  caption = "Huhu GUI",
+                  name = "main_label_TBDel"
+              },
+              {
+                  type = "frame",
+                  style = "entity_button_frame",
+                  {
+                      type = "entity-preview",
+                      style = "wide_entity_button",
+                      position = entity.position,
+                      name = "fcc_view",
+                  },
+              },
+              {
+                  type = "tabbed-pane",
+                  radars.build(),
+                  turrets.build(),
+              },
+              { -- TODO löschen
+                  type = "label",
+                  caption = "Huhu GUI 2",
+                  name = "main_label_TBDel2"
+              },
             }
-          }
-      }
-  })
+        }
+    })
 
-   elems.titlebar.drag_target = gui
-
+    elems.titlebar.drag_target = gui
 
     return elems, gui
 end
@@ -109,36 +129,51 @@ local function gui_open(event)
         end
 
         local player = game.get_player(event.player_index)
-        Log.logBlock(player, function(m)log(m)end, Log.FINE)
         local elems, gui = build(player, entity)
-        Log.logBlock(gui, function(m)log(m)end, Log.FINE)
-        Log.logBlock(elems, function(m)log(m)end, Log.FINE)
+        Log.logBlock( { gui = gui, elems = elems }, function(m)log(m)end, Log.FINE)
         player.opened = gui
         -- store reference to gui in storage
         pd.guis.main = gui
+
+        Log.logLine(entity, function(m)log(m)end, Log.FINE)
 
         -- dart-fcc
         local un = entity.unit_number
         Log.logBlock(un, function(m)log(m)end, Log.FINE)
 
         local gdp = global_data.getPlatforms()
-        Log.logBlock(gdp, function(m)log(m)end, Log.FINE)
-        Log.logBlock(entity.surface.index, function(m)log(m)end, Log.FINE)
-        Log.logBlock(un, function(m)log(m)end, Log.FINE)
-        Log.logBlock(gdp[entity.surface.index].fccsOnPlatform, function(m)log(m)end, Log.FINE)
+        --Log.logBlock(gdp, function(m)log(m)end, Log.FINE)
+        --Log.logBlock(entity.surface.index, function(m)log(m)end, Log.FINE)
+        --Log.logBlock(un, function(m)log(m)end, Log.FINE)
+        --Log.logBlock(gdp[entity.surface.index].fccsOnPlatform, function(m)log(m)end, Log.FINE)
 
-        local dart = gdp[entity.surface.index].fccsOnPlatform[un]
-        Log.logBlock(dump.dumpControlBehavior(dart.control_behavior), function(m)log(m)end, Log.FINE)
+        --local dart = gdp[entity.surface.index].fccsOnPlatform[un]
+        --Log.logBlock(dump.dumpControlBehavior(dart.control_behavior), function(m)log(m)end, Log.FINE)
 
         open(gui)
+
+        elems.fcc_view.entity = entity
+        elems.fcc_view.visible = true
     end
 end
+-- ###############################################################
+
+local function gui_click(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+end
+
+local function tabChanged(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+end
+
 
 -- GUI events - TBC
 local dart_gui = {}
 
 dart_gui.events = {
     [defines.events.on_gui_opened] = gui_open,
+    [defines.events.on_gui_click] =  gui_click,
+    [defines.events.on_gui_click] =  tabChanged,
 }
 
 return dart_gui

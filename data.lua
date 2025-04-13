@@ -6,6 +6,8 @@ local Log = require("__log4factorio__.Log")
 Log.setSeverity(Log.FINE)
 local data_util = require('__flib__.data-util')
 
+require("scripts.gui.styles") -- introduces styles specific for D.A.R.T
+
 -- fields for scaling (as long as we have only 2 possibilities the neat trick in scale() works)
 local fields = {
     shift = true,
