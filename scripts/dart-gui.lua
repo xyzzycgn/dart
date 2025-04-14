@@ -14,14 +14,27 @@ local radars = require("scripts.gui.radars")
 local turrets = require("scripts.gui.turrets")
 
 local flib_gui = require("__flib__.gui")
+local flib_format = require("__flib__.format")
 
 local function close(gui, event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
     Log.logBlock(gui, function(m)log(m)end, Log.FINE)
     local pd = global_data.getPlayer_data(event.player_index)
-    pd.guis.main = nil
+
+    pd.guis.recentlyopen = pd.guis.recentlyopen or {}
+    local ropen= pd.guis.recentlyopen[#pd.guis.recentlyopen]
+
+    -- close actual gui and destroy it
     gui.visible = false
     gui.destroy()
+
+    -- former gui present?
+    if ropen then
+        pd.guis.recentlyopen[#pd.guis.recentlyopen] = nil
+        -- make former gui visible again
+        ropen.gui.visible = true
+    end
+    pd.guis.open = ropen
 end
 
 local handlers = {
@@ -29,7 +42,7 @@ local handlers = {
 }
 
 flib_gui.add_handlers(handlers, function(e, handler)
-    local self = global_data.getPlayer_data(e.player_index).guis.main
+    local self = global_data.getPlayer_data(e.player_index).guis.open.gui
     if self then
         handler(self, e)
     end
@@ -88,13 +101,9 @@ local function build(player, entity)
               },
               {
                   type = "tabbed-pane",
+                  style = "dart_tabbed_pane",
                   radars.build(),
                   turrets.build(),
-              },
-              { -- TODO löschen
-                  type = "label",
-                  caption = "Huhu GUI 2",
-                  name = "main_label_TBDel2"
               },
             }
         }
@@ -106,7 +115,28 @@ local function build(player, entity)
 end
 -- ###############################################################
 
-local function open(gui)
+local function open(player_index, gui, elems)
+    local pd = global_data.getPlayer_data(player_index)
+    local player = game.get_player(player_index)
+    if (pd == nil) then
+        pd = PlayerData.init_player_data(player)
+        global_data.addPlayer_data(player, pd)
+    end
+    player.opened = gui
+    -- store reference to gui in storage
+    local nextgui =  {
+        gui = gui,
+        elems = elems,
+    }
+    pd.guis.recentlyopen = pd.guis.recentlyopen or {}
+    pd.guis.recentlyopen[#pd.guis.recentlyopen + 1] = pd.guis.open
+
+    if pd.guis.open then
+        -- hide former gui
+        pd.guis.open.gui.visible = false
+    end
+    pd.guis.open = nextgui
+
     gui.force_auto_center()
     gui.bring_to_front()
     gui.visible = true
@@ -119,38 +149,13 @@ local function gui_open(event)
         Log.logBlock(event, function(m)log(m)end, Log.FINE)
         Log.logBlock(defines.gui_type, function(m)log(m)end, Log.FINEST)
 
-        local pd = global_data.getPlayer_data(event.player_index)
-        Log.logBlock(pd, function(m)log(m)end, Log.FINER)
-
-        if (pd == nil) then
-            local p = game.get_player(event.player_index)
-            pd = PlayerData.init_player_data(p)
-            global_data.addPlayer_data(p, pd)
-        end
-
         local player = game.get_player(event.player_index)
         local elems, gui = build(player, entity)
         Log.logBlock( { gui = gui, elems = elems }, function(m)log(m)end, Log.FINE)
-        player.opened = gui
-        -- store reference to gui in storage
-        pd.guis.main = gui
+
+        open(event.player_index, gui, elems, "main")
 
         Log.logLine(entity, function(m)log(m)end, Log.FINE)
-
-        -- dart-fcc
-        local un = entity.unit_number
-        Log.logBlock(un, function(m)log(m)end, Log.FINE)
-
-        local gdp = global_data.getPlatforms()
-        --Log.logBlock(gdp, function(m)log(m)end, Log.FINE)
-        --Log.logBlock(entity.surface.index, function(m)log(m)end, Log.FINE)
-        --Log.logBlock(un, function(m)log(m)end, Log.FINE)
-        --Log.logBlock(gdp[entity.surface.index].fccsOnPlatform, function(m)log(m)end, Log.FINE)
-
-        --local dart = gdp[entity.surface.index].fccsOnPlatform[un]
-        --Log.logBlock(dump.dumpControlBehavior(dart.control_behavior), function(m)log(m)end, Log.FINE)
-
-        open(gui)
 
         elems.fcc_view.entity = entity
         elems.fcc_view.visible = true
@@ -162,8 +167,32 @@ local function gui_click(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
 end
 
+-- TODO temporary - tbd
+local cnt = 0
+
 local function tabChanged(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    -- TODO ??
+    cnt = cnt + 1
+    Log.log(cnt, function(m)log(m)end, Log.FINE)
+end
+
+--###############################################################
+
+
+local function update_gui(event)
+    Log.logLine(event, function(m)log(m)end, Log.FINE)
+
+    --local pd = global_data.getPlayer_data(event.player_index)
+    local pd = global_data.getPlayer_data(1) -- TODO
+    Log.logBlock(pd, function(m)log(m)end, Log.FINER)
+
+    if (pd ~= nil) then
+        local open = pd.guis.open
+        if open then
+            open.elems.radars_tab.badge_text = flib_format.number(cnt)
+        end
+    end
 end
 
 
@@ -175,5 +204,11 @@ dart_gui.events = {
     [defines.events.on_gui_click] =  gui_click,
     [defines.events.on_gui_click] =  tabChanged,
 }
+
+-- handling of GUI updates (every second - easy way but not very efficient, TODO update only if necessary)
+dart_gui.on_nth_tick = {
+    [60] = update_gui
+}
+
 
 return dart_gui
