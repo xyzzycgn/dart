@@ -25,6 +25,7 @@ function global_data.addPlayer_data(player, pd)
     end
 end
 
+--- @return PlayerData
 function global_data.getPlayer_data(playerindex)
     return storage.players[playerindex]
 end

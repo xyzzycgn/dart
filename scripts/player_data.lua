@@ -2,7 +2,11 @@
 --- Created by xyzzycgn.
 ---
 
--- convenience class for handling player_data
+--- @class PlayerData any  convenience class for handling player_data
+--- @field player LuaPlayer the player to whom these data belong
+--- @field guis any data of the opened gui
+--- @field pons Pons[] platforms owned by the player
+
 local PlayerData = {}
 
 ---@param player LuaPlayer
@@ -11,6 +15,7 @@ function PlayerData.init_player_data(player)
     local pd = {
         guis = {},
         player = player,
+        pons = {}
     }
 
     return pd

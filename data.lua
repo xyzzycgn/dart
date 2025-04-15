@@ -94,7 +94,7 @@ Log.logBlock(dart_fcc_entity, function(m)log(m)end, Log.FINER)
 
 --- create the D.A.R.T-radar entity
 local dart_radar_entity = data_util.copy_prototype(data.raw["radar"]["radar"], "dart-radar")
-Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINE)
+Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINER)
 
 dart_radar_entity.icon = "__base__/graphics/icons/radar.png" -- TODO
 dart_radar_entity.icon_size = 64
@@ -122,7 +122,7 @@ dart_radar_entity.circuit_connector = {
 }
 dart_radar_entity.surface_conditions = surface_conditions()
 
-Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINE)
+Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINER)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 --- create the D.A.R.T-radar item
 local dart_radar_item = data_util.copy_prototype(data.raw["item"]["radar"], "dart-radar")

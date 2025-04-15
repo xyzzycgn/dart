@@ -510,12 +510,7 @@ local function fragments(dest_target)
 end
 -- ###############################################################
 
---- event handler called if an asteroid is destroyed
-local function entity_died(event)
-    --- @type LuaEntity
-    local entity = event.entity
-    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINEST)
-
+local function asteroid_died(entity)
     script.raise_event(on_target_destroyed_event, { entity=entity, un=entity.unit_number, reason="destroy" } )
 
     --- @type Pons
@@ -547,7 +542,40 @@ local function entity_died(event)
     -- assign remaining asteroids to turrets
     assignTargets(pons, knownAsteroids, managedTurrets)
 end
+
+local function hub_died(entity)
+    -- remove references to platform or objects on it
+    local sid = entity.surface.index
+    local pons = global_data.getPlatforms()[sid]
+    Log.log("removing all D.A.R.T. installations on platform=" .. pons.platform.name, function(m)log(m)end, Log.INFO)
+    global_data.getPlatforms()[sid] = nil
+    -- remove references to platform in player_data
+    local platform = pons.platform
+    if platform.valid then
+        for _, player in pairs(platform.force.players) do
+            local pd = global_data.getPlayer_data(player.index)
+            pd.pons[platform.index] = nil
+        end
+    else
+        Log.log("platfrom already invalid - surfaceid = " .. event.surface_index, function(m)log(m)end, Log.WARN)
+    end
+end
+
+local diedFuncs = {
+    ["space-platform-hub"] = hub_died,
+    asteroid = asteroid_died,
+}
+
+--- event handler called if an asteroid or a hub is destroyed
+local function entity_died(event)
+    --- @type LuaEntity
+    local entity = event.entity
+
+    local func = diedFuncs[entity.name] or diedFuncs[entity.type]
+    _= func and func(entity, event)
+end
 -- ###############################################################
+
 --- @param turretsOnPlatform TurretOnPlatform[]
 --- @param turret LuaEntity
 local function addTurretToPons(turretsOnPlatform, turret)
@@ -685,21 +713,21 @@ end
 local function surfaceCreated(event)
     Log.logBlock(event, function(m)log(m)end, Log.FINER)
     local surface = game.surfaces[event.surface_index]
+    local platform = surface.platform
 
-    if (surface.platform) then
+    if (platform) then
         Log.log("add new platform " .. event.surface_index, function(m)log(m)end, Log.FINER)
 
-        global_data.getPlatforms()[event.surface_index] = newSurface(surface)
+        local pons = newSurface(surface)
+        global_data.getPlatforms()[event.surface_index] = pons
+
+        for _, player in pairs(platform.force.players) do
+            local pd = global_data.getPlayer_data(player.index)
+            pd.pons[platform.index] = pons
+        end
     end
 end
 -- ###############################################################
-
-local function surfaceDeleted(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINER)
-    -- remove references to platform or objects on it
-    global_data.getPlatforms()[event.surface_index] = nil
-end
---###############################################################
 
 -- part of initialization
 local function searchPlatforms()
@@ -752,7 +780,10 @@ local function registerEvents()
                                       { filter = 'type', type = 'ammo-turret' },
     }
 
-    local filters_entity_died = {{ filter = "type", type = "asteroid" }}
+    local filters_entity_died = {
+        { filter = "type", type = "asteroid" },
+        { filter = "type", type = "space-platform-hub" },
+    }
 
     script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_dart_components)
     script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved, filters_dart_components)
@@ -842,7 +873,6 @@ dart.events = {
     [defines.events.script_raised_destroy]           = entityRemoved,
     [defines.events.on_space_platform_pre_mined]     = tbd,
     [defines.events.on_surface_created]              = surfaceCreated,
-    [defines.events.on_pre_surface_deleted]          = surfaceDeleted,
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
     [defines.events.on_player_joined_game] = tbd,
     [defines.events.on_player_left_game] = tbd,
