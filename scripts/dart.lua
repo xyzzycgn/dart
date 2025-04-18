@@ -16,7 +16,6 @@ local asyncHandler = require("scripts.asyncHandler")
 --- @field range float range of the turret
 
 --- @class FccOnPlatform a dart-fcc on a platform
---- @alias CnOfDart
 --- @field fcc LuaEntity dart-fcc
 --- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
 --- @field fcc_un uint64 unit_number of dart-fcc
@@ -296,11 +295,11 @@ end
 
 --- determine circuit networks of darts
 --- @param pons Pons platform
---- @return CnOfDart[] indexed by network id
+--- @return FccOnPlatform[] indexed by network id
 local function circuitNetworkOfDarts(pons)
     local darts = pons.fccsOnPlatform
 
-    --- @type CnOfDart[]
+    --- @type FccOnPlatform[]
     local cnOfDarts = {}
     for _, dart in pairs(darts) do
         local cb = dart.control_behavior
@@ -323,7 +322,7 @@ end
 --- @param pons Pons
 --- @return ManagedTurret[]
 local function getManagedTurrets(pons)
-    --- @type CnOfDart[]
+    --- @type FccOnPlatform[]
     local cnOfDarts = circuitNetworkOfDarts(pons)
     --- @type CnOfTurret[][]
     local cnOfTurrets = circuitNetworkOfTurrets(pons)
@@ -412,7 +411,7 @@ local function detection(pons)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- perforn decision which asteroid should be targeted
+--- perform decision which asteroid should be targeted
 local function businessLogic()
     Log.log("enter BL", function(m)log(m)end, Log.FINER)
     Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINEST)
@@ -871,20 +870,20 @@ dart.on_configuration_changed = dart_config_changed
 dart.events = {
     [defines.events.on_entity_cloned]                = entityCreated, -- TODO delete?
     [defines.events.script_raised_destroy]           = entityRemoved,
-    [defines.events.on_space_platform_pre_mined]     = tbd,
     [defines.events.on_surface_created]              = surfaceCreated,
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
     [defines.events.on_player_joined_game] = tbd,
     [defines.events.on_player_left_game] = tbd,
     [defines.events.on_player_removed] = tbd,
 
+    [defines.events.on_tick] = asyncHandler.dequeue,
+
+    -- defined in internalEvents.lua
     [on_target_assigned_event] = tbda,
     [on_target_unassigned_event] = tbdu,
     [on_target_destroyed_event] = tbdd,
     [on_asteroid_detected_event] = tbdad,
     [on_asteroid_lost_event] = tbdal,
-
-    [defines.events.on_tick] = asyncHandler.dequeue,
 }
 
 -- handling of business logic

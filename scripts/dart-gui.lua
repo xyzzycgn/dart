@@ -3,9 +3,6 @@
 --- DateTime: 04.03.25 21:27
 ---
 --- Build the D.A.R.T Main UI window
---- @param player LuaPlayer @ Player object that is opening the combinator
---- @return GuiElemDef
----@diagnostic disable:missing-fields
 
 local Log = require("__log4factorio__.Log")
 local global_data = require("scripts.global_data")
@@ -16,9 +13,51 @@ local turrets = require("scripts.gui.turrets")
 local flib_gui = require("__flib__.gui")
 local flib_format = require("__flib__.format")
 
+
+local function update_radars()
+    Log.logBlock("update_radars NYI", function(m)log(m)end, Log.WARN)
+end
+
+local function update_turrets()
+    Log.logBlock("update_turrets NYI", function(m)log(m)end, Log.WARN)
+end
+
+local switch = {
+    [1] = update_radars,
+    [2] = update_turrets,
+}
+
+local function update_gui(event)
+    Log.logLine(event, function(m)log(m)end, Log.FINE)
+
+    local pd = global_data.getPlayer_data(event.player_index)
+    Log.logBlock(pd, function(m)log(m)end, Log.FINER)
+
+    if pd then
+        -- the actual opened gui
+        local opengui = pd.guis.open
+        if opengui then
+            -- TODO later distinguish the different (sub-)guis
+            --opengui.elems.radars_tab.badge_text = flib_format.number(cnt)  TODO delete
+
+            local func = switch[opengui.activeTab]
+            if (func) then
+                --func(self.refs, rld_data, gui_model, self.player.index)
+                func()
+            else
+                Log.log("no func for ndx=" .. opengui.activeTab, function(m)log(m)end, Log.WARN)
+            end
+
+        end
+    end
+end
+-- ###############################################################
+
+--
+-- local handlers for flib
+---
 local function close(gui, event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
-    Log.logBlock(gui, function(m)log(m)end, Log.FINE)
+    Log.logBlock(event, function(m)log(m)end, Log.FINER)
     local pd = global_data.getPlayer_data(event.player_index)
 
     pd.guis.recentlyopen = pd.guis.recentlyopen or {}
@@ -30,30 +69,43 @@ local function close(gui, event)
 
     -- former gui present?
     if ropen then
+        -- remove closed gui from list
         pd.guis.recentlyopen[#pd.guis.recentlyopen] = nil
         -- make former gui visible again
         ropen.gui.visible = true
     end
     pd.guis.open = ropen
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function change_tab(gui, event)
+    local tab = event.element
+    Log.logBlock( { event, tab.selected_tab_index }, function(m)log(m)end, Log.FINE)
+    local pd = global_data.getPlayer_data(event.player_index)
+    if pd then
+        pd.guis.open.activeTab = tab.selected_tab_index
+    end
+    update_gui(event)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local handlers = {
-    close_gui = close
+    close_gui = close,
+    change_tab = change_tab,
 }
 
+-- register local handlers in flib
 flib_gui.add_handlers(handlers, function(e, handler)
     local self = global_data.getPlayer_data(e.player_index).guis.open.gui
     if self then
         handler(self, e)
     end
 end)
-
-
 -- ###############################################################
 
 --- creates the custom gui
 --- @param player LuaPlayer who opens the entity
---- @param entity Entity to be shown in the GUI
+--- @param entity LuaEntity to be shown in the GUI
 local function build(player, entity)
     local elems, gui = flib_gui.add(player.gui.screen, {
         {
@@ -84,11 +136,6 @@ local function build(player, entity)
                 },
             },
             { type = "frame", name = "content_frame", direction = "vertical", -- style = "rldman_content_frame",
-              { -- TODO löschen
-                  type = "label",
-                  caption = "Huhu GUI",
-                  name = "main_label_TBDel"
-              },
               {
                   type = "frame",
                   style = "entity_button_frame",
@@ -102,6 +149,7 @@ local function build(player, entity)
               {
                   type = "tabbed-pane",
                   style = "dart_tabbed_pane",
+                  handler = { [defines.events.on_gui_selected_tab_changed] = handlers.change_tab },
                   radars.build(),
                   turrets.build(),
               },
@@ -115,7 +163,9 @@ local function build(player, entity)
 end
 -- ###############################################################
 
-local function open(player_index, gui, elems)
+--- open new gui
+--- @return PlayerData
+local function openNewGui(player_index, gui, elems, entity)
     local pd = global_data.getPlayer_data(player_index)
     local player = game.get_player(player_index)
     if (pd == nil) then
@@ -124,6 +174,7 @@ local function open(player_index, gui, elems)
     end
     player.opened = gui
     -- store reference to gui in storage
+    --- @type GuiAndElements
     local nextgui =  {
         gui = gui,
         elems = elems,
@@ -140,69 +191,46 @@ local function open(player_index, gui, elems)
     gui.force_auto_center()
     gui.bring_to_front()
     gui.visible = true
+
+    return pd
 end
--- ###############################################################
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function gui_open(event)
     local entity = event.entity
     if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-fcc" then
         Log.logBlock(event, function(m)log(m)end, Log.FINE)
-        Log.logBlock(defines.gui_type, function(m)log(m)end, Log.FINEST)
 
         local player = game.get_player(event.player_index)
         local elems, gui = build(player, entity)
         Log.logBlock( { gui = gui, elems = elems }, function(m)log(m)end, Log.FINE)
 
-        open(event.player_index, gui, elems, "main")
-
-        Log.logLine(entity, function(m)log(m)end, Log.FINE)
-
+        local pd = openNewGui(event.player_index, gui, elems, entity)
         elems.fcc_view.entity = entity
-        elems.fcc_view.visible = true
+        pd.guis.open.activeTab = 1
+
+        Log.logLine(gae, function(m)log(m)end, Log.FINE)
+        update_gui(event)
     end
 end
 -- ###############################################################
 
-local function gui_click(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
-end
-
--- TODO temporary - tbd
-local cnt = 0
-
-local function tabChanged(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
-    -- TODO ??
-    cnt = cnt + 1
-    Log.log(cnt, function(m)log(m)end, Log.FINE)
-end
-
+--local function tabChanged(event)
+--    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+--    --
+--    --
+--    --local which = event.element
+--    --local ndx = which.selected_tab_index
+--    --
+--end
 --###############################################################
-
-
-local function update_gui(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINE)
-
-    --local pd = global_data.getPlayer_data(event.player_index)
-    local pd = global_data.getPlayer_data(1) -- TODO
-    Log.logBlock(pd, function(m)log(m)end, Log.FINER)
-
-    if (pd ~= nil) then
-        local open = pd.guis.open
-        if open then
-            open.elems.radars_tab.badge_text = flib_format.number(cnt)
-        end
-    end
-end
-
 
 -- GUI events - TBC
 local dart_gui = {}
 
 dart_gui.events = {
     [defines.events.on_gui_opened] = gui_open,
-    [defines.events.on_gui_click] =  gui_click,
-    [defines.events.on_gui_click] =  tabChanged,
+    --[defines.events.on_gui_selected_tab_changed] = tabChanged,
 }
 
 -- handling of GUI updates (every second - easy way but not very efficient, TODO update only if necessary)
