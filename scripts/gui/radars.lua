@@ -36,35 +36,44 @@ function radars.build()
 
 end
 
-local function getTableAndTab(refs)
-    return refs[radars_table], refs[radars_tab]
+--- @param elems table<string, LuaGuiElement>
+local function getTableAndTab(elems)
+    return elems.radars_table, elems.radars_tab
 end
 -- ###############################################################
 
+--- @param data RadarOnPlatform
 local function dataOfRow(data)
     Log.logBlock(data, function(m)log(m)end, Log.FINER)
-    local train_id = data.id
-    local position = loco and loco.position
 
-    return train_id, position
+    return data.radar.unit_number, data.radar.position
 end
 
+--- @param v RadarOnPlatform
 local function appendTableRow(table, v)
-    local train_id, position = dataOfRow(v)
+    local run, position = dataOfRow(v)
     flib_gui.add(table,  {
         { type = "minimap",
-          style = "dart_train_minimap",
+          style = "dart_minimap",
           position = position,
-          { type = "label", style = "dart_train_minimap_label", caption = train_id }
+          zoom = 5,
+
+          -- TODO camera shows nothing / isn't rendered properly
+          --type = "camera",
+          --position = position,
+          --entity = v.radar,
+          --surface_index = v.radar.surface_index,
+
+          { type = "label", style = "dart_minimap_label", caption = run }
         },
     })
 end
 
 local function updateTableRow(table, v, at_row)
-    local train_id, position = dataOfRow(v)
+    local run, position = dataOfRow(v)
     local offset = at_row * 1 + 1
     local minimap = table.children[offset]
-    minimap.children[1].caption = train_id
+    minimap.children[1].caption = run
     -- workaround to prevent a race condition if radar has been deleted meanwhile before next update event occured
     if (position) then
         minimap.position = position
@@ -72,24 +81,14 @@ local function updateTableRow(table, v, at_row)
         minimap.enabled = false
     end
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-local function getModel(player_model)
-    return player_model.trains -- TODO
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-local function setModel(player_model, val)
-    player_model.trains = val -- TODO
-end
 -- ###############################################################
 
-function radars.update(refs, data, gui_model, player_index)
-    Log.logBlock(data[player_index], function(m)log(m)end, Log.FINE)
+--- @param elems GuiAndElements
+--- @param data RadarOnPlatform[]
+function radars.update(elems, data)
+    Log.logBlock(data, function(m)log(m)end, Log.FINE)
 
-    components.updateVisualizedData(refs, data[player_index], gui_model, player_index,
-            getTableAndTab, getModel, setModel,
-            appendTableRow, updateTableRow)
+    components.updateVisualizedData(elems, data, getTableAndTab, appendTableRow, updateTableRow)
 end
 
 

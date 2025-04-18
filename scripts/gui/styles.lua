@@ -125,12 +125,12 @@ end
 
 
 
-styles.dart_train_minimap = {
+styles.dart_minimap = {
   type = "minimap_style",
   size = 90,
 }
 
-styles.dart_train_minimap_label = {
+styles.dart_minimap_label = {
   type = "label_style",
   font = "default-game",
   font_color = default_font_color,

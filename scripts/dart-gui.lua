@@ -13,12 +13,15 @@ local turrets = require("scripts.gui.turrets")
 local flib_gui = require("__flib__.gui")
 local flib_format = require("__flib__.format")
 
-
-local function update_radars()
-    Log.logBlock("update_radars NYI", function(m)log(m)end, Log.WARN)
+--- @param elems GuiAndElements
+--- @param pons Pons
+local function update_radars(elems, pons)
+    radars.update(elems, pons.radarsOnPlatform)
 end
 
-local function update_turrets()
+--- @param elems GuiAndElements
+--- @param pons Pons
+local function update_turrets(elems, pons)
     Log.logBlock("update_turrets NYI", function(m)log(m)end, Log.WARN)
 end
 
@@ -28,7 +31,7 @@ local switch = {
 }
 
 local function update_gui(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINE)
+    Log.logLine(event, function(m)log(m)end, Log.FINER)
 
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
@@ -53,19 +56,17 @@ local function update_gui(event)
                 Log.logBlock(opengui.elems, function(m)log(m)end, Log.FINE)
                 opengui.elems.radars_tab.badge_text = flib_format.number(table_size(ponsOfEntity.radarsOnPlatform))
                 opengui.elems.turrets_tab.badge_text = flib_format.number(table_size(ponsOfEntity.turretsOnPlatform))
+
+                local func = switch[opengui.activeTab]
+                if (func) then
+                    func(opengui, ponsOfEntity)
+                else
+                    Log.log("no func for ndx=" .. opengui.activeTab, function(m)log(m)end, Log.WARN)
+                end
             else
                 -- TODO better logging
                 Log.log("no valid pons for entity=" .. entity.unit_number, function(m)log(m)end, Log.WARN)
             end
-
-            local func = switch[opengui.activeTab]
-            if (func) then
-                --func(self.refs, rld_data, gui_model, self.player.index)
-                func()
-            else
-                Log.log("no func for ndx=" .. opengui.activeTab, function(m)log(m)end, Log.WARN)
-            end
-
         end
     end
 end

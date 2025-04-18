@@ -6,6 +6,7 @@
 --- @field gui LuaGuiElement top level Element of the gui
 --- @field elems table<string, LuaGuiElement>
 --- @field activeTab int|nil (optional) ndx of active tab
+--- @field rowsShownLastInTab int[] (optional) number of rows shown in table on tab n the last time
 
 --- @class GuiData
 --- @field recentlyopen GuiAndElements[] previously opened guis (hidden after opening a new one)
