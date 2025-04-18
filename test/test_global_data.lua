@@ -30,7 +30,6 @@ end
 
 function TestGlobalData:test_init()
     lu.assertEquals({}, storage.players)
-    lu.assertEquals({}, storage.dart)
     lu.assertEquals({}, storage.platforms)
 end
 -- ###############################################################

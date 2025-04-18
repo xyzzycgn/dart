@@ -10,7 +10,6 @@ local global_data = {}
 function global_data.init()
     Log.log('global_data.init', function(m)log(m)end, Log.FINE)
     storage.players = storage.players or {}
-    storage.dart = storage.dart or {}
     storage.platforms = storage.platforms or {}
     storage.queued = storage.queued or {}
 end

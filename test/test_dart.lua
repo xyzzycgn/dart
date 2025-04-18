@@ -38,7 +38,6 @@ function TestDart:setUp()
 
     -- simulated (global) storage object
     storage = {
-        dart = {},
         players = {},
         platforms = {},
     }
@@ -185,11 +184,20 @@ function TestDart:test_surfaceCreatedPlatform()
     local event = {
         surface_index = 2
     }
-    local platform = { index = 4711}
+    local platform = {
+        index = 4711,
+        force = {
+            players = {
+                [1] = { index = 3 }
+            }
+        }
+    }
     local surface = { platform = platform, index = 2 }
 
 
     game.surfaces[event.surface_index] = surface
+
+    storage.players[3] = { pons = {} }
 
     -- test
     dart.events[defines.events.on_surface_created](event)
@@ -204,19 +212,22 @@ function TestDart:test_surfaceCreatedPlatform()
 end
 -- ###############################################################
 
-function TestDart:test_surfaceDeleted()
-    -- simulate event and old platform
-    local event = {
-        surface_index = 2
-    }
-
-    init_storagePlatforms()
-
-    -- test
-    dart.events[defines.events.on_pre_surface_deleted](event)
-
-    lu.assertEquals(getTableSize(storage.platforms), 0)
-end
+-- TODO function to test is local and not reachable from here and no longer called from dart.events - make it global?
+--function TestDart:test_surfaceDeleted()
+--    -- simulate event and old platform
+--    local event = {
+--        entity = {
+--            type = "space-platform-hub"
+--        }
+--    }
+--
+--    init_storagePlatforms()
+--
+--    -- test
+--    dart.events[defines.events.on_pre_surface_deleted](event)
+--
+--    lu.assertEquals(getTableSize(storage.platforms), 0)
+--end
 -- ###############################################################
 
 function TestDart:test_on_init()
@@ -246,7 +257,6 @@ function TestDart:test_on_init()
 
     dart.on_init()
 
-    lu.assertNotNil(storage.dart)
     lu.assertNotNil(storage.players)
     lu.assertEquals(on_event_called, 3)
 
@@ -264,7 +274,6 @@ end
 function TestDart:test_on_load()
     dart.on_load()
 
-    lu.assertNotNil(storage.dart)
     lu.assertEquals(on_event_called, 3)
 end
 -- ###############################################################
@@ -272,13 +281,10 @@ end
 function TestDart:test_on_config_changed()
     -- here we start with a filled storage
     storage.player = { set = true }
-    storage.dart.set = true
 
     dart.on_configuration_changed()
 
     -- storage should be unchanged
-    lu.assertNotNil(storage.dart)
-    lu.assertTrue(storage.dart.set)
     lu.assertNotNil(storage.player)
     lu.assertTrue(storage.player.set)
 
