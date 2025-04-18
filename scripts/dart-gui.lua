@@ -31,14 +31,32 @@ local function update_gui(event)
     Log.logLine(event, function(m)log(m)end, Log.FINE)
 
     local pd = global_data.getPlayer_data(event.player_index)
-    Log.logBlock(pd, function(m)log(m)end, Log.FINER)
-
     if pd then
         -- the actual opened gui
         local opengui = pd.guis.open
         if opengui then
             -- TODO later distinguish the different (sub-)guis
-            --opengui.elems.radars_tab.badge_text = flib_format.number(cnt)  TODO delete
+
+            ---  @type LuaEntity
+            local entity = event.entity
+
+            -- search the platform
+            --- @type Pons
+            local ponsOfEntity
+            for _, pons in pairs(pd.pons) do
+                if pons.surface == entity.surface then
+                    ponsOfEntity = pons
+                end
+            end
+
+            if ponsOfEntity then
+                Log.logBlock(opengui.elems, function(m)log(m)end, Log.FINE)
+                opengui.elems.radars_tab.badge_text = flib_format.number(table_size(ponsOfEntity.radarsOnPlatform))
+                opengui.elems.turrets_tab.badge_text = flib_format.number(table_size(ponsOfEntity.turretsOnPlatform))
+            else
+                -- TODO better logging
+                Log.log("no valid pons for entity=" .. entity.unit_number, function(m)log(m)end, Log.WARN)
+            end
 
             local func = switch[opengui.activeTab]
             if (func) then

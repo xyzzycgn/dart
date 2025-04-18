@@ -11,17 +11,17 @@ function turrets.build()
         tab = {
             { type = "tab",
               caption = { "gui.dart-turrets" },
-              ref = { "turrets", "tab" },
+              name = "turrets_tab",
             }
         },
         content = {
             type = "frame", direction = "vertical",
             style = "dart_deep_frame",
-            name = "turrets_tab",
+            name = "turrets_tab_content",
             {
+                -- TODO
                 type = "label",
                 caption = "turrets",
-                -- name = "trains_label" -- TODO löschen
             },
         }
     }
