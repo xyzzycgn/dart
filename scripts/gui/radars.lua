@@ -27,7 +27,6 @@ function radars.build()
                   draw_horizontal_line_after_headers = true,
                   style = "dart_table_style",
                   name = "radars_table",
-                  zoom = 0.6,
                   visible = false,
                   { type = "label", caption = { "gui.dart-radar-unit" }, style = "dart_stretchable_label_style", },
                   { type = "label", caption = { "gui.dart-radar-detect" }, style = "dart_stretchable_label_style", },
@@ -48,17 +47,18 @@ end
 local function dataOfRow(data)
     Log.logBlock(data, function(m)log(m)end, Log.FINER)
 
-    return data.radar.position, data.radar.backer_name, data.detectionRange, data.defenseRange
+    return data.radar.position, data.radar.surface_index, data.radar.backer_name, data.detectionRange, data.defenseRange
 end
 
 --- @param v RadarOnPlatform
 local function appendTableRow(table, v)
-    local position, name, detect, defense = dataOfRow(v)
+    local position, surface_index, name, detect, defense = dataOfRow(v)
     local _, camera = flib_gui.add(table, {
         { type = "camera",
           position = position,
           style = "dart_camera",
-          surface_index = v.radar.surface_index,
+          zoom = 0.6,
+          surface_index = surface_index,
           { type = "label", style = "dart_minimap_label", caption = name }
 
         },
@@ -69,17 +69,22 @@ local function appendTableRow(table, v)
     camera.entity = v.radar
 end
 
+--- @param v RadarOnPlatform
 local function updateTableRow(table, v, at_row)
-    local run, position = dataOfRow(v)
-    local offset = at_row * 1 + 1
-    local minimap = table.children[offset]
-    minimap.children[1].caption = run
+    local position, surface_index, name, detect, defense = dataOfRow(v)
+    local offset = at_row * 3 + 1
+    local camera = table.children[offset]
+    camera.position = position
+    camera.surface_index = surface_index
+    camera.children[1].caption = name
     -- workaround to prevent a race condition if radar has been deleted meanwhile before next update event occured
     if (position) then
-        minimap.position = position
+        camera.position = position
     else
-        minimap.enabled = false
+        camera.enabled = false
     end
+    table.children[offset + 1].caption = detect
+    table.children[offset + 2].caption = defense
 end
 -- ###############################################################
 

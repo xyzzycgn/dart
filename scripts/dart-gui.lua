@@ -22,7 +22,7 @@ end
 --- @param elems GuiAndElements
 --- @param pons Pons
 local function update_turrets(elems, pons)
-    Log.logBlock("update_turrets NYI", function(m)log(m)end, Log.WARN)
+    turrets.update(elems, pons.turretsOnPlatform)
 end
 
 local switch = {
@@ -31,7 +31,7 @@ local switch = {
 }
 
 local function update_gui(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINER)
+    Log.logLine(event, function(m)log(m)end, Log.FINE)
 
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
@@ -103,8 +103,9 @@ local function change_tab(gui, event)
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
         pd.guis.open.activeTab = tab.selected_tab_index
+        event.entity = pd.guis.open.entity -- pimp the event ;-)
+        update_gui(event)
     end
-    update_gui(event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -197,6 +198,7 @@ local function openNewGui(player_index, gui, elems, entity)
     local nextgui =  {
         gui = gui,
         elems = elems,
+        entity = entity,
     }
     pd.guis.recentlyopen = pd.guis.recentlyopen or {}
     pd.guis.recentlyopen[#pd.guis.recentlyopen + 1] = pd.guis.open
@@ -232,29 +234,12 @@ local function gui_open(event)
         update_gui(event)
     end
 end
--- ###############################################################
-
---local function tabChanged(event)
---    Log.logBlock(event, function(m)log(m)end, Log.FINE)
---    --
---    --
---    --local which = event.element
---    --local ndx = which.selected_tab_index
---    --
---end
---###############################################################
 
 -- GUI events - TBC
 local dart_gui = {}
 
 dart_gui.events = {
     [defines.events.on_gui_opened] = gui_open,
-    --[defines.events.on_gui_selected_tab_changed] = tabChanged,
-}
-
--- handling of GUI updates (every second - easy way but not very efficient, TODO update only if necessary)
-dart_gui.on_nth_tick = {
-    [60] = update_gui
 }
 
 
