@@ -240,6 +240,10 @@ local dart_gui = {}
 
 dart_gui.events = {
     [defines.events.on_gui_opened] = gui_open,
+
+    -- defined in internalEvents.lua
+    [on_dart_component_build_event] = update_gui,
+    [on_dart_component_removed_event] = update_gui,
 }
 
 

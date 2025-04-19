@@ -14,3 +14,9 @@ on_asteroid_lost_event = script.generate_event_name()
 log("registered on_asteroid_lost_event: " .. on_asteroid_lost_event)
 on_target_destroyed_event = script.generate_event_name()
 log("registered on_target_destroyed_event: " .. on_target_destroyed_event)
+
+
+on_dart_component_build_event = script.generate_event_name()
+log("registered on_dart_component_build_event: " .. on_dart_component_build_event)
+on_dart_component_removed_event = script.generate_event_name()
+log("registered on_dart_component_removed_event: " .. on_dart_component_removed_event)
