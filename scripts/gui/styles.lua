@@ -132,10 +132,16 @@ styles.dart_minimap = {
 
 styles.dart_minimap_label = {
   type = "label_style",
-  font = "default-game",
-  font_color = default_font_color,
+  font = "default-small",
+  font_color = { 0, 0.7, 0 },
   size = 90,
   vertical_align = "bottom",
-  horizontal_align = "right",
+  horizontal_align = "left",
   right_padding = 4,
+}
+
+styles.dart_camera = {
+    type = "camera_style",
+    size = 90,
+    padding = 4,
 }

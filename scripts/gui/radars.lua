@@ -23,17 +23,19 @@ function radars.build()
             {
                 type = "scroll-pane",
                 { type = "table",
-                  column_count = 1,
+                  column_count = 3,
                   draw_horizontal_line_after_headers = true,
                   style = "dart_table_style",
                   name = "radars_table",
-                  visible = true, -- TODO false
+                  zoom = 0.6,
+                  visible = false,
                   { type = "label", caption = { "gui.dart-radar-unit" }, style = "dart_stretchable_label_style", },
+                  { type = "label", caption = { "gui.dart-radar-detect" }, style = "dart_stretchable_label_style", },
+                  { type = "label", caption = { "gui.dart-radar-defense" }, style = "dart_stretchable_label_style", },
                 }
             },
         }
     }
-
 end
 
 --- @param elems table<string, LuaGuiElement>
@@ -46,27 +48,25 @@ end
 local function dataOfRow(data)
     Log.logBlock(data, function(m)log(m)end, Log.FINER)
 
-    return data.radar.unit_number, data.radar.position
+    return data.radar.position, data.radar.backer_name, data.detectionRange, data.defenseRange
 end
 
 --- @param v RadarOnPlatform
 local function appendTableRow(table, v)
-    local run, position = dataOfRow(v)
-    flib_gui.add(table,  {
-        { type = "minimap",
-          style = "dart_minimap",
+    local position, name, detect, defense = dataOfRow(v)
+    local _, camera = flib_gui.add(table, {
+        { type = "camera",
           position = position,
-          zoom = 5,
+          style = "dart_camera",
+          surface_index = v.radar.surface_index,
+          { type = "label", style = "dart_minimap_label", caption = name }
 
-          -- TODO camera shows nothing / isn't rendered properly
-          --type = "camera",
-          --position = position,
-          --entity = v.radar,
-          --surface_index = v.radar.surface_index,
-
-          { type = "label", style = "dart_minimap_label", caption = run }
         },
+        { type = "label", style = "dart_stretchable_label_style", caption = detect },
+        { type = "label", style = "dart_stretchable_label_style", caption = defense },
     })
+
+    camera.entity = v.radar
 end
 
 local function updateTableRow(table, v, at_row)
