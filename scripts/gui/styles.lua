@@ -66,10 +66,6 @@ styles.dart_tabbed_pane = {
     tab_content_frame = {
         type = "frame_style",
         parent = "tabbed_pane_frame",
-        --vertically_stretchable = "on",
-        --horizontally_stretchable = "on",
-        --vertically_squashable = "on",
-        --horizontally_squashable = "on",
         left_padding = 12,
         right_padding = 12,
         bottom_padding = 8,
@@ -101,18 +97,6 @@ styles.dart_small_slot_table_frame = {
   type = "frame_style",
   minimal_height = 36,
   padding = 0,
-  --background_graphical_set = {
-  --  base = {
-  --    position = { 282, 17 },
-  --    corner_size = 8,
-  --    overall_tiling_horizontal_padding = 4,
-  --    overall_tiling_horizontal_size = 28,
-  --    overall_tiling_horizontal_spacing = 8,
-  --    overall_tiling_vertical_padding = 4,
-  --    overall_tiling_vertical_size = 28,
-  --    overall_tiling_vertical_spacing = 8,
-  --  },
-  --},
 }
 
 for _, color in ipairs({ "default", "red", "green", "blue" }) do
@@ -134,14 +118,12 @@ styles.dart_minimap_label = {
   type = "label_style",
   font = "default-small",
   font_color = { 0, 0.7, 0 },
-  size = 90,
+  width = 90,
   vertical_align = "bottom",
   horizontal_align = "left",
-  right_padding = 4,
 }
 
 styles.dart_camera = {
     type = "camera_style",
     size = 90,
-    padding = 4,
 }

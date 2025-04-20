@@ -54,29 +54,33 @@ end
 local function appendTableRow(table, v)
     local position, surface_index, name, detect, defense = dataOfRow(v)
     local _, camera = flib_gui.add(table, {
-        { type = "camera",
-          position = position,
-          style = "dart_camera",
-          zoom = 0.6,
-          surface_index = surface_index,
-          { type = "label", style = "dart_minimap_label", caption = name }
-
+        {
+            type = "frame",
+            direction = "vertical",
+            { type = "camera",
+              position = position,
+              style = "dart_camera",
+              zoom = 0.6,
+              surface_index = surface_index,
+            },
+            { type = "label", style = "dart_minimap_label", caption = name },
         },
         { type = "label", style = "dart_stretchable_label_style", caption = detect },
         { type = "label", style = "dart_stretchable_label_style", caption = defense },
     })
 
-    camera.entity = v.radar
+    camera.children[1].entity = v.radar
 end
 
 --- @param v RadarOnPlatform
 local function updateTableRow(table, v, at_row)
     local position, surface_index, name, detect, defense = dataOfRow(v)
     local offset = at_row * 3 + 1
-    local camera = table.children[offset]
+    local cframe = table.children[offset]
+    local camera = cframe.children[1]
     camera.position = position
     camera.surface_index = surface_index
-    camera.children[1].caption = name
+    cframe.children[2].caption = name
     -- workaround to prevent a race condition if radar has been deleted meanwhile before next update event occured
     if (position) then
         camera.position = position

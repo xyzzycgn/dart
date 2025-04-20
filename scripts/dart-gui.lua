@@ -133,7 +133,7 @@ local function build(player, entity)
             direction = "vertical",
             visible = false,
             handler = { [defines.events.on_gui_closed] = handlers.close_gui },
-            --style = "rldman_top_frame",
+            style = "dart_top_frame",
             {
                 type = "flow",
                 direction = "horizontal",
