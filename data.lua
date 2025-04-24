@@ -5,6 +5,7 @@
 local Log = require("__log4factorio__.Log")
 Log.setSeverity(Log.FINE)
 local data_util = require('__flib__.data-util')
+local meld = require('meld') -- from lualib
 
 require("scripts.gui.styles") -- introduces styles specific for D.A.R.T
 
@@ -82,12 +83,31 @@ dart_fcc_recipe.ingredients = {
 
 --- create the D.A.R.T-fcc entity
 local dart_fcc_entity = data_util.copy_prototype(data.raw['constant-combinator']['constant-combinator'], "dart-fcc")
-dart_fcc_entity.icon = "__base__/graphics/icons/constant-combinator.png" -- TODO
+
+Log.logBlock(dart_fcc_entity, function(m)log(m)end, Log.FINE)
+
+dart_fcc_entity.icon = "__dart__/graphics/icons/fcc.png"
 dart_fcc_entity.icon_size = 64
 dart_fcc_entity.icon_mipmaps = 4
 dart_fcc_entity.next_upgrade = nil
 dart_fcc_entity.fast_replaceable_group = nil
 dart_fcc_entity.surface_conditions = surface_conditions()
+
+local image = "__dart__/graphics/entity/fcc.png"
+local dart_fcc_entity_update = {
+    sprites = {
+        east = {},
+        west = {},
+        north = {},
+        south = {},
+    }
+}
+dart_fcc_entity_update.sprites.east.layers  = {{ filename  = image }}
+dart_fcc_entity_update.sprites.west.layers  = {{ filename  = image }}
+dart_fcc_entity_update.sprites.north.layers = {{ filename  = image }}
+dart_fcc_entity_update.sprites.south.layers = {{ filename  = image }}
+
+dart_fcc_entity = meld(dart_fcc_entity, dart_fcc_entity_update)
 
 Log.logBlock(dart_fcc_entity, function(m)log(m)end, Log.FINER)
 
@@ -134,7 +154,7 @@ dart_radar_item.order = order .. "-a"
 
 --- create the D.A.R.T-fcc item
 local dart_fcc_item = data_util.copy_prototype(data.raw["item"]["constant-combinator"], "dart-fcc")
-dart_fcc_item.icon = "__base__/graphics/icons/constant-combinator.png" -- TODO
+dart_fcc_item.icon = "__dart__/graphics/icons/fcc.png"
 dart_fcc_item.icon_size = 64
 dart_fcc_item.icon_mipmaps = 4
 dart_fcc_item. fast_replaceable_group = nil
