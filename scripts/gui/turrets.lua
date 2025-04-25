@@ -86,22 +86,32 @@ local function networkConditions(networks, prefix)
         Log.logBlock(cc.first_signal, function(m)log(m)end, Log.FINE)
 
         conditions[#conditions + 1] = {
-            type = "frame",
+            type = "flow",
             direction = "horizontal",
-            { type = "choose-elem-button", elem_type = "signal", name = prefix .. #conditions, },
-            { type = "label", style = "dart_stretchable_label_style", caption = cc.comparator },
-            { type = "label", style = "dart_stretchable_label_style", caption = cc.constant,  }, -- TODO or second_signal
+            { type = "choose-elem-button", elem_type = "signal", name = prefix .. #conditions,
+              ignored_by_interaction = true,
+            },
+            { type = "button",
+              style = "dropdown_button",
+              caption = cc.comparator,
+              ignored_by_interaction = true,
+              style_mods = { minimal_width = 28, top_margin = 6, vertical_align = "center", }
+            },
+            { type = "label",
+              style = "dart_stretchable_label_style",
+              caption = cc.constant,
+              style_mods = { top_margin = 10 } }, -- TODO or second_signal
         }
         add_params[#add_params + 1] = cc.first_signal
     end
 
     return {
-        type = "frame",
+        type = "flow",
         direction = "vertical",
         conditions[1],
         conditions[2],
     }, {
-        type = "frame",
+        type = "flow",
         direction = "vertical",
         nw_numbers[1],
         nw_numbers[2],
