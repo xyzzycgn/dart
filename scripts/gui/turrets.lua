@@ -7,42 +7,16 @@ local components = require("scripts/gui/components")
 local flib_gui = require("__flib__.gui")
 
 local turrets = {}
+local redAndGreenWC = { defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }
 
-function turrets.build()
-    return {
-        tab = {
-            { type = "tab",
-              caption = { "gui.dart-turrets" },
-              name = "turrets_tab",
-            }
-        },
-        content = {
-            type = "frame", direction = "vertical",
-            style = "dart_deep_frame",
-            name = "turrets_tab_content",
-            {
-                type = "scroll-pane",
-                { type = "table",
-                  column_count = 3,
-                  draw_horizontal_line_after_headers = true,
-                  style = "dart_table_style",
-                  name = "turrets_table",
-                  visible = false,
-                  { type = "label", caption = { "gui.dart-turret-unit" }, style = "dart_stretchable_label_style", },
-                  { type = "label", caption = { "gui.dart-turret-cn" }, style = "dart_stretchable_label_style", },
-                  { type = "label", caption = { "gui.dart-turret-cond" }, style = "dart_stretchable_label_style", },
-                }
-            },
-        }
-    }
-end
 
 --- @param elems table<string, LuaGuiElement>
 local function getTableAndTab(elems)
     return elems.turrets_table, elems.turrets_tab
 end
--- ###############################################################
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- returns position of turret, surface_index of turret and an array with all circuit networks of turret
 --- @param top TurretOnPlatform
 local function dataOfRow(top)
     Log.logBlock(top, function(m)log(m)end, Log.FINER)
@@ -50,7 +24,7 @@ local function dataOfRow(top)
     local cb = top.control_behavior
 
     local networks = {}
-    for connector, wc in pairs({ defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }) do
+    for connector, wc in pairs(redAndGreenWC) do
         ---  @type LuaCircuitNetwork
         local cn = cb.get_circuit_network(wc)
 
@@ -72,59 +46,72 @@ local col_style = {
      [defines.wire_connector_id.circuit_green] =  "green_label",
 }
 
-local function networkConditions(networks, prefix)
+--- @param networks any array with all circuit networks of turret
+--- @param nwOfFcc any array with the IDs of the circuitnetworks of the fcc managed in this gui
+local function networkConditions(networks, prefix, nwOfFcc)
     local conditions = {}
     local add_params = {}
     local nw_numbers = {}
 
     for conn, nw in pairs(networks) do
-        nw_numbers[#nw_numbers + 1] =
-            { type = "label", style = "dart_stretchable_label_style", caption = nw.network_id, style = col_style[conn] }
+        if (nwOfFcc[nw.network_id]) then
+            -- network of turret is connected to fcc managed in gui
+            nw_numbers[#nw_numbers + 1] =
+                { type = "label", style = "dart_stretchable_label_style", caption = nw.network_id, style = col_style[conn] }
 
-        ---@type CircuitCondition
-        local cc = nw.circuit_condition
-        Log.logBlock(cc.first_signal, function(m)log(m)end, Log.FINE)
+            ---@type CircuitCondition
+            local cc = nw.circuit_condition
+            Log.logBlock(cc.first_signal, function(m)log(m)end, Log.FINE)
 
-        conditions[#conditions + 1] = {
-            type = "flow",
-            direction = "horizontal",
-            { type = "choose-elem-button", elem_type = "signal", name = prefix .. #conditions,
-              ignored_by_interaction = true,
-            },
-            { type = "button",
-              style = "dropdown_button",
-              caption = cc.comparator,
-              ignored_by_interaction = true,
-              style_mods = { minimal_width = 28, top_margin = 6, vertical_align = "center", }
-            },
-            { type = "label",
-              style = "dart_stretchable_label_style",
-              caption = cc.constant,
-              style_mods = { top_margin = 10 } }, -- TODO or second_signal
-        }
-        add_params[#add_params + 1] = cc.first_signal
+            conditions[#conditions + 1] = {
+                type = "flow",
+                direction = "horizontal",
+                { type = "choose-elem-button", elem_type = "signal", name = prefix .. #conditions,
+                  ignored_by_interaction = true,
+                },
+                { type = "button",
+                  style = "dropdown_button",
+                  caption = cc.comparator,
+                  ignored_by_interaction = true,
+                  style_mods = { minimal_width = 28, top_margin = 6, vertical_align = "center", }
+                },
+                { type = "label",
+                  style = "dart_stretchable_label_style",
+                  caption = cc.constant, -- TODO or second_signal
+                  style_mods = { top_margin = 10 }
+                },
+            }
+            add_params[#add_params + 1] = cc.first_signal
+        end
+    end
+
+    if #nw_numbers == 0 then
+        -- not connected
+        nw_numbers[1] = { type = "label", style = "dart_stretchable_label_style",
+                          caption = { "gui.dart-turret-offline" }, style = "bold_orange_label" }
     end
 
     return {
         type = "flow",
         direction = "vertical",
-        conditions[1],
-        conditions[2],
+        nw_numbers[1],
+        nw_numbers[2],
     }, {
         type = "flow",
         direction = "vertical",
-        nw_numbers[1],
-        nw_numbers[2],
+        conditions[1],
+        conditions[2],
     },
     add_params
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param v TurretOnPlatform
-local function appendTableRow(table, v)
+--- @param nwOfFcc any array with the IDs of the circuitnetworks of the fcc managed in this gui
+local function appendTableRow(table, v, nwOfFcc)
     local position, surface_index, networks  = dataOfRow(v)
     local prefix = "tur_cc_" .. v.turret.unit_number .. "_"
-    local cc, nwn, add_params = networkConditions(networks, prefix)
+    local nwn, cc, add_params = networkConditions(networks, prefix, nwOfFcc)
 
     Log.logBlock( { cc, add_params }, function(m)log(m)end, Log.FINE)
 
@@ -153,7 +140,7 @@ local function appendTableRow(table, v)
         ndx = ndx + 1
     end
 end
--- ###############################################################
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param v TurretOnPlatform
 local function updateTableRow(table, v, at_row)
@@ -175,9 +162,56 @@ end
 --- @param elems GuiAndElements
 --- @param data TurretOnPlatform[]
 function turrets.update(elems, data)
-    Log.logBlock(data, function(m)log(m)end, Log.FINE)
+    -- fcc managed in gui
+    local entity = elems.entity
+    -- get the circuit networks of it
+    local nwOfFcc = {}
+    for _, wc in pairs(redAndGreenWC) do
+        local cn = entity.get_circuit_network(wc)
+        if cn then
+            nwOfFcc[cn.network_id] = true
+        end
+    end
 
-    components.updateVisualizedData(elems, data, getTableAndTab, appendTableRow, updateTableRow)
+    local function localAppendTableRow(table, v)
+        appendTableRow(table, v, nwOfFcc)
+    end
+
+    components.updateVisualizedData(elems, data, getTableAndTab, localAppendTableRow, updateTableRow)
 end
+-- ###############################################################
+
+function turrets.build()
+    return {
+        tab = {
+            { type = "tab",
+              caption = { "gui.dart-turrets" },
+              name = "turrets_tab",
+            }
+        },
+        content = {
+            type = "frame", direction = "vertical",
+            style = "dart_deep_frame",
+            name = "turrets_tab_content",
+            {
+                type = "scroll-pane",
+                { type = "table",
+                  column_count = 3,
+                  draw_horizontal_line_after_headers = true,
+                  style = "dart_table_style",
+                  name = "turrets_table",
+                  visible = false,
+                    --{ type = "label", caption = { "gui.dart-turret-unit" }, style = "dart_stretchable_label_style", },
+                    --{ type = "label", caption = { "gui.dart-turret-cn" }, style = "dart_stretchable_label_style", },
+                    --{ type = "label", caption = { "gui.dart-turret-cond" }, style = "dart_stretchable_label_style", },
+                  components.sort_checkbox( { "gui.dart-turret-unit" }, nil, true, true),
+                  components.sort_checkbox( { "gui.dart-turret-cn" }, nil, false, false),
+                  components.sort_checkbox( { "gui.dart-turret-cond" }, nil, false, false),
+                }
+            },
+        }
+    }
+end
+-- ###############################################################
 
 return turrets

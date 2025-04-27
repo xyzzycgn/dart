@@ -43,7 +43,7 @@ local function update_gui(event)
             ---  @type LuaEntity
             local entity = event.entity
 
-            -- search the platform
+            -- search the platform in the list of pons owned by player
             --- @type Pons
             local ponsOfEntity
             for _, pons in pairs(pd.pons) do
@@ -53,7 +53,7 @@ local function update_gui(event)
             end
 
             if ponsOfEntity then
-                Log.logBlock(opengui.elems, function(m)log(m)end, Log.FINE)
+                -- show the numbers of known radars and turrets
                 opengui.elems.radars_tab.badge_text = flib_format.number(table_size(ponsOfEntity.radarsOnPlatform))
                 opengui.elems.turrets_tab.badge_text = flib_format.number(table_size(ponsOfEntity.turretsOnPlatform))
 
@@ -155,7 +155,7 @@ local function build(player, entity)
                     handler = { [defines.events.on_gui_click] = handlers.close_gui },
                 },
             },
-            { type = "frame", name = "content_frame", direction = "vertical", -- style = "rldman_content_frame",
+            { type = "frame", name = "content_frame", direction = "vertical", style = "dart_content_frame",
               {
                   type = "frame",
                   style = "entity_button_frame",
@@ -235,7 +235,7 @@ local function gui_open(event)
     end
 end
 
--- GUI events - TBC
+-- GUI events - TODO TBC
 local dart_gui = {}
 
 dart_gui.events = {
