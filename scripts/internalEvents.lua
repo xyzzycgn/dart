@@ -20,3 +20,7 @@ on_dart_component_build_event = script.generate_event_name()
 log("registered on_dart_component_build_event: " .. on_dart_component_build_event)
 on_dart_component_removed_event = script.generate_event_name()
 log("registered on_dart_component_removed_event: " .. on_dart_component_removed_event)
+
+
+on_dart_gui_needs_update = script.generate_event_name()
+log("registered on_dart_gui_needs_update: " .. on_dart_gui_needs_update)

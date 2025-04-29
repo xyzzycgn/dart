@@ -3,7 +3,7 @@
 --- DateTime: 03.03.25 20:51
 ---
 local Log = require("__log4factorio__.Log")
-Log.setSeverity(Log.FINE)
+Log.setSeverity(Log.INFO)
 local data_util = require('__flib__.data-util')
 local meld = require('meld') -- from lualib
 
@@ -109,8 +109,6 @@ Log.logBlock(dart_fcc_entity, function(m)log(m)end, Log.FINER)
 
 --- create the D.A.R.T-radar entity
 local dart_radar_entity = data_util.copy_prototype(data.raw["radar"]["radar"], "dart-radar")
-Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINE)
-
 dart_radar_entity.icon = "__dart__/graphics/icons/radar.png"
 dart_radar_entity.icon_size = 64
 dart_radar_entity.icon_mipmaps = 4

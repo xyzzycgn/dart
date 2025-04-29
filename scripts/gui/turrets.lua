@@ -2,13 +2,96 @@
 --- Created by xyzzycgn.
 --- DateTime: 13.04.25 21:06
 ---
-local Log = require("__log4factorio__.Log")
-local components = require("scripts/gui/components")
 local flib_gui = require("__flib__.gui")
+local Log = require("__log4factorio__.Log")
+local dump = require("scripts/dump")
+local components = require("scripts/gui/components")
+local global_data = require("scripts/global_data")
 
 local turrets = {}
 local redAndGreenWC = { defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }
 
+-- ###############################################################
+
+local function cmpPos(data1, data2)
+    local pos1 = data1.turret.position
+    local pos2 = data2.turret.position
+
+    local x = (pos1.x < pos2.x) or ((pos1.x == pos2.x) and (pos1.y < pos2.y))
+    Log.logBlock(x, function(m)log(m)end, Log.FINE)
+    return x
+end
+
+-- table.sort doesn't work with these tables (not gapless)
+-- because the size (# rows) of these tables shouldn't be large, a modified bubblesort should be fast enough
+local function sort(data, ascending, func)
+    local sortedData = {}
+
+    local ndx = 0
+    for _, row in pairs(data) do
+        for i = 1, #sortedData do
+            if (func(sortedData[i], row) ~= ascending) then
+                table.insert(sortedData, i, row)
+                goto continue
+            end
+        end
+
+        sortedData[#sortedData + 1] = row
+
+       ::continue::
+    end
+
+    return sortedData
+end
+
+
+
+local function sortByUnit(data, ascending)
+    Log.logBlock(data, function(m)log(m)end, Log.FINE)
+
+    local sortedData = sort(data, ascending, cmpPos)
+
+    Log.logBlock(sortedData, function(m)log(m)end, Log.FINE)
+    return sortedData
+end
+
+local function sortByNetwork(data, ascending)
+    Log.log("sortByNetwork NYI", function(m)log(m)end, Log.WARN)
+    return data
+end
+
+local function sortByCondition(data, ascending)
+    Log.log("sortByCondition NYI", function(m)log(m)end, Log.WARN)
+    return data
+end
+
+local sortFields = {
+    unit = "turret-unit",
+    cn = "turret-cn",
+    cond = "turret-cond",
+}
+
+
+local sortFunction = {
+    [sortFields.unit] = sortByUnit,
+    [sortFields.cn] = sortByNetwork,
+    [sortFields.cond] = sortByCondition,
+}
+
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+---  @return Sortings defaults for the turret tab
+function turrets.sortings()
+    return {
+        sorting = {
+            [sortFields.unit] = false,
+            [sortFields.cn] = false,
+            [sortFields.cond] = false,
+        },
+        active = ""
+    }
+end
+-- ###############################################################
 
 --- @param elems table<string, LuaGuiElement>
 local function getTableAndTab(elems)
@@ -150,6 +233,7 @@ local function updateTableRow(table, v, at_row)
     local camera = cframe.children[1]
     camera.position = position
     camera.surface_index = surface_index
+    camera.entity = v.turret
     -- workaround to prevent a race condition if turret has been deleted meanwhile before next update event occured
     if (position) then
         camera.position = position
@@ -157,11 +241,12 @@ local function updateTableRow(table, v, at_row)
         camera.enabled = false
     end
 end
--- ###############################################################
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param elems GuiAndElements
 --- @param data TurretOnPlatform[]
-function turrets.update(elems, data)
+--- @param pd PlayerData
+function turrets.update(elems, data, pd)
     -- fcc managed in gui
     local entity = elems.entity
     -- get the circuit networks of it
@@ -177,9 +262,65 @@ function turrets.update(elems, data)
         appendTableRow(table, v, nwOfFcc)
     end
 
-    components.updateVisualizedData(elems, data, getTableAndTab, localAppendTableRow, updateTableRow)
+    -- sort data
+    local sorteddata = data
+
+    local sortings = pd.guis.open.sortings[2] -- turrets are on 2nd tab
+    local active = sortings.active
+    if (active ~= "") then
+        sorteddata = sortFunction[active](data, sortings.sorting[active])
+    end
+
+    components.updateVisualizedData(elems, sorteddata, getTableAndTab, localAppendTableRow, updateTableRow)
 end
 -- ###############################################################
+
+local function sort_clicked_handler(gui, event)
+    --- @type LuaGuiElement
+    local element =  event.element
+    Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINE)
+
+    local column = element.name
+    local gae = global_data.getPlayer_data(event.player_index).guis.open
+    local sortings = gae.sortings[2] -- turrets are on 2nd tab
+
+    Log.logBlock(sortings, function(m)log(m)end, Log.FINE)
+
+    if (sortings.active == column) then
+        -- toggled sort
+        Log.log("toggled sort", function(m)log(m)end, Log.FINE)
+        sortings.sorting[column] = element.state
+    else
+        Log.log("changed column", function(m)log(m)end, Log.FINE)
+        -- changed sort column
+        element.state = sortings.sorting[column]
+        element.style = "dart_selected_sort_checkbox"
+
+        if sortings.active ~= "" then
+            local prev = gae.elems[sortings.active]
+            prev.style = "dart_sort_checkbox"
+        end
+
+        sortings.active = column
+    end
+
+    script.raise_event(on_dart_gui_needs_update, { player_index = event.player_index, entity = gae.entity } )
+end
+
+
+local handlers = {
+   turret_sort_clicked = sort_clicked_handler
+}
+
+-- register local handlers in flib
+flib_gui.add_handlers(handlers, function(e, handler)
+    local self = global_data.getPlayer_data(e.player_index).guis.open.gui
+    if self then
+        handler(self, e)
+    end
+end)
+
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 function turrets.build()
     return {
@@ -204,9 +345,9 @@ function turrets.build()
                     --{ type = "label", caption = { "gui.dart-turret-unit" }, style = "dart_stretchable_label_style", },
                     --{ type = "label", caption = { "gui.dart-turret-cn" }, style = "dart_stretchable_label_style", },
                     --{ type = "label", caption = { "gui.dart-turret-cond" }, style = "dart_stretchable_label_style", },
-                  components.sort_checkbox( { "gui.dart-turret-unit" }, nil, true, true),
-                  components.sort_checkbox( { "gui.dart-turret-cn" }, nil, false, false),
-                  components.sort_checkbox( { "gui.dart-turret-cond" }, nil, false, false),
+                  components.sort_checkbox( "turret-unit", nil, false, false, handlers.turret_sort_clicked),
+                  components.sort_checkbox( "turret-cn", nil, false, false, handlers.turret_sort_clicked),
+                  components.sort_checkbox( "turret-cond", nil, false, false, handlers.turret_sort_clicked),
                 }
             },
         }

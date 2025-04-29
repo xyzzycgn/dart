@@ -158,6 +158,21 @@ function dump.dumpControlBehavior(cb)
 
     return dcb
 end
+-- ###############################################################
 
+--- @param lge LuaGuiElement
+function dump.dumpLuaGuiElement(lge)
+    local dlge = lge and {
+        type = lge.type,
+        children_names = lge.children_names,
+        enabled = lge.enabled,
+        tags = lge.tags,
+        caption = lge.caption,
+        name = lge.name,
+        index = lge.index,
+    } or {}
+
+    return dlge
+end
 
 return dump

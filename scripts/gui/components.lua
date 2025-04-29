@@ -7,6 +7,26 @@ local flib_format = require("__flib__.format")
 
 local components =  {}
 
+
+--- Creates a column header with a sort toggle.
+--- @param name string used for name and (as base) for caption
+--- @param tooltip string
+--- @param sortByThis boolean true sort by this column
+--- @param state boolean true = ascending
+--- @param handler function eventHandler
+function components.sort_checkbox(name, tooltip, sortByThis, state, handler)
+    return {
+        type = "checkbox",
+        style = sortByThis and "dart_selected_sort_checkbox" or "dart_sort_checkbox",
+        caption = { "gui.dart-" .. name },
+        tooltip = tooltip,
+        state = state,
+        name = name,
+        handler = { [defines.events.on_gui_checked_state_changed] = handler }
+    }
+end
+-- ###############################################################
+
 function components.slot_table(name, size)
     size = size or 4
     return {
@@ -111,7 +131,7 @@ end
 function components.updateVisualizedData(gae, data,
                                          getTableAndTab, appendTableRow, updateTableRow, funcRemoveTableRow)
     funcRemoveTableRow = funcRemoveTableRow or components.removeTableRow
-    Log.logBlock(data, function(m)log(m)end, Log.FINER)
+    Log.logBlock(data, function(m)log(m)end, Log.FINE)
     local table, tab = getTableAndTab(gae.elems)
     local new_number = table_size(data)
     local rows = gae.rowsShownLastInTab or {}

@@ -3,6 +3,8 @@
 --- DateTime: 26.12.24 06:01
 ---
 
+local flib_data_util = require("__flib__.data-util")
+
 local styles = data.raw["gui-style"].default
 
 styles.dart_top_frame = {
@@ -126,4 +128,45 @@ styles.dart_minimap_label = {
 styles.dart_camera = {
     type = "camera_style",
     size = 90,
+}
+
+local function graphical_set(filename)
+    return { filename = "__core__/graphics/arrows/" .. filename, size = { 16, 16 }, scale = 0.5, }
+end
+
+local empty_checkmark = {
+    filename = flib_data_util.empty_image,
+    priority = "very-low",
+    width = 1,
+    height = 1,
+    frame_count = 1,
+    scale = 8,
+}
+
+-- inactive is grey until hovered
+-- checked = ascending, unchecked = descending
+styles.dart_sort_checkbox = {
+    type = "checkbox_style",
+    font = "default-bold",
+    padding = 0,
+    default_graphical_set = graphical_set("table-header-sort-arrow-down-white.png"),
+    hovered_graphical_set = graphical_set("table-header-sort-arrow-down-hover.png"),
+    clicked_graphical_set = graphical_set("table-header-sort-arrow-down-white.png"),
+    disabled_graphical_set = graphical_set("table-header-sort-arrow-down-white.png"),
+    selected_graphical_set = graphical_set("table-header-sort-arrow-up-white.png"),
+    selected_hovered_graphical_set = graphical_set("table-header-sort-arrow-up-hover.png"),
+    selected_clicked_graphical_set = graphical_set("table-header-sort-arrow-up-white.png"),
+    selected_disabled_graphical_set = graphical_set("table-header-sort-arrow-up-white.png"),
+    checkmark = empty_checkmark,
+    disabled_checkmark = empty_checkmark,
+    text_padding = 5,
+    horizontally_stretchable = "stretch_and_expand",
+}
+
+-- selected is orange by default
+styles.dart_selected_sort_checkbox = {
+    type = "checkbox_style",
+    parent = "dart_sort_checkbox",
+    default_graphical_set = graphical_set("table-header-sort-arrow-down-active.png"),
+    selected_graphical_set = graphical_set("table-header-sort-arrow-up-active.png"),
 }

@@ -2,14 +2,19 @@
 --- Created by xyzzycgn.
 ---
 
---- @class GuiAndElements
+--- @class Sortings any sorting parameters for all columns in a table
+--- @field sorting boolean[] true = ascending
+--- @field active int index of column used for sorting, -1 means no sorting
+
+--- @class GuiAndElements any
 --- @field gui LuaGuiElement top level Element of the gui
---- @field entity LuaEntity Entity shown in gui
 --- @field elems table<string, LuaGuiElement>
+--- @field entity LuaEntity Entity shown in gui
 --- @field activeTab int|nil (optional) ndx of active tab
 --- @field rowsShownLastInTab int[] (optional) number of rows shown in table on tab n the last time
+--- @field sortings Sortings[] (optional) sorting parameters for all columns in table on tab n
 
---- @class GuiData
+--- @class GuiData any
 --- @field recentlyopen GuiAndElements[] previously opened guis (hidden after opening a new one)
 --- @field open GuiAndElements
 

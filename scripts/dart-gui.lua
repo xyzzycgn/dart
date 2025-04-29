@@ -15,14 +15,16 @@ local flib_format = require("__flib__.format")
 
 --- @param elems GuiAndElements
 --- @param pons Pons
-local function update_radars(elems, pons)
-    radars.update(elems, pons.radarsOnPlatform)
+--- @param pd PlayerData
+local function update_radars(elems, pons, pd)
+    radars.update(elems, pons.radarsOnPlatform, pd)
 end
 
 --- @param elems GuiAndElements
 --- @param pons Pons
-local function update_turrets(elems, pons)
-    turrets.update(elems, pons.turretsOnPlatform)
+--- @param pd PlayerData
+local function update_turrets(elems, pons, pd)
+    turrets.update(elems, pons.turretsOnPlatform, pd)
 end
 
 local switch = {
@@ -59,7 +61,7 @@ local function update_gui(event)
 
                 local func = switch[opengui.activeTab]
                 if (func) then
-                    func(opengui, ponsOfEntity)
+                    func(opengui, ponsOfEntity, pd)
                 else
                     Log.log("no func for ndx=" .. opengui.activeTab, function(m)log(m)end, Log.WARN)
                 end
@@ -230,6 +232,12 @@ local function gui_open(event)
         elems.fcc_view.entity = entity
         pd.guis.open.activeTab = 1
 
+        -- prepare sorting
+        local allSortings = pd.guis.open.sortings or {}
+        allSortings[1] = allSortings[1] or radars.sortings()
+        allSortings[2] = allSortings[2] or turrets.sortings()
+        pd.guis.open.sortings = allSortings
+
         Log.logLine(gae, function(m)log(m)end, Log.FINE)
         update_gui(event)
     end
@@ -244,6 +252,7 @@ dart_gui.events = {
     -- defined in internalEvents.lua
     [on_dart_component_build_event] = update_gui,
     [on_dart_component_removed_event] = update_gui,
+    [on_dart_gui_needs_update] = update_gui,
 }
 
 

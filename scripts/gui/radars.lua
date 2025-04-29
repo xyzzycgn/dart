@@ -8,35 +8,6 @@ local flib_gui = require("__flib__.gui")
 
 local radars = {}
 
-function radars.build()
-    return {
-        tab = {
-            { type = "tab",
-              caption = { "gui.dart-radars" },
-              name = "radars_tab",
-            }
-        },
-        content = {
-            type = "frame", direction = "vertical",
-            style = "dart_deep_frame",
-            name = "radars_tab_content",
-            {
-                type = "scroll-pane",
-                { type = "table",
-                  column_count = 3,
-                  draw_horizontal_line_after_headers = true,
-                  style = "dart_table_style",
-                  name = "radars_table",
-                  visible = false,
-                  { type = "label", caption = { "gui.dart-radar-unit" }, style = "dart_stretchable_label_style", },
-                  { type = "label", caption = { "gui.dart-radar-detect" }, style = "dart_stretchable_label_style", },
-                  { type = "label", caption = { "gui.dart-radar-defense" }, style = "dart_stretchable_label_style", },
-                }
-            },
-        }
-    }
-end
-
 --- @param elems table<string, LuaGuiElement>
 local function getTableAndTab(elems)
     return elems.radars_table, elems.radars_tab
@@ -99,6 +70,43 @@ function radars.update(elems, data)
 
     components.updateVisualizedData(elems, data, getTableAndTab, appendTableRow, updateTableRow)
 end
+-- ###############################################################
 
+--- @return any content for the radars tab
+function radars.build()
+    return {
+        tab = {
+            { type = "tab",
+              caption = { "gui.dart-radars" },
+              name = "radars_tab",
+            }
+        },
+        content = {
+            type = "frame", direction = "vertical",
+            style = "dart_deep_frame",
+            name = "radars_tab_content",
+            {
+                type = "scroll-pane",
+                { type = "table",
+                  column_count = 3,
+                  draw_horizontal_line_after_headers = true,
+                  style = "dart_table_style",
+                  name = "radars_table",
+                  visible = false,
+                  { type = "label", caption = { "gui.dart-radar-unit" }, style = "dart_stretchable_label_style", },
+                  { type = "label", caption = { "gui.dart-radar-detect" }, style = "dart_stretchable_label_style", },
+                  { type = "label", caption = { "gui.dart-radar-defense" }, style = "dart_stretchable_label_style", },
+                }
+            },
+        }
+    }
+end
+-- ###############################################################
+
+--- prepared for future use
+---  @return Sortings for the radar tab
+function radars.sortings()
+    return {}
+end
 
 return radars
