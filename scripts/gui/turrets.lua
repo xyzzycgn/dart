@@ -13,17 +13,9 @@ local redAndGreenWC = { defines.wire_connector_id.circuit_red, defines.wire_conn
 
 -- ###############################################################
 
-local function cmpPos(data1, data2)
-    local pos1 = data1.turret.position
-    local pos2 = data2.turret.position
-
-    local x = (pos1.x < pos2.x) or ((pos1.x == pos2.x) and (pos1.y < pos2.y))
-    Log.logBlock(x, function(m)log(m)end, Log.FINE)
-    return x
-end
-
 -- table.sort doesn't work with these tables (not gapless)
--- because the size (# rows) of these tables shouldn't be large, a modified bubblesort should be fast enough
+-- because the size (# rows) of these tables shouldn't be large, a variant of bubblesort should be fast enough
+-- although it's O(n²) ;-)
 local function sort(data, ascending, func)
     local sortedData = {}
 
@@ -43,23 +35,44 @@ local function sort(data, ascending, func)
 
     return sortedData
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param data1 TurretOnPlatform
+--- @param data2 TurretOnPlatform
+local function cmpPos(data1, data2)
+    local pos1 = data1.turret.position
+    local pos2 = data2.turret.position
+
+    local x = (pos1.x < pos2.x) or ((pos1.x == pos2.x) and (pos1.y < pos2.y))
+    return x
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param data1 TurretOnPlatform
+--- @param data2 TurretOnPlatform
+local function cmpNet(data1, data2)
+    local pos1 = data1.turret.position
+    local pos2 = data2.turret.position
+
+    local x = (pos1.x < pos2.x) or ((pos1.x == pos2.x) and (pos1.y < pos2.y))
+    return x
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-
+--- @param data TurretOnPlatform[]
 local function sortByUnit(data, ascending)
-    Log.logBlock(data, function(m)log(m)end, Log.FINE)
-
-    local sortedData = sort(data, ascending, cmpPos)
-
-    Log.logBlock(sortedData, function(m)log(m)end, Log.FINE)
-    return sortedData
+    return sort(data, ascending, cmpPos)
 end
 
+--- @param data TurretOnPlatform[]
 local function sortByNetwork(data, ascending)
     Log.log("sortByNetwork NYI", function(m)log(m)end, Log.WARN)
     return data
+    --return sort(data, ascending, cmpNet)
 end
 
+--- @param data TurretOnPlatform[]
 local function sortByCondition(data, ascending)
     Log.log("sortByCondition NYI", function(m)log(m)end, Log.WARN)
     return data
@@ -128,84 +141,67 @@ local col_style = {
      [defines.wire_connector_id.circuit_red] =  "red_label",
      [defines.wire_connector_id.circuit_green] =  "green_label",
 }
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param networks any array with all circuit networks of turret
 --- @param nwOfFcc any array with the IDs of the circuitnetworks of the fcc managed in this gui
-local function networkConditions(networks, prefix, nwOfFcc)
-    local condition = nil
-    local add_param = nil
-    local nw_number = nil
+local function networkCondition(networks, nwOfFcc)
+    local lblcaption, lblstyle, cc
 
     local connected_twice = false -- is the turret connected twice
     for conn, nw in pairs(networks) do
         if (nwOfFcc[nw.network_id]) then
-            if nw_number then -- ignore the 2nd connection
+            if lblcaption then -- ignore the 2nd connection
                 connected_twice = true
                 break
             end
             -- network of turret is connected to fcc managed in gui
-            nw_number = { type = "label", style = "dart_stretchable_label_style", caption = nw.network_id, style = col_style[conn] }
+            lblcaption = nw.network_id
+            lblstyle = col_style[conn]
+
 
             ---@type CircuitCondition
-            local cc = nw.circuit_condition
-            Log.logBlock(cc.first_signal, function(m)log(m)end, Log.FINE)
-
-            condition = {
-                type = "flow",
-                direction = "horizontal",
-                { type = "choose-elem-button", elem_type = "signal", name = prefix,
-                  ignored_by_interaction = true,
-                },
-                { type = "button",
-                  style = "dropdown_button",
-                  caption = cc.comparator,
-                  ignored_by_interaction = true,
-                  style_mods = { minimal_width = 28, top_margin = 6, vertical_align = "center", }
-                },
-                { type = "label",
-                  style = "dart_stretchable_label_style",
-                  caption = cc.constant, -- TODO or second_signal
-                  style_mods = { top_margin = 10 }
-                },
-            }
-            add_param = cc.first_signal
+            cc = nw.circuit_condition
+            Log.logBlock(cc.first_signal, function(m)log(m)end, Log.FINER)
         end
     end
 
-    if nw_number then
+    if lblcaption then
         if connected_twice then
-            nw_number = { type = "label", style = "dart_stretchable_label_style",
-                          caption = { "gui.dart-turret-connected-twice" }, style = "bold_orange_label" }
-            condition = nil
-            add_param = nil
+            lblcaption = { "gui.dart-turret-connected-twice" }
+            lblstyle = "bold_orange_label"
+            cc = nil
         end
     else
         -- not connected
-        nw_number = { type = "label", style = "dart_stretchable_label_style",
-                         caption = { "gui.dart-turret-offline" }, style = "bold_red_label" }
+        lblcaption = { "gui.dart-turret-offline" }
+        lblstyle = "bold_red_label"
     end
 
-    return {
-        type = "flow",
-        direction = "vertical",
-        nw_number,
-    }, {
-        type = "flow",
-        direction = "vertical",
-        condition,
-    },
-    add_param
+    return lblcaption, lblstyle, cc
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param v TurretOnPlatform
---- @param nwOfFcc any array with the IDs of the circuitnetworks of the fcc managed in this gui
-local function appendTableRow(table, v, nwOfFcc)
-    local position, surface_index, networks  = dataOfRow(v)
-    local prefix = "tur_cc_" .. v.turret.unit_number .. "_" -- TODO unit_number -> row number
-    local nwn, cc, add_param = networkConditions(networks, prefix, nwOfFcc)
+local function names(ndx)
+    local prefix = "tur_cc_" .. ndx
+    local camera = prefix .. "_camera"
+    local lbl = prefix .. "_lbl"
+    local ceb = prefix .. "_ceb"
+    local ddb = prefix .. "_ddb"
+    local sig2 = prefix .. "_2ndsig"
 
-    Log.logBlock( { cc, add_param }, function(m)log(m)end, Log.FINE)
+    return camera, lbl, ceb, ddb, sig2
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param table LuaGuiElement table to add row
+--- @param v TurretOnPlatform
+--- @param ndx number of row
+--- @param nwOfFcc any array with the IDs of the circuitnetworks of the fcc managed in this gui
+local function appendTableRow(table, v, ndx, nwOfFcc)
+    local position, surface_index, networks  = dataOfRow(v)
+    local lblcaption, lblstyle, cc = networkCondition(networks, nwOfFcc)
+    local camera, lbl, ceb, ddb, sig2 = names(ndx)
 
     local elems, camera = flib_gui.add(table, {
         { type = "camera",
@@ -213,36 +209,79 @@ local function appendTableRow(table, v, nwOfFcc)
           style = "dart_camera",
           zoom = 0.6,
           surface_index = surface_index,
+          name = camera
         },
-        nwn,
-        cc,
+        {
+            type = "label", name = lbl, style = lblstyle, caption = lblcaption,
+        },
+        {
+            type = "flow",
+            direction = "horizontal",
+            { type = "choose-elem-button",
+              elem_type = "signal",
+              ignored_by_interaction = true,
+              name = ceb
+            },
+            { type = "button",
+              style = "dropdown_button",
+              ignored_by_interaction = true,
+              style_mods = { minimal_width = 28, top_margin = 6, vertical_align = "center", },
+              name = ddb
+            },
+            { type = "label",
+              style = "dart_stretchable_label_style",
+              style_mods = { top_margin = 10 },
+              name = sig2
+            },
+        }
     })
-    Log.logBlock( elems, function(m)log(m)end, Log.FINE)
+    Log.logBlock(elems, function(m)log(m)end, Log.FINER)
 
     -- set the entity the camera should follow
     camera.entity = v.turret
-    -- set the value for the choose-elem-button
-    if add_param then
-        local elem = elems[prefix]
-        elem.elem_value = add_param
+    -- set the values for the choose-elem-button, ...
+    if cc then
+        local elem = elems[ceb]
+        elem.elem_value = cc.first_signal
         elem.locked = true
+
+        elems[ddb].caption = cc.comparator
+        elems[sig2].caption = cc.constant -- TODO or second_signal
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param table LuaGuiElement
 --- @param v TurretOnPlatform
-local function updateTableRow(table, v, at_row)
+local function updateTableRow(table, v, at_row, nwOfFcc)
     local position, surface_index, networks  = dataOfRow(v)
-    local offset = at_row * 3 + 1
-    local camera = table.children[offset]
-    camera.position = position
-    camera.surface_index = surface_index
-    camera.entity = v.turret
-    -- workaround to prevent a race condition if turret has been deleted meanwhile before next update event occured
+    local lblcaption, lblstyle, cc = networkCondition(networks, nwOfFcc)
+    local camera, lbl, ceb, ddb, sig2 = names(at_row)
+    local offset = at_row * 3
+
+    local camElem = table[camera]
     if (position) then
-        camera.position = position
+        camElem.position = position
+        camElem.surface_index = surface_index
+        camElem.entity = v.turret
+        camElem.enabled = true
     else
-        camera.enabled = false
+        camElem.enabled = false
+    end
+
+    table[lbl].caption = lblcaption
+    table[lbl].style = lblstyle
+
+    local ccflow = table.children[offset + 3]
+    if cc then
+        ccflow.visible = true
+        ccflow[ceb].elem_value = cc.first_signal
+        ccflow[ceb].locked = true
+
+        ccflow[ddb].caption = cc.comparator
+        ccflow[sig2].caption = cc.constant -- TODO or second_signal
+    else
+        ccflow.visible = false
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -262,8 +301,12 @@ function turrets.update(elems, data, pd)
         end
     end
 
-    local function localAppendTableRow(table, v)
-        appendTableRow(table, v, nwOfFcc)
+    local function localAppendTableRow(table, v, ndx)
+        appendTableRow(table, v, ndx, nwOfFcc)
+    end
+
+    local function localUpdateTableRow(table, v, ndx)
+        updateTableRow(table, v, ndx, nwOfFcc)
     end
 
     -- sort data
@@ -275,27 +318,25 @@ function turrets.update(elems, data, pd)
         sorteddata = sortFunction[active](data, sortings.sorting[active])
     end
 
-    components.updateVisualizedData(elems, sorteddata, getTableAndTab, localAppendTableRow, updateTableRow)
+    components.updateVisualizedData(elems, sorteddata, getTableAndTab, localAppendTableRow, localUpdateTableRow)
 end
 -- ###############################################################
 
 local function sort_clicked_handler(gui, event)
     --- @type LuaGuiElement
     local element =  event.element
-    Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINER)
 
     local column = element.name
     local gae = global_data.getPlayer_data(event.player_index).guis.open
     local sortings = gae.sortings[2] -- turrets are on 2nd tab
 
-    Log.logBlock(sortings, function(m)log(m)end, Log.FINE)
-
     if (sortings.active == column) then
         -- toggled sort
-        Log.log("toggled sort", function(m)log(m)end, Log.FINE)
+        Log.log("toggled sort", function(m)log(m)end, Log.FINER)
         sortings.sorting[column] = element.state
     else
-        Log.log("changed column", function(m)log(m)end, Log.FINE)
+        Log.log("changed column", function(m)log(m)end, Log.FINER)
         -- changed sort column
         element.state = sortings.sorting[column]
         element.style = "dart_selected_sort_checkbox"

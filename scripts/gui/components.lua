@@ -131,13 +131,13 @@ end
 function components.updateVisualizedData(gae, data,
                                          getTableAndTab, appendTableRow, updateTableRow, funcRemoveTableRow)
     funcRemoveTableRow = funcRemoveTableRow or components.removeTableRow
-    Log.logBlock(data, function(m)log(m)end, Log.FINE)
+    Log.logBlock(data, function(m)log(m)end, Log.FINER)
     local table, tab = getTableAndTab(gae.elems)
     local new_number = table_size(data)
     local rows = gae.rowsShownLastInTab or {}
     local old_number = rows[gae.activeTab] or 0
 
-    Log.log("oldn = " .. old_number .. ", newn=" .. new_number, function(m)log(m)end, Log.FINE)
+    Log.log("oldn = " .. old_number .. ", newn=" .. new_number, function(m)log(m)end, Log.FINER)
 
     -- update tab-label with new count
     tab.badge_text = flib_format.number(new_number)
@@ -146,12 +146,12 @@ function components.updateVisualizedData(gae, data,
     for _, v in pairs(data) do
         if (ndx <= new_number) and (ndx <= old_number) then
             -- update existing rows with new data
-            Log.log("update entry@" .. ndx, function(m)log(m)end, Log.FINE)
+            Log.log("update entry@" .. ndx, function(m)log(m)end, Log.FINER)
             updateTableRow(table, v, ndx)
         else
             -- more active => add new entries at the end of table
-            Log.log("add new entry at end", function(m)log(m)end, Log.FINE)
-            appendTableRow(table, v)
+            Log.log("add new entry at end", function(m)log(m)end, Log.FINER)
+            appendTableRow(table, v, ndx)
         end
         ndx = ndx + 1
     end
@@ -160,7 +160,7 @@ function components.updateVisualizedData(gae, data,
         -- less active => remove entries at the end of table
         local firstRow2remove = ndx
         while (ndx <= old_number) do
-            Log.log("remove old entry@" .. ndx, function(m)log(m)end, Log.FINE)
+            Log.log("remove old entry@" .. ndx, function(m)log(m)end, Log.FINER)
             funcRemoveTableRow(table, firstRow2remove)
             ndx = ndx + 1
         end
