@@ -132,24 +132,28 @@ local col_style = {
 --- @param networks any array with all circuit networks of turret
 --- @param nwOfFcc any array with the IDs of the circuitnetworks of the fcc managed in this gui
 local function networkConditions(networks, prefix, nwOfFcc)
-    local conditions = {}
-    local add_params = {}
-    local nw_numbers = {}
+    local condition = nil
+    local add_param = nil
+    local nw_number = nil
 
+    local connected_twice = false -- is the turret connected twice
     for conn, nw in pairs(networks) do
         if (nwOfFcc[nw.network_id]) then
+            if nw_number then -- ignore the 2nd connection
+                connected_twice = true
+                break
+            end
             -- network of turret is connected to fcc managed in gui
-            nw_numbers[#nw_numbers + 1] =
-                { type = "label", style = "dart_stretchable_label_style", caption = nw.network_id, style = col_style[conn] }
+            nw_number = { type = "label", style = "dart_stretchable_label_style", caption = nw.network_id, style = col_style[conn] }
 
             ---@type CircuitCondition
             local cc = nw.circuit_condition
             Log.logBlock(cc.first_signal, function(m)log(m)end, Log.FINE)
 
-            conditions[#conditions + 1] = {
+            condition = {
                 type = "flow",
                 direction = "horizontal",
-                { type = "choose-elem-button", elem_type = "signal", name = prefix .. #conditions,
+                { type = "choose-elem-button", elem_type = "signal", name = prefix,
                   ignored_by_interaction = true,
                 },
                 { type = "button",
@@ -164,28 +168,33 @@ local function networkConditions(networks, prefix, nwOfFcc)
                   style_mods = { top_margin = 10 }
                 },
             }
-            add_params[#add_params + 1] = cc.first_signal
+            add_param = cc.first_signal
         end
     end
 
-    if #nw_numbers == 0 then
+    if nw_number then
+        if connected_twice then
+            nw_number = { type = "label", style = "dart_stretchable_label_style",
+                          caption = { "gui.dart-turret-connected-twice" }, style = "bold_orange_label" }
+            condition = nil
+            add_param = nil
+        end
+    else
         -- not connected
-        nw_numbers[1] = { type = "label", style = "dart_stretchable_label_style",
-                          caption = { "gui.dart-turret-offline" }, style = "bold_orange_label" }
+        nw_number = { type = "label", style = "dart_stretchable_label_style",
+                         caption = { "gui.dart-turret-offline" }, style = "bold_red_label" }
     end
 
     return {
         type = "flow",
         direction = "vertical",
-        nw_numbers[1],
-        nw_numbers[2],
+        nw_number,
     }, {
         type = "flow",
         direction = "vertical",
-        conditions[1],
-        conditions[2],
+        condition,
     },
-    add_params
+    add_param
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -193,34 +202,30 @@ end
 --- @param nwOfFcc any array with the IDs of the circuitnetworks of the fcc managed in this gui
 local function appendTableRow(table, v, nwOfFcc)
     local position, surface_index, networks  = dataOfRow(v)
-    local prefix = "tur_cc_" .. v.turret.unit_number .. "_"
-    local nwn, cc, add_params = networkConditions(networks, prefix, nwOfFcc)
+    local prefix = "tur_cc_" .. v.turret.unit_number .. "_" -- TODO unit_number -> row number
+    local nwn, cc, add_param = networkConditions(networks, prefix, nwOfFcc)
 
-    Log.logBlock( { cc, add_params }, function(m)log(m)end, Log.FINE)
+    Log.logBlock( { cc, add_param }, function(m)log(m)end, Log.FINE)
 
-    local elems, cameraframe = flib_gui.add(table, {
-        {
-            type = "frame",
-            direction = "vertical",
-            { type = "camera",
-              position = position,
-              style = "dart_camera",
-              zoom = 0.6,
-              surface_index = surface_index,
-            },
+    local elems, camera = flib_gui.add(table, {
+        { type = "camera",
+          position = position,
+          style = "dart_camera",
+          zoom = 0.6,
+          surface_index = surface_index,
         },
         nwn,
         cc,
     })
+    Log.logBlock( elems, function(m)log(m)end, Log.FINE)
 
     -- set the entity the camera should follow
-    cameraframe.children[1].entity = v.turret
-    -- set the values for the choose-elem-buttons
-    local ndx = 1
-    for _, elem in pairs(elems) do
-        elem.elem_value = add_params[ndx]
+    camera.entity = v.turret
+    -- set the value for the choose-elem-button
+    if add_param then
+        local elem = elems[prefix]
+        elem.elem_value = add_param
         elem.locked = true
-        ndx = ndx + 1
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -229,8 +234,7 @@ end
 local function updateTableRow(table, v, at_row)
     local position, surface_index, networks  = dataOfRow(v)
     local offset = at_row * 3 + 1
-    local cframe = table.children[offset]
-    local camera = cframe.children[1]
+    local camera = table.children[offset]
     camera.position = position
     camera.surface_index = surface_index
     camera.entity = v.turret
