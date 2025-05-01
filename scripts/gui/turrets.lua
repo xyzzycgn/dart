@@ -12,6 +12,79 @@ local turrets = {}
 local redAndGreenWC = { defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }
 
 -- ###############################################################
+-- event handlers
+
+local function sort_clicked_handler(gui, event)
+    --- @type LuaGuiElement
+    local element =  event.element
+    Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINER)
+
+    local column = element.name
+    local gae = global_data.getPlayer_data(event.player_index).guis.open
+    local sortings = gae.sortings[2] -- turrets are on 2nd tab
+
+    if (sortings.active == column) then
+        -- toggled sort
+        Log.log("toggled sort", function(m)log(m)end, Log.FINER)
+        sortings.sorting[column] = element.state
+    else
+        Log.log("changed column", function(m)log(m)end, Log.FINER)
+        -- changed sort column
+        element.state = sortings.sorting[column]
+        element.style = "dart_selected_sort_checkbox"
+
+        if sortings.active ~= "" then
+            local prev = gae.elems[sortings.active]
+            prev.style = "dart_sort_checkbox"
+        end
+
+        sortings.active = column
+    end
+
+    script.raise_event(on_dart_gui_needs_update, { player_index = event.player_index, entity = gae.entity } )
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param event EventData
+local function turret_hover(gui, event)
+    ---@type LuaGuiElement
+    local camera = event.element
+    local entity = camera.entity
+
+    -- highlight the entity in main window
+    local highlight = entity.surface.create_entity({
+        name = "highlight-box",
+        position = entity.position,
+        source = entity,
+        box_type = "entity",
+    })
+
+    global_data.getPlayer_data(event.player_index).guis.open.highlight = highlight
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function turret_leave(gui, event)
+    local open = global_data.getPlayer_data(event.player_index).guis.open
+    open.highlight.destroy()
+    open.highlight = nil
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local handlers = {
+    turret_sort_clicked = sort_clicked_handler,
+    turret_hover = turret_hover,
+    turret_leave = turret_leave,
+}
+
+-- register local handlers in flib
+flib_gui.add_handlers(handlers, function(e, handler)
+    local self = global_data.getPlayer_data(e.player_index).guis.open.gui
+    if self then
+        handler(self, e)
+    end
+end)
+
+-- ###############################################################
 
 --- @class Network a certain circuit network (either green or red) and its CircuitCondition of a turret
 --- @field network_id number the unique ID of the network
@@ -81,7 +154,6 @@ end
 local function cmpNet(data1, data2)
     local n1 = data1.num_connections
     local n2 = data2.num_connections
-    Log.logBlock({ n1 = n1, n2 = n2 }, function(m)log(m)end, Log.FINE)
 
     if (n1 == 1) and (n2 == 1) then
         -- both connected to one network => compare network-ids
@@ -107,7 +179,6 @@ local function cmpCond(data1, data2)
     local n2 = data2.num_connections
     local cc1 = data1.cc
     local cc2 = data2.cc
-    Log.logBlock({ cc1 = cc1, cc2 = cc2 }, function(m)log(m)end, Log.FINE)
 
     if (n1 == 1) and (n2 == 1) then
         -- both connected to one network => compare circuit conditions (name of 1st signal)
@@ -211,7 +282,12 @@ local function appendTableRow(table, v, at_row)
           style = "dart_camera",
           zoom = 0.6,
           surface_index = v.turret.surface_index,
-          name = camera
+          name = camera,
+          raise_hover_events = true,
+          handler = {
+              [defines.events.on_gui_hover] = handlers.turret_hover,
+              [defines.events.on_gui_leave] = handlers.turret_leave,
+          }
         },
         {
             type = "label", name = lbl, style = lblstyle, caption = lblcaption,
@@ -360,7 +436,6 @@ function turrets.update(elems, data, pd)
     end
 
     local pdata = extractDataForPresentation(data, nwOfFcc)
-    Log.logBlock(pdata, function(m)log(m)end, Log.FINE)
 
     -- sort data
     local sorteddata = pdata
@@ -369,57 +444,11 @@ function turrets.update(elems, data, pd)
     local active = sortings.active
     if (active ~= "") then
         sorteddata = sort(pdata, sortings.sorting[active], comparators[active])
-        Log.logBlock(sorteddata, function(m)log(m)end, Log.FINE)
     end
 
     components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow, updateTableRow)
 end
 -- ###############################################################
-
-local function sort_clicked_handler(gui, event)
-    --- @type LuaGuiElement
-    local element =  event.element
-    Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINER)
-
-    local column = element.name
-    local gae = global_data.getPlayer_data(event.player_index).guis.open
-    local sortings = gae.sortings[2] -- turrets are on 2nd tab
-
-    if (sortings.active == column) then
-        -- toggled sort
-        Log.log("toggled sort", function(m)log(m)end, Log.FINER)
-        sortings.sorting[column] = element.state
-    else
-        Log.log("changed column", function(m)log(m)end, Log.FINER)
-        -- changed sort column
-        element.state = sortings.sorting[column]
-        element.style = "dart_selected_sort_checkbox"
-
-        if sortings.active ~= "" then
-            local prev = gae.elems[sortings.active]
-            prev.style = "dart_sort_checkbox"
-        end
-
-        sortings.active = column
-    end
-
-    script.raise_event(on_dart_gui_needs_update, { player_index = event.player_index, entity = gae.entity } )
-end
-
-
-local handlers = {
-   turret_sort_clicked = sort_clicked_handler
-}
-
--- register local handlers in flib
-flib_gui.add_handlers(handlers, function(e, handler)
-    local self = global_data.getPlayer_data(e.player_index).guis.open.gui
-    if self then
-        handler(self, e)
-    end
-end)
-
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 function turrets.build()
     return {

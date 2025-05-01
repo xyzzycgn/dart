@@ -33,7 +33,7 @@ local switch = {
 }
 
 local function update_gui(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINE)
+    Log.logLine(event, function(m)log(m)end, Log.FINER)
 
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
@@ -81,6 +81,13 @@ local function close(gui, event)
     Log.logBlock(event, function(m)log(m)end, Log.FINER)
     local pd = global_data.getPlayer_data(event.player_index)
 
+    -- has an entity in main window been highlighted?
+    local highlight = pd.guis.open.highlight
+    if (highlight and highlight.valid) then
+        -- yes - destroy the highlight-box
+        highlight.destroy()
+    end
+
     pd.guis.recentlyopen = pd.guis.recentlyopen or {}
     local ropen= pd.guis.recentlyopen[#pd.guis.recentlyopen]
 
@@ -101,7 +108,6 @@ end
 
 local function change_tab(gui, event)
     local tab = event.element
-    Log.logBlock( { event, tab.selected_tab_index }, function(m)log(m)end, Log.FINE)
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
         pd.guis.open.activeTab = tab.selected_tab_index
@@ -222,11 +228,10 @@ end
 local function gui_open(event)
     local entity = event.entity
     if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-fcc" then
-        Log.logBlock(event, function(m)log(m)end, Log.FINE)
+        Log.logBlock(event, function(m)log(m)end, Log.FINER)
 
         local player = game.get_player(event.player_index)
         local elems, gui = build(player, entity)
-        Log.logBlock( { gui = gui, elems = elems }, function(m)log(m)end, Log.FINE)
 
         local pd = openNewGui(event.player_index, gui, elems, entity)
         elems.fcc_view.entity = entity
@@ -238,7 +243,6 @@ local function gui_open(event)
         allSortings[2] = allSortings[2] or turrets.sortings()
         pd.guis.open.sortings = allSortings
 
-        Log.logLine(gae, function(m)log(m)end, Log.FINE)
         update_gui(event)
     end
 end

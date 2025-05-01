@@ -13,6 +13,7 @@
 --- @field activeTab int|nil (optional) ndx of active tab
 --- @field rowsShownLastInTab int[] (optional) number of rows shown in table on tab n the last time
 --- @field sortings Sortings[] (optional) sorting parameters for all columns in table on tab n
+--- @field highlight LuaEntity (optional) highlight-box used for marking hovered entity in main gui
 
 --- @class GuiData any
 --- @field recentlyopen GuiAndElements[] previously opened guis (hidden after opening a new one)
