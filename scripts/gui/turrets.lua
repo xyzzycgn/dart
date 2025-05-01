@@ -13,7 +13,34 @@ local redAndGreenWC = { defines.wire_connector_id.circuit_red, defines.wire_conn
 
 -- ###############################################################
 
--- table.sort doesn't work with these tables (not gapless)
+--- @class Network a certain circuit network (either green or red) and its CircuitCondition of a turret
+--- @field network_id number the unique ID of the network
+--- @field circuit_condition CircuitConditionDefinition
+
+--- @param top TurretOnPlatform
+--- @return Network[] indexed by connector (circuit_red/circuit_green)
+local function getNetworksOfTurretOnPlatform(top)
+    local networks = {}
+    local cb = top.control_behavior
+
+    for connector, wc in pairs(redAndGreenWC) do
+        ---  @type LuaCircuitNetwork
+        local cn = cb.get_circuit_network(wc)
+
+        if cn then
+            --- @type CnOfTurret
+            networks[connector] = {
+                network_id = cn.network_id,
+                circuit_condition = cb.circuit_condition,
+            }
+        end
+    end
+
+    return networks
+end
+-- ###############################################################
+
+-- table.sort doesn't work with these tables (may be not gapless)
 -- because the size (# rows) of these tables shouldn't be large, a variant of bubblesort should be fast enough
 -- although it's O(n²) ;-)
 local function sort(data, ascending, func)
@@ -35,41 +62,66 @@ local function sort(data, ascending, func)
 
     return sortedData
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
---- @param data1 TurretOnPlatform
---- @param data2 TurretOnPlatform
+--- @param data1 TurretConnection
+--- @param data2 TurretConnection
+--- @return true if data1 < data2
 local function cmpPos(data1, data2)
     local pos1 = data1.turret.position
     local pos2 = data2.turret.position
 
-    local x = (pos1.x < pos2.x) or ((pos1.x == pos2.x) and (pos1.y < pos2.y))
-    return x
+    return (pos1.x < pos2.x) or ((pos1.x == pos2.x) and (pos1.y < pos2.y))
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param data1 TurretOnPlatform
---- @param data2 TurretOnPlatform
-local function cmpNet(data1, data2)
-    local pos1 = data1.turret.position
-    local pos2 = data2.turret.position
-
-    local x = (pos1.x < pos2.x) or ((pos1.x == pos2.x) and (pos1.y < pos2.y))
-    return x
-end
+-- TODO
+----- @param data1 TurretOnPlatform
+----- @param data2 TurretOnPlatform
+--local function cmpCondition(data1, data2)
+--    local pos1 = data1.turret.network_id
+--    local pos2 = data2.turret.network_id
+--
+--    local x = (pos1.x < pos2.x) or ((pos1.x == pos2.x) and (pos1.y < pos2.y))
+--    return x
+--end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
---- @param data TurretOnPlatform[]
+--- @param data TurretConnection[]
 local function sortByUnit(data, ascending)
     return sort(data, ascending, cmpPos)
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param data TurretOnPlatform[]
+
+--- @param data1 TurretConnection
+--- @param data2 TurretConnection
+--- @return true if network_id of data1 < network_id of data2
+local function cmpNet(data1, data2)
+    local n1 = data1.num_connections
+    local n2 = data2.num_connections
+    Log.logBlock({ n1 = n1, n2 = n2 }, function(m)log(m)end, Log.FINE)
+
+    if (n1 == 1) and (n2 == 1) then
+        -- both connected to one network => compare network-ids
+        return (data1.network_id < data2.network_id)
+    elseif n1 == 1 then
+        -- only 1st connected to one network => treat it as smaller
+        return true
+    elseif n2 == 1 then
+        -- only 2nd connected to one network => treat it as smaller
+        return false
+    else
+        -- both are either not connected or connected twice => treat not connected as smaller
+        return n1 < n2
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param data TurretConnection[]
 local function sortByNetwork(data, ascending)
-    Log.log("sortByNetwork NYI", function(m)log(m)end, Log.WARN)
-    return data
-    --return sort(data, ascending, cmpNet)
+    return sort(data, ascending, cmpNet)
 end
 
 --- @param data TurretOnPlatform[]
@@ -112,70 +164,28 @@ local function getTableAndTab(elems)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- returns position of turret, surface_index of turret and an array with all circuit networks of turret
---- @param top TurretOnPlatform
-local function dataOfRow(top)
-    Log.logBlock(top, function(m)log(m)end, Log.FINER)
-
-    local cb = top.control_behavior
-
-    local networks = {}
-    for connector, wc in pairs(redAndGreenWC) do
-        ---  @type LuaCircuitNetwork
-        local cn = cb.get_circuit_network(wc)
-
-        if cn then
-            --- @type CnOfTurret
-            networks[connector] = {
-                network_id = cn.network_id,
-                circuit_condition = cb.circuit_condition,
-            }
-        end
-    end
-
-    return top.turret.position, top.turret.surface_index, networks
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 local col_style = {
      [defines.wire_connector_id.circuit_red] =  "red_label",
      [defines.wire_connector_id.circuit_green] =  "green_label",
 }
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param networks any array with all circuit networks of turret
---- @param nwOfFcc any array with the IDs of the circuitnetworks of the fcc managed in this gui
-local function networkCondition(networks, nwOfFcc)
+--- @param tc TurretConnection
+local function networkCondition(tc)
     local lblcaption, lblstyle, cc
-
-    local connected_twice = false -- is the turret connected twice
-    for conn, nw in pairs(networks) do
-        if (nwOfFcc[nw.network_id]) then
-            if lblcaption then -- ignore the 2nd connection
-                connected_twice = true
-                break
-            end
-            -- network of turret is connected to fcc managed in gui
-            lblcaption = nw.network_id
-            lblstyle = col_style[conn]
-
-
-            ---@type CircuitCondition
-            cc = nw.circuit_condition
-            Log.logBlock(cc.first_signal, function(m)log(m)end, Log.FINER)
-        end
-    end
-
-    if lblcaption then
-        if connected_twice then
-            lblcaption = { "gui.dart-turret-connected-twice" }
-            lblstyle = "bold_orange_label"
-            cc = nil
-        end
-    else
+    if tc.num_connections == 1 then
+        -- connected once
+        lblcaption = tc.network_id
+        lblstyle = col_style[tc.connector]
+        cc = tc.cc
+    elseif tc.num_connections == 0 then
         -- not connected
         lblcaption = { "gui.dart-turret-offline" }
         lblstyle = "bold_red_label"
+    else
+        -- connected twice
+        lblcaption = { "gui.dart-turret-connected-twice" }
+        lblstyle = "bold_orange_label"
     end
 
     return lblcaption, lblstyle, cc
@@ -195,20 +205,18 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param table LuaGuiElement table to add row
---- @param v TurretOnPlatform
---- @param ndx number of row
---- @param nwOfFcc any array with the IDs of the circuitnetworks of the fcc managed in this gui
-local function appendTableRow(table, v, ndx, nwOfFcc)
-    local position, surface_index, networks  = dataOfRow(v)
-    local lblcaption, lblstyle, cc = networkCondition(networks, nwOfFcc)
-    local camera, lbl, ceb, ddb, sig2 = names(ndx)
+--- @param v TurretConnection
+--- @param at_row number of row
+local function appendTableRow(table, v, at_row)
+    local lblcaption, lblstyle, cc = networkCondition(v)
+    local camera, lbl, ceb, ddb, sig2 = names(at_row)
 
-    local elems, camera = flib_gui.add(table, {
+    local elems, camera_elem = flib_gui.add(table, {
         { type = "camera",
-          position = position,
+          position = v.turret.position,
           style = "dart_camera",
           zoom = 0.6,
-          surface_index = surface_index,
+          surface_index = v.turret.surface_index,
           name = camera
         },
         {
@@ -238,7 +246,7 @@ local function appendTableRow(table, v, ndx, nwOfFcc)
     Log.logBlock(elems, function(m)log(m)end, Log.FINER)
 
     -- set the entity the camera should follow
-    camera.entity = v.turret
+    camera_elem.entity = v.turret
     -- set the values for the choose-elem-button, ...
     if cc then
         local elem = elems[ceb]
@@ -251,18 +259,18 @@ local function appendTableRow(table, v, ndx, nwOfFcc)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param table LuaGuiElement
---- @param v TurretOnPlatform
-local function updateTableRow(table, v, at_row, nwOfFcc)
-    local position, surface_index, networks  = dataOfRow(v)
-    local lblcaption, lblstyle, cc = networkCondition(networks, nwOfFcc)
+--- @param table LuaGuiElement table for update of row
+--- @param v TurretConnection
+--- @param at_row number of row
+local function updateTableRow(table, v, at_row)
+    local lblcaption, lblstyle, cc = networkCondition(v)
     local camera, lbl, ceb, ddb, sig2 = names(at_row)
     local offset = at_row * 3
 
     local camElem = table[camera]
-    if (position) then
-        camElem.position = position
-        camElem.surface_index = surface_index
+    if (v.turret.position) then
+        camElem.position = v.turret.position
+        camElem.surface_index = v.turret.surface_index
         camElem.entity = v.turret
         camElem.enabled = true
     else
@@ -274,16 +282,73 @@ local function updateTableRow(table, v, at_row, nwOfFcc)
 
     local ccflow = table.children[offset + 3]
     if cc then
-        ccflow.visible = true
-        ccflow[ceb].elem_value = cc.first_signal
-        ccflow[ceb].locked = true
+        local cebelem = ccflow[ceb]
+        cebelem.visible = true
+        cebelem.elem_value = cc.first_signal
+        cebelem.locked = true
 
-        ccflow[ddb].caption = cc.comparator
-        ccflow[sig2].caption = cc.constant -- TODO or second_signal
+        local ddbelem = ccflow[ddb]
+        ddbelem.visible = true
+        ddbelem.caption = cc.comparator
+
+        local sig2elem = ccflow[sig2]
+        sig2elem.visible = true
+        sig2elem.caption = cc.constant -- TODO or second_signal
     else
-        ccflow.visible = false
+        ccflow[ceb].visible = false
+        ccflow[ddb].visible = false
+        ccflow[sig2].visible = false
     end
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @class TurretConnection
+--- @field turret LuaEntity
+--- @field network_id uint ID of circuit network
+--- @field num_connections number of connections to fcc 0 - 2
+--- @field cc CircuitCondition
+--- @field connector uint defines.wire_connector_id.circuit_red or defines.wire_connector_id.circuit_green
+
+--- @param data TurretOnPlatform[]
+--- @param nwOfFcc uint[] IDs of the circuit networks of fcc shown in gui
+--- @return TurretConnection[]
+local function extractDataForPresentation(data, nwOfFcc)
+    local pdata = {}
+
+    for _, top in pairs(data) do
+        -- all networks of turret
+        local networks = getNetworksOfTurretOnPlatform(top)
+
+        local num_connections = 0 -- how often is the turret connected to fcc
+        local nwid, cc, conn
+
+        for connector, nw in pairs(networks) do
+            if (nwOfFcc[nw.network_id]) then
+                if num_connections > 0 then
+                    -- 2nd connection :-/
+                    num_connections = 2
+                    break
+                end
+                -- network of turret is connected to fcc managed in gui
+                nwid = nw.network_id
+                cc = nw.circuit_condition
+                conn = connector
+                num_connections = 1
+            end
+        end
+
+        pdata[#pdata + 1] = {
+            turret = top.turret,
+            network_id = nwid,
+            connector = conn,
+            cc = cc,
+            num_connections = num_connections,
+        }
+    end
+
+    return pdata
+end
+
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param elems GuiAndElements
@@ -301,24 +366,20 @@ function turrets.update(elems, data, pd)
         end
     end
 
-    local function localAppendTableRow(table, v, ndx)
-        appendTableRow(table, v, ndx, nwOfFcc)
-    end
-
-    local function localUpdateTableRow(table, v, ndx)
-        updateTableRow(table, v, ndx, nwOfFcc)
-    end
+    local pdata = extractDataForPresentation(data, nwOfFcc)
+    Log.logBlock(pdata, function(m)log(m)end, Log.FINE)
 
     -- sort data
-    local sorteddata = data
+    local sorteddata = pdata
 
     local sortings = pd.guis.open.sortings[2] -- turrets are on 2nd tab
     local active = sortings.active
     if (active ~= "") then
-        sorteddata = sortFunction[active](data, sortings.sorting[active])
+        sorteddata = sortFunction[active](pdata, sortings.sorting[active])
+        Log.logBlock(sorteddata, function(m)log(m)end, Log.FINE)
     end
 
-    components.updateVisualizedData(elems, sorteddata, getTableAndTab, localAppendTableRow, localUpdateTableRow)
+    components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow, updateTableRow)
 end
 -- ###############################################################
 
