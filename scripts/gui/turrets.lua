@@ -94,7 +94,6 @@ local function sortByUnit(data, ascending)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
 --- @param data1 TurretConnection
 --- @param data2 TurretConnection
 --- @return true if network_id of data1 < network_id of data2
@@ -124,10 +123,39 @@ local function sortByNetwork(data, ascending)
     return sort(data, ascending, cmpNet)
 end
 
+
+
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param data1 TurretConnection
+--- @param data2 TurretConnection
+--- @return true if network_id of data1 < network_id of data2
+local function cmpCond(data1, data2)
+    local n1 = data1.num_connections
+    local n2 = data2.num_connections
+    local cc1 = data1.cc
+    local cc2 = data2.cc
+    Log.logBlock({ cc1 = cc1, cc2 = cc2 }, function(m)log(m)end, Log.FINE)
+
+    if (n1 == 1) and (n2 == 1) then
+        -- both connected to one network => compare circuit conditions (name of 1st signal)
+        return (cc1.first_signal.name < cc2.first_signal.name)
+    elseif n1 == 1 then
+        -- only 1st connected to one network => treat it as smaller
+        return true
+    elseif n2 == 1 then
+        -- only 2nd connected to one network => treat it as smaller
+        return false
+    else
+        -- both are either not connected or connected twice => treat not connected as smaller
+        return n1 < n2
+    end
+end
+
+
 --- @param data TurretOnPlatform[]
 local function sortByCondition(data, ascending)
-    Log.log("sortByCondition NYI", function(m)log(m)end, Log.WARN)
-    return data
+    return sort(data, ascending, cmpCond)
 end
 
 local sortFields = {
@@ -348,7 +376,6 @@ local function extractDataForPresentation(data, nwOfFcc)
 
     return pdata
 end
-
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param elems GuiAndElements
