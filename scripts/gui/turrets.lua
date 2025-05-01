@@ -75,25 +75,6 @@ local function cmpPos(data1, data2)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
--- TODO
------ @param data1 TurretOnPlatform
------ @param data2 TurretOnPlatform
---local function cmpCondition(data1, data2)
---    local pos1 = data1.turret.network_id
---    local pos2 = data2.turret.network_id
---
---    local x = (pos1.x < pos2.x) or ((pos1.x == pos2.x) and (pos1.y < pos2.y))
---    return x
---end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
---- @param data TurretConnection[]
-local function sortByUnit(data, ascending)
-    return sort(data, ascending, cmpPos)
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 --- @param data1 TurretConnection
 --- @param data2 TurretConnection
 --- @return true if network_id of data1 < network_id of data2
@@ -118,18 +99,9 @@ local function cmpNet(data1, data2)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param data TurretConnection[]
-local function sortByNetwork(data, ascending)
-    return sort(data, ascending, cmpNet)
-end
-
-
-
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 --- @param data1 TurretConnection
 --- @param data2 TurretConnection
---- @return true if network_id of data1 < network_id of data2
+--- @return true if circuit condition of data1 < circuit condition of data2
 local function cmpCond(data1, data2)
     local n1 = data1.num_connections
     local n2 = data2.num_connections
@@ -152,12 +124,6 @@ local function cmpCond(data1, data2)
     end
 end
 
-
---- @param data TurretOnPlatform[]
-local function sortByCondition(data, ascending)
-    return sort(data, ascending, cmpCond)
-end
-
 local sortFields = {
     unit = "turret-unit",
     cn = "turret-cn",
@@ -165,10 +131,10 @@ local sortFields = {
 }
 
 
-local sortFunction = {
-    [sortFields.unit] = sortByUnit,
-    [sortFields.cn] = sortByNetwork,
-    [sortFields.cond] = sortByCondition,
+local comparators = {
+    [sortFields.unit] = cmpPos,
+    [sortFields.cn] = cmpNet,
+    [sortFields.cond] = cmpCond,
 }
 
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -402,7 +368,7 @@ function turrets.update(elems, data, pd)
     local sortings = pd.guis.open.sortings[2] -- turrets are on 2nd tab
     local active = sortings.active
     if (active ~= "") then
-        sorteddata = sortFunction[active](pdata, sortings.sorting[active])
+        sorteddata = sort(pdata, sortings.sorting[active], comparators[active])
         Log.logBlock(sorteddata, function(m)log(m)end, Log.FINE)
     end
 
