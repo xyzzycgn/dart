@@ -5,6 +5,7 @@
 local flib_gui = require("__flib__.gui")
 local Log = require("__log4factorio__.Log")
 local components = require("scripts/gui/components")
+local utils = require("scripts/utils")
 local eventHandler = require("scripts/gui/eventHandler")
 
 local turrets = {}
@@ -41,30 +42,6 @@ local function getNetworksOfTurretOnPlatform(top)
     end
 
     return networks
-end
--- ###############################################################
-
--- table.sort doesn't work with these tables (may be not gapless)
--- because the size (# rows) of these tables shouldn't be large, a variant of bubblesort should be fast enough
--- although it's O(n²) ;-)
-local function sort(data, ascending, func)
-    local sortedData = {}
-
-    local ndx = 0
-    for _, row in pairs(data) do
-        for i = 1, #sortedData do
-            if (func(sortedData[i], row) ~= ascending) then
-                table.insert(sortedData, i, row)
-                goto continue
-            end
-        end
-
-        sortedData[#sortedData + 1] = row
-
-       ::continue::
-    end
-
-    return sortedData
 end
 -- ###############################################################
 
@@ -201,8 +178,8 @@ local function appendTableRow(table, v, at_row)
           name = camera,
           raise_hover_events = true,
           handler = {
-              [defines.events.on_gui_hover] = eventHandler.handlers.turret_hover,
-              [defines.events.on_gui_leave] = eventHandler.handlers.turret_leave,
+              [defines.events.on_gui_hover] = eventHandler.handlers.camera_hovered,
+              [defines.events.on_gui_leave] = eventHandler.handlers.camera_leave,
           }
         },
         {
@@ -337,7 +314,7 @@ end
 -- ###############################################################
 
 local function sort_checkbox(name)
-    return components.sort_checkbox( name, nil, false, false, eventHandler.handlers.turret_sort_clicked)
+    return components.sort_checkbox( name, nil, false, false, eventHandler.handlers.sort_clicked)
 end
 -- ###############################################################
 
@@ -366,11 +343,12 @@ function turrets.update(elems, data, pd)
 
     -- sort data
     local sorteddata = pdata
+    local gae = pd.guis.open
 
-    local sortings = pd.guis.open.sortings[2] -- turrets are on 2nd tab
+    local sortings = gae.sortings[gae.activeTab] -- turrets are on 2nd tab
     local active = sortings.active
     if (active ~= "") then
-        sorteddata = sort(pdata, sortings.sorting[active], comparators[active])
+        sorteddata = utils.sort(pdata, sortings.sorting[active], comparators[active])
     end
 
     components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow, updateTableRow)
@@ -397,9 +375,9 @@ function turrets.build()
                   style = "dart_table_style",
                   name = "turrets_table",
                   visible = false,
-                  sort_checkbox( "turret-unit"),
-                  sort_checkbox( "turret-cn"),
-                  sort_checkbox( "turret-cond"),
+                  sort_checkbox(sortFields.unit),
+                  sort_checkbox(sortFields.cn),
+                  sort_checkbox(sortFields.cond),
                 }
             },
         }

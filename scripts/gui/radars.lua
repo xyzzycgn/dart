@@ -5,9 +5,17 @@
 local Log = require("__log4factorio__.Log")
 local flib_gui = require("__flib__.gui")
 local components = require("scripts/gui/components")
+local utils = require("scripts/utils")
 local eventHandler = require("scripts/gui/eventHandler")
 
 local radars = {}
+
+local sortFields = {
+    unit = "radar-unit",
+    detect = "radar-detect",
+    defense = "radar-defense",
+}
+
 
 --- @param elems table<string, LuaGuiElement>
 local function getTableAndTab(elems)
@@ -36,8 +44,8 @@ local function appendTableRow(table, v)
               surface_index = surface_index,
               raise_hover_events = true,
               handler = {
-                  [defines.events.on_gui_hover] = eventHandler.handlers.turret_hover,
-                  [defines.events.on_gui_leave] = eventHandler.handlers.turret_leave,
+                  [defines.events.on_gui_hover] = eventHandler.handlers.camera_hovered,
+                  [defines.events.on_gui_leave] = eventHandler.handlers.camera_leave,
               }
             },
             { type = "label", style = "dart_minimap_label", caption = name },
@@ -69,12 +77,71 @@ local function updateTableRow(table, v, at_row)
 end
 -- ###############################################################
 
+local function sort_checkbox(name)
+    return components.sort_checkbox( name, nil, false, false, eventHandler.handlers.sort_clicked)
+end
+-- ###############################################################
+
+--- @param data1 RadarOnPlatform
+--- @param data2 RadarOnPlatform
+--- @return true if backer_name of data1 < backer_name of data2
+local function cmpUnit(data1, data2)
+    return data1.radar.backer_name < data2.radar.backer_name
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param data1 RadarOnPlatform
+--- @param data2 RadarOnPlatform
+--- @return true if data1.detectionRange < data2.detectionRange
+local function cmpDetect(data1, data2)
+    return data1.detectionRange < data2.detectionRange
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param data1 RadarOnPlatform
+--- @param data2 RadarOnPlatform
+--- @return true if data1.defenseRange < data2.defenseRange
+local function cmpDefense(data1, data2)
+    return data1.defenseRange < data2.defenseRange
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local comparators = {
+    [sortFields.unit] = cmpUnit,
+    [sortFields.detect] = cmpDetect,
+    [sortFields.defense] = cmpDefense,
+}
+
 --- @param elems GuiAndElements
 --- @param data RadarOnPlatform[]
-function radars.update(elems, data)
+--- @param pd PlayerData
+function radars.update(elems, data, pd)
     Log.logBlock(data, function(m)log(m)end, Log.FINE)
 
-    components.updateVisualizedData(elems, data, getTableAndTab, appendTableRow, updateTableRow)
+    -- sort data
+    local sorteddata = data
+    local gae = pd.guis.open
+
+    local sortings = gae.sortings[gae.activeTab] -- radars are on 1st tab
+    local active = sortings.active
+    if (active ~= "") then
+        sorteddata = utils.sort(data, sortings.sorting[active], comparators[active])
+    end
+
+    components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow, updateTableRow)
+end
+-- ###############################################################
+
+---  @return Sortings defaults for the turret tab
+function radars.sortings()
+    return {
+        sorting = {
+            [sortFields.unit] = false,
+            [sortFields.detect] = false,
+            [sortFields.defense] = false,
+        },
+        active = ""
+    }
 end
 -- ###############################################################
 
@@ -99,20 +166,17 @@ function radars.build()
                   style = "dart_table_style",
                   name = "radars_table",
                   visible = false,
-                  { type = "label", caption = { "gui.dart-radar-unit" }, style = "dart_stretchable_label_style", },
-                  { type = "label", caption = { "gui.dart-radar-detect" }, style = "dart_stretchable_label_style", },
-                  { type = "label", caption = { "gui.dart-radar-defense" }, style = "dart_stretchable_label_style", },
-                }
+                  --{ type = "label", caption = { "gui.dart-radar-unit" }, style = "dart_stretchable_label_style", },
+                  --{ type = "label", caption = { "gui.dart-radar-detect" }, style = "dart_stretchable_label_style", },
+                  --{ type = "label", caption = { "gui.dart-radar-defense" }, style = "dart_stretchable_label_style", },
+                  sort_checkbox(sortFields.unit),
+                  sort_checkbox(sortFields.detect),
+                  sort_checkbox(sortFields.defense),
+               }
             },
         }
     }
 end
 -- ###############################################################
-
---- prepared for future use
----  @return Sortings for the radar tab
-function radars.sortings()
-    return {}
-end
 
 return radars

@@ -1,5 +1,5 @@
 ---
---- Created by xyzzycgn.
+--- Common event handlers for the gui
 ---
 local Log = require("__log4factorio__.Log")
 local flib_gui = require("__flib__.gui")
@@ -15,16 +15,17 @@ local function sort_clicked_handler(gae, event)
     --- @type LuaGuiElement
     local element =  event.element
     Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINER)
+    Log.logBlock({ active = gae.activeTab, sortings = gae.sortings}, function(m)log(m)end, Log.FINE)
 
     local column = element.name
     local sortings = gae.sortings[gae.activeTab] -- turrets are on 2nd tab
 
     if (sortings.active == column) then
         -- toggled sort
-        Log.log("toggled sort", function(m)log(m)end, Log.FINER)
+        Log.log("toggled sort", function(m)log(m)end, Log.FINE)
         sortings.sorting[column] = element.state
     else
-        Log.log("changed column", function(m)log(m)end, Log.FINER)
+        Log.log("changed column", function(m)log(m)end, Log.FINE)
         -- changed sort column
         element.state = sortings.sorting[column]
         element.style = "dart_selected_sort_checkbox"
@@ -69,9 +70,9 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 eventHandlers.handlers = {
-    turret_sort_clicked = sort_clicked_handler,
-    turret_hover = turret_hover,
-    turret_leave = turret_leave,
+    sort_clicked = sort_clicked_handler,
+    camera_hovered = turret_hover,
+    camera_leave = turret_leave,
 }
 
 -- register local handlers in flib
