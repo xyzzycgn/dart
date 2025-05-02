@@ -16,7 +16,6 @@ local sortFields = {
     defense = "radar-defense",
 }
 
-
 --- @param elems table<string, LuaGuiElement>
 local function getTableAndTab(elems)
     return elems.radars_table, elems.radars_tab
@@ -29,51 +28,67 @@ local function dataOfRow(data)
 
     return data.radar.position, data.radar.surface_index, data.radar.backer_name, data.detectionRange, data.defenseRange
 end
+-- ###############################################################
+
+local function names(ndx)
+    local prefix = "radar_" .. ndx
+    local cframe = prefix .. "_cframe"
+    local camera = prefix .. "_camera"
+    local bn = prefix .. "_backername"
+    local det = prefix .. "_detect"
+    local def = prefix .. "_defense"
+
+    return cframe, camera, bn, det, def
+end
 
 --- @param v RadarOnPlatform
-local function appendTableRow(table, v)
+local function appendTableRow(table, v, at_row)
     local position, surface_index, name, detect, defense = dataOfRow(v)
-    local _, camera = flib_gui.add(table, {
+    local cframe, camera, bn, det, def = names(at_row)
+    local elems, _ = flib_gui.add(table, {
         {
             type = "frame",
             direction = "vertical",
+            name = cframe,
             { type = "camera",
               position = position,
               style = "dart_camera",
               zoom = 0.6,
               surface_index = surface_index,
+              name = camera,
               raise_hover_events = true,
               handler = {
                   [defines.events.on_gui_hover] = eventHandler.handlers.camera_hovered,
                   [defines.events.on_gui_leave] = eventHandler.handlers.camera_leave,
               }
             },
-            { type = "label", style = "dart_minimap_label", caption = name },
+            { type = "label", style = "dart_minimap_label", name = bn, caption = name },
         },
-        { type = "label", style = "dart_stretchable_label_style", caption = detect },
-        { type = "label", style = "dart_stretchable_label_style", caption = defense },
+        { type = "label", style = "dart_stretchable_label_style", name = det, caption = detect },
+        { type = "label", style = "dart_stretchable_label_style", name = def, caption = defense },
     })
 
-    camera.children[1].entity = v.radar
+    elems[camera].entity = v.radar
 end
+-- ###############################################################
 
 --- @param v RadarOnPlatform
 local function updateTableRow(table, v, at_row)
     local position, surface_index, name, detect, defense = dataOfRow(v)
-    local offset = at_row * 3 + 1
-    local cframe = table.children[offset]
-    local camera = cframe.children[1]
-    camera.position = position
-    camera.surface_index = surface_index
-    cframe.children[2].caption = name
-    -- workaround to prevent a race condition if radar has been deleted meanwhile before next update event occured
+    local cframe, camera, bn, det, def = names(at_row)
+    local cframeElem = table[cframe]
+    local camElem = cframeElem[camera]
     if (position) then
-        camera.position = position
+        camElem.position = position
+        camElem.surface_index = surface_index
+        camElem.entity = v.radar
+        camElem.enabled = true
     else
-        camera.enabled = false
+        camElem.enabled = false
     end
-    table.children[offset + 1].caption = detect
-    table.children[offset + 2].caption = defense
+    cframeElem[bn].caption = name
+    table[det].caption = detect
+    table[def].caption = defense
 end
 -- ###############################################################
 
@@ -116,7 +131,7 @@ local comparators = {
 --- @param data RadarOnPlatform[]
 --- @param pd PlayerData
 function radars.update(elems, data, pd)
-    Log.logBlock(data, function(m)log(m)end, Log.FINE)
+    Log.logBlock(data, function(m)log(m)end, Log.FINER)
 
     -- sort data
     local sorteddata = data
@@ -166,9 +181,6 @@ function radars.build()
                   style = "dart_table_style",
                   name = "radars_table",
                   visible = false,
-                  --{ type = "label", caption = { "gui.dart-radar-unit" }, style = "dart_stretchable_label_style", },
-                  --{ type = "label", caption = { "gui.dart-radar-detect" }, style = "dart_stretchable_label_style", },
-                  --{ type = "label", caption = { "gui.dart-radar-defense" }, style = "dart_stretchable_label_style", },
                   sort_checkbox(sortFields.unit),
                   sort_checkbox(sortFields.detect),
                   sort_checkbox(sortFields.defense),
