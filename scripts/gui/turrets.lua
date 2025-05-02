@@ -4,84 +4,17 @@
 ---
 local flib_gui = require("__flib__.gui")
 local Log = require("__log4factorio__.Log")
-local dump = require("scripts/dump")
 local components = require("scripts/gui/components")
-local global_data = require("scripts/global_data")
+local eventHandler = require("scripts/gui/eventHandler")
 
 local turrets = {}
 local redAndGreenWC = { defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }
 
--- ###############################################################
--- event handlers
-
-local function sort_clicked_handler(gae, event)
-    --- @type LuaGuiElement
-    local element =  event.element
-    Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINER)
-
-    local column = element.name
-    local sortings = gae.sortings[gae.activeTab] -- turrets are on 2nd tab
-
-    if (sortings.active == column) then
-        -- toggled sort
-        Log.log("toggled sort", function(m)log(m)end, Log.FINER)
-        sortings.sorting[column] = element.state
-    else
-        Log.log("changed column", function(m)log(m)end, Log.FINER)
-        -- changed sort column
-        element.state = sortings.sorting[column]
-        element.style = "dart_selected_sort_checkbox"
-
-        if sortings.active ~= "" then
-            local prev = gae.elems[sortings.active]
-            prev.style = "dart_sort_checkbox"
-        end
-
-        sortings.active = column
-    end
-
-    script.raise_event(on_dart_gui_needs_update, { player_index = event.player_index, entity = gae.entity } )
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
---- @param event EventData
-local function turret_hover(gae, event)
-    ---@type LuaGuiElement
-    local camera = event.element
-    local entity = camera.entity
-
-    -- highlight the entity in main window
-    local highlight = entity.surface.create_entity({
-        name = "highlight-box",
-        position = entity.position,
-        source = entity,
-        box_type = "entity",
-    })
-
-    gae.highlight = highlight
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-local function turret_leave(gae, event)
-    gae.highlight.destroy()
-    gae.highlight = nil
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-local handlers = {
-    turret_sort_clicked = sort_clicked_handler,
-    turret_hover = turret_hover,
-    turret_leave = turret_leave,
+local sortFields = {
+    unit = "turret-unit",
+    cn = "turret-cn",
+    cond = "turret-cond",
 }
-
--- register local handlers in flib
-flib_gui.add_handlers(handlers, function(e, handler)
-    local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
-    if guiAndElements then
-        handler(guiAndElements, e)
-    end
-end)
-
 -- ###############################################################
 
 --- @class Network a certain circuit network (either green or red) and its CircuitCondition of a turret
@@ -144,7 +77,7 @@ local function cmpPos(data1, data2)
 
     return (pos1.x < pos2.x) or ((pos1.x == pos2.x) and (pos1.y < pos2.y))
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 --- @param data1 TurretConnection
 --- @param data2 TurretConnection
@@ -167,7 +100,7 @@ local function cmpNet(data1, data2)
         return n1 > n2
     end
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 --- @param data1 TurretConnection
 --- @param data2 TurretConnection
@@ -192,21 +125,7 @@ local function cmpCond(data1, data2)
         return n1 > n2
     end
 end
-
-local sortFields = {
-    unit = "turret-unit",
-    cn = "turret-cn",
-    cond = "turret-cond",
-}
-
-
-local comparators = {
-    [sortFields.unit] = cmpPos,
-    [sortFields.cn] = cmpNet,
-    [sortFields.cond] = cmpCond,
-}
-
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 ---  @return Sortings defaults for the turret tab
 function turrets.sortings()
@@ -225,13 +144,12 @@ end
 local function getTableAndTab(elems)
     return elems.turrets_table, elems.turrets_tab
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 local col_style = {
      [defines.wire_connector_id.circuit_red] =  "red_label",
      [defines.wire_connector_id.circuit_green] =  "green_label",
 }
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param tc TurretConnection
 local function networkCondition(tc)
@@ -253,7 +171,7 @@ local function networkCondition(tc)
 
     return lblcaption, lblstyle, cc
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 local function names(ndx)
     local prefix = "tur_cc_" .. ndx
@@ -265,7 +183,7 @@ local function names(ndx)
 
     return camera, lbl, ceb, ddb, sig2
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 --- @param table LuaGuiElement table to add row
 --- @param v TurretConnection
@@ -283,8 +201,8 @@ local function appendTableRow(table, v, at_row)
           name = camera,
           raise_hover_events = true,
           handler = {
-              [defines.events.on_gui_hover] = handlers.turret_hover,
-              [defines.events.on_gui_leave] = handlers.turret_leave,
+              [defines.events.on_gui_hover] = eventHandler.handlers.turret_hover,
+              [defines.events.on_gui_leave] = eventHandler.handlers.turret_leave,
           }
         },
         {
@@ -325,7 +243,7 @@ local function appendTableRow(table, v, at_row)
         elems[sig2].caption = cc.constant -- TODO or second_signal
     end
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 --- @param table LuaGuiElement table for update of row
 --- @param v TurretConnection
@@ -368,7 +286,7 @@ local function updateTableRow(table, v, at_row)
         ccflow[sig2].visible = false
     end
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 --- @class TurretConnection
 --- @field turret LuaEntity
@@ -416,7 +334,18 @@ local function extractDataForPresentation(data, nwOfFcc)
 
     return pdata
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
+
+local function sort_checkbox(name)
+    return components.sort_checkbox( name, nil, false, false, eventHandler.handlers.turret_sort_clicked)
+end
+-- ###############################################################
+
+local comparators = {
+    [sortFields.unit] = cmpPos,
+    [sortFields.cn] = cmpNet,
+    [sortFields.cond] = cmpCond,
+}
 
 --- @param elems GuiAndElements
 --- @param data TurretOnPlatform[]
@@ -468,12 +397,9 @@ function turrets.build()
                   style = "dart_table_style",
                   name = "turrets_table",
                   visible = false,
-                    --{ type = "label", caption = { "gui.dart-turret-unit" }, style = "dart_stretchable_label_style", },
-                    --{ type = "label", caption = { "gui.dart-turret-cn" }, style = "dart_stretchable_label_style", },
-                    --{ type = "label", caption = { "gui.dart-turret-cond" }, style = "dart_stretchable_label_style", },
-                  components.sort_checkbox( "turret-unit", nil, false, false, handlers.turret_sort_clicked),
-                  components.sort_checkbox( "turret-cn", nil, false, false, handlers.turret_sort_clicked),
-                  components.sort_checkbox( "turret-cond", nil, false, false, handlers.turret_sort_clicked),
+                  sort_checkbox( "turret-unit"),
+                  sort_checkbox( "turret-cn"),
+                  sort_checkbox( "turret-cond"),
                 }
             },
         }
