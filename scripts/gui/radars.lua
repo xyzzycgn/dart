@@ -3,8 +3,9 @@
 --- DateTime: 13.04.25 21:05
 ---
 local Log = require("__log4factorio__.Log")
-local components = require("scripts/gui/components")
 local flib_gui = require("__flib__.gui")
+local components = require("scripts/gui/components")
+local eventHandler = require("scripts/gui/eventHandler")
 
 local radars = {}
 
@@ -33,6 +34,11 @@ local function appendTableRow(table, v)
               style = "dart_camera",
               zoom = 0.6,
               surface_index = surface_index,
+              raise_hover_events = true,
+              handler = {
+                  [defines.events.on_gui_hover] = eventHandler.handlers.turret_hover,
+                  [defines.events.on_gui_leave] = eventHandler.handlers.turret_leave,
+              }
             },
             { type = "label", style = "dart_minimap_label", caption = name },
         },
