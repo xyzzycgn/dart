@@ -76,44 +76,43 @@ end
 
 --
 -- local handlers for flib
----
-local function close(gui, event)
+
+--- @param gae GuiAndElements
+local function close(gae, event)
     Log.logBlock(event, function(m)log(m)end, Log.FINER)
-    local pd = global_data.getPlayer_data(event.player_index)
+    local guis = global_data.getPlayer_data(event.player_index).guis
 
     -- has an entity in main window been highlighted?
-    local highlight = pd.guis.open.highlight
+    local highlight = gae.highlight
     if (highlight and highlight.valid) then
         -- yes - destroy the highlight-box
         highlight.destroy()
     end
 
-    pd.guis.recentlyopen = pd.guis.recentlyopen or {}
-    local ropen= pd.guis.recentlyopen[#pd.guis.recentlyopen]
+    guis.recentlyopen = guis.recentlyopen or {}
+    local ropen = guis.recentlyopen[#guis.recentlyopen]
 
     -- close actual gui and destroy it
-    gui.visible = false
-    gui.destroy()
+    gae.gui.visible = false
+    gae.gui.destroy()
 
     -- former gui present?
     if ropen then
         -- remove closed gui from list
-        pd.guis.recentlyopen[#pd.guis.recentlyopen] = nil
+        guis.recentlyopen[#guis.recentlyopen] = nil
         -- make former gui visible again
         ropen.gui.visible = true
     end
-    pd.guis.open = ropen
+    guis.open = ropen
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function change_tab(gui, event)
+--- @param gae GuiAndElements
+local function change_tab(gae, event)
     local tab = event.element
-    local pd = global_data.getPlayer_data(event.player_index)
-    if pd then
-        pd.guis.open.activeTab = tab.selected_tab_index
-        event.entity = pd.guis.open.entity -- pimp the event ;-)
-        update_gui(event)
-    end
+    gae.activeTab = tab.selected_tab_index
+    event.entity = gae.entity -- pimp the event ;-)
+    update_gui(event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -124,9 +123,9 @@ local handlers = {
 
 -- register local handlers in flib
 flib_gui.add_handlers(handlers, function(e, handler)
-    local self = global_data.getPlayer_data(e.player_index).guis.open.gui
-    if self then
-        handler(self, e)
+    local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
+    if guiAndElements then
+        handler(guiAndElements, e)
     end
 end)
 -- ###############################################################

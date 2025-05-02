@@ -14,14 +14,13 @@ local redAndGreenWC = { defines.wire_connector_id.circuit_red, defines.wire_conn
 -- ###############################################################
 -- event handlers
 
-local function sort_clicked_handler(gui, event)
+local function sort_clicked_handler(gae, event)
     --- @type LuaGuiElement
     local element =  event.element
     Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINER)
 
     local column = element.name
-    local gae = global_data.getPlayer_data(event.player_index).guis.open
-    local sortings = gae.sortings[2] -- turrets are on 2nd tab
+    local sortings = gae.sortings[gae.activeTab] -- turrets are on 2nd tab
 
     if (sortings.active == column) then
         -- toggled sort
@@ -46,7 +45,7 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param event EventData
-local function turret_hover(gui, event)
+local function turret_hover(gae, event)
     ---@type LuaGuiElement
     local camera = event.element
     local entity = camera.entity
@@ -59,14 +58,13 @@ local function turret_hover(gui, event)
         box_type = "entity",
     })
 
-    global_data.getPlayer_data(event.player_index).guis.open.highlight = highlight
+    gae.highlight = highlight
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function turret_leave(gui, event)
-    local open = global_data.getPlayer_data(event.player_index).guis.open
-    open.highlight.destroy()
-    open.highlight = nil
+local function turret_leave(gae, event)
+    gae.highlight.destroy()
+    gae.highlight = nil
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -78,9 +76,9 @@ local handlers = {
 
 -- register local handlers in flib
 flib_gui.add_handlers(handlers, function(e, handler)
-    local self = global_data.getPlayer_data(e.player_index).guis.open.gui
-    if self then
-        handler(self, e)
+    local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
+    if guiAndElements then
+        handler(guiAndElements, e)
     end
 end)
 
@@ -166,7 +164,7 @@ local function cmpNet(data1, data2)
         return false
     else
         -- both are either not connected or connected twice => treat not connected as smaller
-        return n1 < n2
+        return n1 > n2
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -191,7 +189,7 @@ local function cmpCond(data1, data2)
         return false
     else
         -- both are either not connected or connected twice => treat not connected as smaller
-        return n1 < n2
+        return n1 > n2
     end
 end
 
