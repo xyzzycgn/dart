@@ -827,7 +827,7 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function initLogging()
-    Log.setFromSettings("dart-logLevel")
+    Log.setSeverityFromSettings("dart-logLevel")
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
