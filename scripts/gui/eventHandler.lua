@@ -69,10 +69,23 @@ local function turret_leave(gae, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param gae GuiAndElements
+--- @param event EventData
+local function clicked(gae, event)
+    Log.logLine({ gae = gae, event = event }, function(m)log(m)end, Log.FINE)
+    local entity = event.element.entity
+    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
+
+    game.players[event.player_index].opened = entity
+    --game.player.opened = entity
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 eventHandlers.handlers = {
     sort_clicked = sort_clicked_handler,
     camera_hovered = turret_hover,
     camera_leave = turret_leave,
+    clicked = clicked,
 }
 
 -- register local handlers in flib

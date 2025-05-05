@@ -180,6 +180,7 @@ local function appendTableRow(table, v, at_row)
           handler = {
               [defines.events.on_gui_hover] = eventHandler.handlers.camera_hovered,
               [defines.events.on_gui_leave] = eventHandler.handlers.camera_leave,
+              [defines.events.on_gui_click] = eventHandler.handlers.clicked,
           }
         },
         {
