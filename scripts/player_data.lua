@@ -22,7 +22,7 @@
 --- @class PlayerData any  convenience class for handling player_data
 --- @field player LuaPlayer the player to whom these data belong
 --- @field guis GuiData data of the opened guis
---- @field pons Pons[] platforms owned by the player
+--- @field pons Pons[] platforms owned by the player indexed by platform.index
 
 local playerData = {}
 
