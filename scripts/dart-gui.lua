@@ -82,12 +82,12 @@ end
 local function close(gae, event)
     Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINE)
     local guis = global_data.getPlayer_data(event.player_index).guis
-    local guiToBeCLosed = event.element
+    local guiToBeCLosed = gae.gui
     guis.recentlyopen = guis.recentlyopen or {}
     local ropen = guis.recentlyopen[#guis.recentlyopen]
 
     -- has an entity in main window been highlighted?
-    local highlight = gae.highlight or ropen.highlight
+    local highlight = gae.highlight or (ropen and ropen.highlight)
     if (highlight and highlight.valid) then
         -- yes - destroy the highlight-box
         highlight.destroy()
@@ -160,7 +160,7 @@ local function build(player, entity)
             type = "frame",
             direction = "vertical",
             visible = false,
-            handler = { [defines.events.on_gui_closed] = handlers.close_gui },
+            --handler = { [defines.events.on_gui_closed] = handlers.close_gui },
             style = "dart_top_frame",
             {
                 type = "flow",
@@ -243,23 +243,27 @@ local function standard_gui_closed(event)
     local pd = global_data.getPlayer_data(event.player_index)
     --- @type LuaEntity
     local entity = event.entity
-    if entity and (entity.type == 'ammo-turret') then
-        local platform = entity.surface.platform
+    if entity then
+        if (entity.type == 'ammo-turret') then
+            local platform = entity.surface.platform
 
-        if platform then
-            Log.log("turret on platform", function(m)log(m)end, Log.FINE)
-            local pons = pd.pons[platform.index]
+            if platform then
+                Log.log("turret on platform", function(m)log(m)end, Log.FINE)
+                local pons = pd.pons[platform.index]
 
-            for _, top in pairs(pons.turretsOnPlatform) do
-                if top.turret == entity then
-                    local gae = pd.guis.open
-                    Log.log("closed turret on platform", function(m)log(m)end, Log.FINE)
-                    --if gae then
-                    --    close(gae, event)
-                    --end
-                    break
+                for _, top in pairs(pons.turretsOnPlatform) do
+                    if top.turret == entity then
+                        local gae = pd.guis.open
+                        Log.log("closed turret on platform", function(m)log(m)end, Log.FINE)
+                        if gae then
+                            close(gae, event)
+                        end
+                        break
+                    end
                 end
             end
+        elseif entity.name == "dart-fcc" then
+            Log.log("close fcc", function(m)log(m)end, Log.FINE)
         end
     end
 end
@@ -274,7 +278,7 @@ local dart_gui = {}
 
 dart_gui.events = {
     [defines.events.on_gui_opened] = gui_open,
-    --[defines.events.on_gui_closed] = standard_gui_closed,
+    [defines.events.on_gui_closed] = standard_gui_closed,
 
     -- defined in internalEvents.lua
     [on_dart_component_build_event] = update_gui,
