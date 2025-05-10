@@ -2,11 +2,18 @@
 --- Created by xyzzycgn.
 --- DateTime: 18.01.25 09:27
 local Log = require("__log4factorio__.Log")
+local global_data = require("scripts.global_data")
+local PlayerData = require("scripts.player_data")
 local flib_gui = require("__flib__.gui")
 local flib_format = require("__flib__.format")
 
 local components =  {}
 
+--- @param guiOrEntity LuaGuiElement|LuaEntity
+--- @return true if guiOrEntity is a valid LuaGuiElement
+function components.checkIfValidGuiElement(guiOrEntity)
+    return guiOrEntity and guiOrEntity.valid and guiOrEntity.object_name == "LuaGuiElement"
+end
 
 --- Creates a column header with a sort toggle.
 --- @param name string used for name and (as base) for caption
@@ -171,5 +178,50 @@ function components.updateVisualizedData(gae, data,
     rows[gae.activeTab] = new_number
     gae.rowsShownLastInTab = rows
 end
+-- ###############################################################
+
+--- open new gui and chain it with formerly opened
+--- @return PlayerData
+function components.openNewGui(player_index, gui, elems, entity)
+    Log.logBlock({player_index = player_index, gui = gui, elems = elems, entity = entity}, function(m)log(m)end, Log.FINE)
+
+    local pd = global_data.getPlayer_data(player_index)
+    local player = game.get_player(player_index)
+    if (pd == nil) then
+        pd = PlayerData.init_player_data(player)
+        global_data.addPlayer_data(player, pd)
+    end
+    -- store reference to gui in storage
+    --- @type GuiAndElements
+    local nextgui =  {
+        gui = gui,
+        elems = elems,
+        entity = entity,
+    }
+    pd.guis.recentlyopen = pd.guis.recentlyopen or {}
+    pd.guis.recentlyopen[#pd.guis.recentlyopen + 1] = pd.guis.open
+
+    Log.logBlock(pd.guis, function(m)log(m)end, Log.FINE)
+    local open = pd.guis.open
+    if open and components.checkIfValidGuiElement(open.gui) then
+        -- hide former gui
+        open.gui.visible = false
+    end
+    pd.guis.open = nextgui
+
+    -- open new GUI
+    player.opened = gui
+    if components.checkIfValidGuiElement(gui) then
+        gui.force_auto_center()
+        gui.bring_to_front()
+        gui.visible = true
+    end
+
+    return pd
+end
+
+
+
+
 
 return components

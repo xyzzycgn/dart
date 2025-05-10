@@ -63,6 +63,19 @@ local function dumpGroup(group)
     return dg
 end
 
+local function getTypeName(types, value)
+    if value then
+        for name, val in pairs(defines[types]) do
+            if val == value then
+                return name
+            end
+        end
+        return "unknown"
+    end
+    return nil
+end
+-- ###############################################################
+
 function dump.dumpAsteroidPropertyPrototype(prototype)
     local dp = prototype and {
         name = prototype.name,
@@ -163,7 +176,7 @@ end
 --- @param lge LuaGuiElement
 function dump.dumpLuaGuiElement(lge)
     local dlge = lge and {
-        type = lge.type,
+        type = getTypeName("gui_type", lge.type),
         children_names = lge.children_names,
         enabled = lge.enabled,
         tags = lge.tags,
@@ -173,6 +186,26 @@ function dump.dumpLuaGuiElement(lge)
     } or {}
 
     return dlge
+end
+
+local function tableCopy(obj)
+    if type(obj) ~= 'table' then return obj end
+    local res = {}
+    for k, v in pairs(obj) do res[tableCopy(k)] = tableCopy(v) end
+    return res
+end
+
+
+
+--- @param lge LuaGuiElement
+function dump.dumpEvent(event)
+    local function f()
+        local erg = tableCopy(event)
+        erg.gui_type = getTypeName("gui_type", event.gui_type)
+        return erg
+    end
+
+    return event and f() or {}
 end
 
 return dump

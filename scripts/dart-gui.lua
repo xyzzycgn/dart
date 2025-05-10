@@ -5,8 +5,9 @@
 --- Build the D.A.R.T Main UI window
 
 local Log = require("__log4factorio__.Log")
+local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
-local PlayerData = require("scripts.player_data")
+local components = require("scripts.gui.components")
 local radars = require("scripts.gui.radars")
 local turrets = require("scripts.gui.turrets")
 
@@ -79,31 +80,51 @@ end
 
 --- @param gae GuiAndElements
 local function close(gae, event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINER)
+    Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINE)
     local guis = global_data.getPlayer_data(event.player_index).guis
-
-    -- has an entity in main window been highlighted?
-    local highlight = gae.highlight
-    if (highlight and highlight.valid) then
-        -- yes - destroy the highlight-box
-        highlight.destroy()
-    end
-
+    local guiToBeCLosed = event.element
     guis.recentlyopen = guis.recentlyopen or {}
     local ropen = guis.recentlyopen[#guis.recentlyopen]
 
-    -- close actual gui and destroy it
-    gae.gui.visible = false
-    gae.gui.destroy()
+    -- has an entity in main window been highlighted?
+    local highlight = gae.highlight or ropen.highlight
+    if (highlight and highlight.valid) then
+        -- yes - destroy the highlight-box
+        highlight.destroy()
+        gae.highlight = nil
+    end
 
-    -- former gui present?
+    Log.logBlock(ropen, function(m)log(m)end, Log.FINE)
+    Log.logLine((ropen and ropen.gui) == event.element, function(m)log(m)end, Log.FINE)
+
+    -- 3 cases
+    -- only fcc-gui open and close it                                 -- ropen == nil
+    -- fcc-gui open and turret just opened -> close event for fcc-gui -- ropen != nil
+    -- close turret                                                   -- ropem != nil
+
+    -- make guiToBeCLosed invisible and destroy it in case of no chaied gui
+    if components.checkIfValidGuiElement(guiToBeCLosed) then
+        -- must be fcc-gui
+        Log.log("valid old gui", function(m)log(m)end, Log.FINE)
+        guiToBeCLosed.visible = false
+        -- distinguish between close and chain
+        if not ropen then
+            Log.log("nothing chained", function(m)log(m)end, Log.FINE)
+            -- close
+            guiToBeCLosed.destroy()
+        end
+        return
+    end
+
+    -- no fcc-gui
+    -- close of chained gui?
     if ropen then
         -- remove closed gui from list
         guis.recentlyopen[#guis.recentlyopen] = nil
         -- make former gui visible again
         ropen.gui.visible = true
+        guis.open = ropen
     end
-    guis.open = ropen
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -188,51 +209,17 @@ local function build(player, entity)
 
     return elems, gui
 end
--- ###############################################################
-
---- open new gui
---- @return PlayerData
-local function openNewGui(player_index, gui, elems, entity)
-    local pd = global_data.getPlayer_data(player_index)
-    local player = game.get_player(player_index)
-    if (pd == nil) then
-        pd = PlayerData.init_player_data(player)
-        global_data.addPlayer_data(player, pd)
-    end
-    player.opened = gui
-    -- store reference to gui in storage
-    --- @type GuiAndElements
-    local nextgui =  {
-        gui = gui,
-        elems = elems,
-        entity = entity,
-    }
-    pd.guis.recentlyopen = pd.guis.recentlyopen or {}
-    pd.guis.recentlyopen[#pd.guis.recentlyopen + 1] = pd.guis.open
-
-    if pd.guis.open then
-        -- hide former gui
-        pd.guis.open.gui.visible = false
-    end
-    pd.guis.open = nextgui
-
-    gui.force_auto_center()
-    gui.bring_to_front()
-    gui.visible = true
-
-    return pd
-end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function gui_open(event)
     local entity = event.entity
+    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
     if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-fcc" then
-        Log.logBlock(event, function(m)log(m)end, Log.FINER)
 
         local player = game.get_player(event.player_index)
         local elems, gui = build(player, entity)
 
-        local pd = openNewGui(event.player_index, gui, elems, entity)
+        local pd = components.openNewGui(event.player_index, gui, elems, entity)
         elems.fcc_view.entity = entity
         pd.guis.open.activeTab = 1
 
@@ -243,20 +230,61 @@ local function gui_open(event)
         pd.guis.open.sortings = allSortings
 
         update_gui(event)
+    elseif event.gui_type == defines.gui_type.entity then -- TODO löschen
+       local player = game.get_player(event.player_index)
+       -- player.opened ist zu diesem Zeitpunkt bereits die GUI
+        Log.logBlock(player.opened, function(m)log(m)end, Log.FINE)
     end
 end
+-- ###############################################################
+
+local function standard_gui_closed(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    local pd = global_data.getPlayer_data(event.player_index)
+    --- @type LuaEntity
+    local entity = event.entity
+    if entity and (entity.type == 'ammo-turret') then
+        local platform = entity.surface.platform
+
+        if platform then
+            Log.log("turret on platform", function(m)log(m)end, Log.FINE)
+            local pons = pd.pons[platform.index]
+
+            for _, top in pairs(pons.turretsOnPlatform) do
+                if top.turret == entity then
+                    local gae = pd.guis.open
+                    Log.log("closed turret on platform", function(m)log(m)end, Log.FINE)
+                    --if gae then
+                    --    close(gae, event)
+                    --end
+                    break
+                end
+            end
+        end
+    end
+end
+
+--local filter_ammo_turrets = {
+--    { filter = 'type', type = 'ammo-turret' },
+--}
+-- ###############################################################
 
 -- GUI events - TODO TBC
 local dart_gui = {}
 
 dart_gui.events = {
     [defines.events.on_gui_opened] = gui_open,
+    --[defines.events.on_gui_closed] = standard_gui_closed,
 
     -- defined in internalEvents.lua
     [on_dart_component_build_event] = update_gui,
     [on_dart_component_removed_event] = update_gui,
     [on_dart_gui_needs_update] = update_gui,
 }
+
+--dart_gui.event_filters = {
+--    [defines.events.on_gui_closed] = filter_ammo_turrets,
+--}
 
 
 return dart_gui

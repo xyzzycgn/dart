@@ -5,6 +5,7 @@ local Log = require("__log4factorio__.Log")
 local flib_gui = require("__flib__.gui")
 local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
+local components = require("scripts.gui.components")
 
 local eventHandlers = {}
 -- ###############################################################
@@ -64,20 +65,22 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 local function turret_leave(gae, event)
-    gae.highlight.destroy()
-    gae.highlight = nil
+    if gae.highlight then
+        gae.highlight.destroy()
+        gae.highlight = nil
+    end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param gae GuiAndElements
 --- @param event EventData
 local function clicked(gae, event)
-    Log.logLine({ gae = gae, event = event }, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
     local entity = event.element.entity
     Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
 
-    game.players[event.player_index].opened = entity
-    --game.player.opened = entity
+    components.openNewGui(event.player_index, entity, nil, entity)
+    --game.players[event.player_index].opened = entity
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
