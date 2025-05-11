@@ -200,6 +200,7 @@ function components.openNewGui(player_index, gui, elems, entity)
     }
     pd.guis.recentlyopen = pd.guis.recentlyopen or {}
     pd.guis.recentlyopen[#pd.guis.recentlyopen + 1] = pd.guis.open
+    Log.log("set recentlyopen", function(m)log(m)end, Log.FINE)
 
     Log.logBlock(pd.guis, function(m)log(m)end, Log.FINE)
     local open = pd.guis.open

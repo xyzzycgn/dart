@@ -99,24 +99,10 @@ local function close(gae, event)
 
     -- 3 cases
     -- only fcc-gui open and close it                                 -- ropen == nil
-    -- fcc-gui open and turret just opened -> close event for fcc-gui -- ropen != nil
-    -- close turret                                                   -- ropem != nil
+    -- only turret open and close it                                  -- ropen == nil
+    -- fcc-gui open and turret just opened -> close event for fcc-gui -- ropen != nil // handled not here????
+    -- close chained turret                                           -- ropen != nil
 
-    -- make guiToBeCLosed invisible and destroy it in case of no chaied gui
-    if components.checkIfValidGuiElement(guiToBeCLosed) then
-        -- must be fcc-gui
-        Log.log("valid old gui", function(m)log(m)end, Log.FINE)
-        guiToBeCLosed.visible = false
-        -- distinguish between close and chain
-        if not ropen then
-            Log.log("nothing chained", function(m)log(m)end, Log.FINE)
-            -- close
-            guiToBeCLosed.destroy()
-        end
-        return
-    end
-
-    -- no fcc-gui
     -- close of chained gui?
     if ropen then
         -- remove closed gui from list
@@ -124,6 +110,14 @@ local function close(gae, event)
         -- make former gui visible again
         ropen.gui.visible = true
         guis.open = ropen
+    else
+        -- close single gui - either fcc or turret
+        if components.checkIfValidGuiElement(guiToBeCLosed) then
+            -- must be fcc
+            Log.log("destroy custom gui", function(m)log(m)end, Log.FINE)
+            guiToBeCLosed.destroy()
+            guis.open = nil
+        end
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -160,7 +154,7 @@ local function build(player, entity)
             type = "frame",
             direction = "vertical",
             visible = false,
-            --handler = { [defines.events.on_gui_closed] = handlers.close_gui },
+            handler = { [defines.events.on_gui_closed] = handlers.close_gui },
             style = "dart_top_frame",
             {
                 type = "flow",
@@ -238,8 +232,8 @@ local function gui_open(event)
 end
 -- ###############################################################
 
-local function standard_gui_closed(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+local function standard_gui_closed(event) -- TODO better name for function
+    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
     local pd = global_data.getPlayer_data(event.player_index)
     --- @type LuaEntity
     local entity = event.entity
@@ -255,8 +249,8 @@ local function standard_gui_closed(event)
                     if top.turret == entity then
                         local gae = pd.guis.open
                         Log.log("closed turret on platform", function(m)log(m)end, Log.FINE)
-                        if gae then
-                            close(gae, event)
+                        if gae then -- chained?
+                            close(gae, event) -- yes
                         end
                         break
                     end
@@ -264,6 +258,12 @@ local function standard_gui_closed(event)
             end
         elseif entity.name == "dart-fcc" then
             Log.log("close fcc", function(m)log(m)end, Log.FINE)
+            local gae = pd.guis.open
+            local fcc_gui = gae and gae.gui
+            if (fcc_gui.valid) then
+                Log.log("omit close(gae, event))", function(m)log(m)end, Log.FINE)
+                --close(gae, event)
+            end
         end
     end
 end
