@@ -103,13 +103,22 @@ local function close(gae, event)
     -- fcc-gui open and turret just opened -> close event for fcc-gui -- ropen != nil // handled not here????
     -- close chained turret                                           -- ropen != nil
 
-    -- close of chained gui?
+    -- close or chaining gui?
     if ropen then
-        -- remove closed gui from list
-        guis.recentlyopen[#guis.recentlyopen] = nil
-        -- make former gui visible again
-        ropen.gui.visible = true
-        guis.open = ropen
+        local rogui = ropen.gui
+        Log.logBlock(dump.dumpLuaGuiElement(rogui), function(m)log(m)end, Log.FINE)
+        -- chaining gui?
+        if (rogui.valid and rogui == event.element) then
+            -- chaining to turret gui
+            Log.log("visible = false", function(m)log(m)end, Log.FINE)
+            rogui.visible = false
+        else
+            -- remove closed gui from list
+            guis.recentlyopen[#guis.recentlyopen] = nil
+            -- make former gui visible again
+            ropen.gui.visible = true
+            guis.open = ropen
+        end
     else
         -- close single gui - either fcc or turret
         if components.checkIfValidGuiElement(guiToBeCLosed) then

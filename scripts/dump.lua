@@ -183,6 +183,8 @@ function dump.dumpLuaGuiElement(lge)
         caption = lge.caption,
         name = lge.name,
         index = lge.index,
+        valid = lge.valid,
+        visible = lge.visible,
     } or {}
 
     return dlge
