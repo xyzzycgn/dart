@@ -118,6 +118,7 @@ local function close(gae, event)
             -- make former gui visible again
             ropen.gui.visible = true
             guis.open = ropen
+            update_gui(event)
         end
     else
         -- close single gui - either fcc or turret
