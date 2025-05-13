@@ -101,7 +101,8 @@ local function clicked(gae, event)
     Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
     local elems, gui = radars.buildGui(player, entity)
 
-    components.openNewGui(event.player_index, gui, elems, entity)
+    local pd = components.openNewGui(event.player_index, gui, elems, entity)
+    pd.guis.open.dart_gui_type = "dart_radar_gui"
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

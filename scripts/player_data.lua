@@ -10,6 +10,7 @@
 --- @field gui LuaGuiElement top level Element of the gui
 --- @field elems table<string, LuaGuiElement>
 --- @field entity LuaEntity Entity shown in gui
+--- @field dart_gui_type dart_guis type of custom gui opened
 --- @field activeTab int|nil (optional) ndx of active tab
 --- @field rowsShownLastInTab int[] (optional) number of rows shown in table on tab n the last time
 --- @field sortings Sortings[] (optional) sorting parameters for all columns in table on tab n

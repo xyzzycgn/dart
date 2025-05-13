@@ -34,6 +34,37 @@ local switch = {
     [2] = update_turrets,
 }
 
+local function update_main(pd, opengui, event)
+    ---  @type LuaEntity
+    local entity = event.entity
+
+    -- search the platform in the list of pons owned by player
+    --- @type Pons
+    local ponsOfEntity
+    for _, pons in pairs(pd.pons) do
+        if pons.surface == entity.surface then
+            ponsOfEntity = pons
+        end
+    end
+
+    if ponsOfEntity then
+        -- show the numbers of known radars and turrets
+        opengui.elems.radars_tab.badge_text = flib_format.number(table_size(ponsOfEntity.radarsOnPlatform))
+        opengui.elems.turrets_tab.badge_text = flib_format.number(table_size(ponsOfEntity.turretsOnPlatform))
+
+        local func = switch[opengui.activeTab]
+        if (func) then
+            func(opengui, ponsOfEntity, pd)
+        else
+            Log.log("no func for ndx=" .. opengui.activeTab, function(m)log(m)end, Log.WARN)
+        end
+    else
+        Log.log("no valid pons for entity=" .. entity.unit_number, function(m)log(m)end, Log.WARN)
+    end
+end
+
+
+
 local function update_gui(event)
     Log.logLine(event, function(m)log(m)end, Log.FINER)
 
@@ -42,33 +73,14 @@ local function update_gui(event)
         -- the actual opened gui
         local opengui = pd.guis.open
         if opengui then
-            -- TODO later distinguish the different (sub-)guis
+            Log.logBlock(opengui, function(m)log(m)end, Log.FINE)
 
-            ---  @type LuaEntity
-            local entity = event.entity
-
-            -- search the platform in the list of pons owned by player
-            --- @type Pons
-            local ponsOfEntity
-            for _, pons in pairs(pd.pons) do
-                if pons.surface == entity.surface then
-                    ponsOfEntity = pons
-                end
-            end
-
-            if ponsOfEntity then
-                -- show the numbers of known radars and turrets
-                opengui.elems.radars_tab.badge_text = flib_format.number(table_size(ponsOfEntity.radarsOnPlatform))
-                opengui.elems.turrets_tab.badge_text = flib_format.number(table_size(ponsOfEntity.turretsOnPlatform))
-
-                local func = switch[opengui.activeTab]
-                if (func) then
-                    func(opengui, ponsOfEntity, pd)
-                else
-                    Log.log("no func for ndx=" .. opengui.activeTab, function(m)log(m)end, Log.WARN)
-                end
+            -- distinguish the different (sub-)guis
+            if opengui.dart_gui_type == "main_gui" then
+                update_main(pd, opengui, event)
             else
-                Log.log("no valid pons for entity=" .. entity.unit_number, function(m)log(m)end, Log.WARN)
+                -- currently only "dart_radar_gui"
+                Log.log("update dart-radar NYI", function(m)log(m)end, Log.FINE)
             end
         end
     end
@@ -173,6 +185,7 @@ local function gui_open(event)
         local pd = components.openNewGui(event.player_index, gui, elems, entity)
         elems.fcc_view.entity = entity
         pd.guis.open.activeTab = 1
+        pd.guis.open.dart_gui_type = "main_gui"
 
         -- prepare sorting
         local allSortings = pd.guis.open.sortings or {}
@@ -181,10 +194,14 @@ local function gui_open(event)
         pd.guis.open.sortings = allSortings
 
         script.raise_event(on_dart_gui_needs_update, event)
-    elseif event.gui_type == defines.gui_type.entity then -- TODO löschen
-       local player = game.get_player(event.player_index)
-       -- player.opened ist zu diesem Zeitpunkt bereits die GUI
-        Log.logBlock(player.opened, function(m)log(m)end, Log.FINE)
+    elseif event.gui_type == defines.gui_type.custom then
+        local pd = global_data.getPlayer_data(event.player_index)
+        local entity = pd.guis.open.entity
+        Log.logBlock(entity, function(m)log(m)end, Log.FINE)
+        if entity and entity.name == "dart-radar" then
+            event.entity = entity -- pimp the event ;-)
+            script.raise_event(on_dart_gui_needs_update, event)
+        end
     end
 end
 -- ###############################################################

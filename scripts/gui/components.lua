@@ -9,6 +9,10 @@ local flib_format = require("__flib__.format")
 
 local components =  {}
 
+--- @alias dart_guis
+--- | "main_gui"
+--- | "dart_radar_gui"
+
 --- @param guiOrEntity LuaGuiElement|LuaEntity
 --- @return true if guiOrEntity is a valid LuaGuiElement
 function components.checkIfValidGuiElement(guiOrEntity)
