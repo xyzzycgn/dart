@@ -118,7 +118,7 @@ local function close(gae, event)
             -- make former gui visible again
             ropen.gui.visible = true
             guis.open = ropen
-            update_gui(event)
+            script.raise_event(on_dart_gui_needs_update, event)
         end
     else
         -- close single gui - either fcc or turret
@@ -137,7 +137,7 @@ local function change_tab(gae, event)
     local tab = event.element
     gae.activeTab = tab.selected_tab_index
     event.entity = gae.entity -- pimp the event ;-)
-    update_gui(event)
+    script.raise_event(on_dart_gui_needs_update, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -233,7 +233,7 @@ local function gui_open(event)
         allSortings[2] = allSortings[2] or turrets.sortings()
         pd.guis.open.sortings = allSortings
 
-        update_gui(event)
+        script.raise_event(on_dart_gui_needs_update, event)
     elseif event.gui_type == defines.gui_type.entity then -- TODO löschen
        local player = game.get_player(event.player_index)
        -- player.opened ist zu diesem Zeitpunkt bereits die GUI
