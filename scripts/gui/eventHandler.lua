@@ -45,7 +45,7 @@ end
 
 --- @param gae GuiAndElements
 --- @param event EventData
-local function turret_hover(gae, event)
+local function camera_hover(gae, event)
     ---@type LuaGuiElement
     local camera = event.element
     local entity = camera.entity
@@ -64,7 +64,7 @@ end
 
 --- @param gae GuiAndElements
 --- @param event EventData
-local function turret_leave(gae, event)
+local function camera_leave(gae, event)
     if gae.highlight then
         gae.highlight.destroy()
         gae.highlight = nil
@@ -80,15 +80,79 @@ local function clicked(gae, event)
     Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
 
     components.openNewGui(event.player_index, entity, nil, entity)
-    --game.players[event.player_index].opened = entity
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- common function to close gui
+--- @param gae GuiAndElements
+--- @param event EventData
+function eventHandlers.close(gae, event)
+    Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINE)
+    local guis = global_data.getPlayer_data(event.player_index).guis
+    local guiToBeCLosed = gae.gui
+    guis.recentlyopen = guis.recentlyopen or {}
+    local ropen = guis.recentlyopen[#guis.recentlyopen]
+
+    -- has an entity in main window been highlighted?
+    local highlight = gae.highlight or (ropen and ropen.highlight)
+    if (highlight and highlight.valid) then
+        -- yes - destroy the highlight-box
+        highlight.destroy()
+        gae.highlight = nil
+    end
+
+    Log.logBlock(ropen, function(m)log(m)end, Log.FINE)
+    Log.logLine((ropen and ropen.gui) == event.element, function(m)log(m)end, Log.FINE)
+
+    -- 3 cases
+    -- only fcc-gui open and close it                                 -- ropen == nil
+    -- only turret open and close it                                  -- ropen == nil
+    -- fcc-gui open and turret just opened -> close event for fcc-gui -- ropen != nil // handled not here????
+    -- close chained turret                                           -- ropen != nil
+
+    -- close or chaining gui?
+    if ropen then
+        local rogui = ropen.gui
+        Log.logBlock(dump.dumpLuaGuiElement(rogui), function(m)log(m)end, Log.FINE)
+        -- chaining gui?
+        if (rogui.valid and rogui == event.element) then
+            -- chaining to turret gui
+            Log.log("visible = false", function(m)log(m)end, Log.FINE)
+            rogui.visible = false
+        else
+            if rogui.valid then
+                -- must be dart-radar
+               guiToBeCLosed.visible = false
+               guiToBeCLosed.destroy()
+            end
+            -- remove closed gui from list
+            guis.recentlyopen[#guis.recentlyopen] = nil
+            -- make former gui visible again
+            ropen.gui.visible = true
+            guis.open = ropen
+            if (not event.entity) then
+                event.entity = gae.entity
+            end
+            script.raise_event(on_dart_gui_needs_update, event)
+        end
+    else
+        -- close single gui - either fcc or turret
+        if components.checkIfValidGuiElement(guiToBeCLosed) then
+            -- must be fcc
+            Log.log("destroy custom gui", function(m)log(m)end, Log.FINE)
+            guiToBeCLosed.destroy()
+            guis.open = nil
+        end
+    end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 eventHandlers.handlers = {
     sort_clicked = sort_clicked_handler,
-    camera_hovered = turret_hover,
-    camera_leave = turret_leave,
+    camera_hovered = camera_hover,
+    camera_left = camera_leave,
     clicked = clicked,
+    close_gui = eventHandlers.close,
 }
 
 -- register local handlers in flib

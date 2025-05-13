@@ -8,6 +8,7 @@ local Log = require("__log4factorio__.Log")
 local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
 local components = require("scripts.gui.components")
+local eventHandler = require("scripts.gui.eventHandler")
 local radars = require("scripts.gui.radars")
 local turrets = require("scripts.gui.turrets")
 
@@ -67,7 +68,6 @@ local function update_gui(event)
                     Log.log("no func for ndx=" .. opengui.activeTab, function(m)log(m)end, Log.WARN)
                 end
             else
-                -- TODO better logging
                 Log.log("no valid pons for entity=" .. entity.unit_number, function(m)log(m)end, Log.WARN)
             end
         end
@@ -77,59 +77,6 @@ end
 
 --
 -- local handlers for flib
-
---- @param gae GuiAndElements
-local function close(gae, event)
-    Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINE)
-    local guis = global_data.getPlayer_data(event.player_index).guis
-    local guiToBeCLosed = gae.gui
-    guis.recentlyopen = guis.recentlyopen or {}
-    local ropen = guis.recentlyopen[#guis.recentlyopen]
-
-    -- has an entity in main window been highlighted?
-    local highlight = gae.highlight or (ropen and ropen.highlight)
-    if (highlight and highlight.valid) then
-        -- yes - destroy the highlight-box
-        highlight.destroy()
-        gae.highlight = nil
-    end
-
-    Log.logBlock(ropen, function(m)log(m)end, Log.FINE)
-    Log.logLine((ropen and ropen.gui) == event.element, function(m)log(m)end, Log.FINE)
-
-    -- 3 cases
-    -- only fcc-gui open and close it                                 -- ropen == nil
-    -- only turret open and close it                                  -- ropen == nil
-    -- fcc-gui open and turret just opened -> close event for fcc-gui -- ropen != nil // handled not here????
-    -- close chained turret                                           -- ropen != nil
-
-    -- close or chaining gui?
-    if ropen then
-        local rogui = ropen.gui
-        Log.logBlock(dump.dumpLuaGuiElement(rogui), function(m)log(m)end, Log.FINE)
-        -- chaining gui?
-        if (rogui.valid and rogui == event.element) then
-            -- chaining to turret gui
-            Log.log("visible = false", function(m)log(m)end, Log.FINE)
-            rogui.visible = false
-        else
-            -- remove closed gui from list
-            guis.recentlyopen[#guis.recentlyopen] = nil
-            -- make former gui visible again
-            ropen.gui.visible = true
-            guis.open = ropen
-            script.raise_event(on_dart_gui_needs_update, event)
-        end
-    else
-        -- close single gui - either fcc or turret
-        if components.checkIfValidGuiElement(guiToBeCLosed) then
-            -- must be fcc
-            Log.log("destroy custom gui", function(m)log(m)end, Log.FINE)
-            guiToBeCLosed.destroy()
-            guis.open = nil
-        end
-    end
-end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param gae GuiAndElements
@@ -141,8 +88,8 @@ local function change_tab(gae, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+-- local event handlers
 local handlers = {
-    close_gui = close,
     change_tab = change_tab,
 }
 
@@ -164,7 +111,7 @@ local function build(player, entity)
             type = "frame",
             direction = "vertical",
             visible = false,
-            handler = { [defines.events.on_gui_closed] = handlers.close_gui },
+            handler = { [defines.events.on_gui_closed] = eventHandler.handlers.close_gui },
             style = "dart_top_frame",
             {
                 type = "flow",
@@ -184,7 +131,7 @@ local function build(player, entity)
                     sprite = "utility/close",
                     hovered_sprite = "utility/close_black",
                     tooltip = { "gui.dart-close-button-tt" },
-                    handler = { [defines.events.on_gui_click] = handlers.close_gui },
+                    handler = { [defines.events.on_gui_click] = eventHandler.handlers.close_gui },
                 },
             },
             { type = "frame", name = "content_frame", direction = "vertical", style = "dart_content_frame",
@@ -260,7 +207,7 @@ local function standard_gui_closed(event) -- TODO better name for function
                         local gae = pd.guis.open
                         Log.log("closed turret on platform", function(m)log(m)end, Log.FINE)
                         if gae then -- chained?
-                            close(gae, event) -- yes
+                            eventHandler.close(gae, event) -- yes -- TODO better solution than calling eventHandler.close
                         end
                         break
                     end
@@ -277,10 +224,6 @@ local function standard_gui_closed(event) -- TODO better name for function
         end
     end
 end
-
---local filter_ammo_turrets = {
---    { filter = 'type', type = 'ammo-turret' },
---}
 -- ###############################################################
 
 -- GUI events - TODO TBC
@@ -295,10 +238,5 @@ dart_gui.events = {
     [on_dart_component_removed_event] = update_gui,
     [on_dart_gui_needs_update] = update_gui,
 }
-
---dart_gui.event_filters = {
---    [defines.events.on_gui_closed] = filter_ammo_turrets,
---}
-
 
 return dart_gui

@@ -7,6 +7,8 @@ local flib_gui = require("__flib__.gui")
 local components = require("scripts/gui/components")
 local utils = require("scripts/utils")
 local eventHandler = require("scripts/gui/eventHandler")
+local global_data = require("scripts.global_data")
+local dump = require("scripts.dump")
 
 local radars = {}
 
@@ -29,6 +31,92 @@ local function dataOfRow(data)
     return data.radar.position, data.radar.surface_index, data.radar.backer_name, data.detectionRange, data.defenseRange
 end
 -- ###############################################################
+
+--- custom gui for dart-radar for setting defense-radius
+--- @param player LuaPlayer
+--- @param entity LuaEntity a dart-radar
+function radars.buildGui(player, entity)
+    local elems, gui = flib_gui.add(player.gui.screen, {
+        {
+            type = "frame",
+            direction = "vertical",
+            visible = false,
+            handler = { [defines.events.on_gui_closed] = eventHandler.handlers.close_gui },
+            style = "dart_top_frame",
+            {
+                type = "flow",
+                direction = "horizontal",
+                name = "titlebar",
+                {
+                    type = "label",
+                    style = "frame_title",
+                    caption = { "mod-name.dart" },
+                    ignored_by_interaction = true,
+                },
+                { type = "empty-widget", style = "flib_titlebar_drag_handle", ignored_by_interaction = true },
+                {
+                    type = "sprite-button",
+                    name = "gui_close_button",
+                    style = "close_button",
+                    sprite = "utility/close",
+                    hovered_sprite = "utility/close_black",
+                    tooltip = { "gui.dart-close-button-tt" },
+                    handler = { [defines.events.on_gui_click] = eventHandler.handlers.close_gui },
+                },
+            },
+            { type = "frame", name = "content_frame", direction = "vertical", style = "dart_content_frame",
+              {
+                  type = "frame",
+                  style = "entity_button_frame",
+                  {
+                      type = "entity-preview",
+                      style = "wide_entity_button",
+                      position = entity.position,
+                      name = "radar_view",
+                  },
+              },
+                --{
+                --    type = "tabbed-pane",
+                --    style = "dart_tabbed_pane",
+                --    handler = { [defines.events.on_gui_selected_tab_changed] = handlers.change_tab },
+                --    radars.build(),
+                --    turrets.build(),
+                --},
+            }
+        }
+    })
+
+    elems.titlebar.drag_target = gui
+
+    return elems, gui
+end
+
+-- as vanilla radar (and thus also dart-radar) doesn't have a standard gui a special handling is required
+--- @param gae GuiAndElements
+--- @param event EventData
+local function clicked(gae, event)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
+    local entity = event.element.entity
+    local player = game.get_player(event.player_index)
+    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
+    local elems, gui = radars.buildGui(player, entity)
+
+    components.openNewGui(event.player_index, gui, elems, entity)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local handlers = {
+    radar_clicked = clicked,
+}
+
+-- register local handlers in flib
+flib_gui.add_handlers(handlers, function(e, handler)
+    local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
+    if guiAndElements then
+        handler(guiAndElements, e)
+    end
+end)
+
 
 local function names(ndx)
     local prefix = "radar_" .. ndx
@@ -59,7 +147,8 @@ local function appendTableRow(table, v, at_row)
               raise_hover_events = true,
               handler = {
                   [defines.events.on_gui_hover] = eventHandler.handlers.camera_hovered,
-                  [defines.events.on_gui_leave] = eventHandler.handlers.camera_leave,
+                  [defines.events.on_gui_leave] = eventHandler.handlers.camera_left,
+                  [defines.events.on_gui_click] = handlers.radar_clicked,
               }
             },
             { type = "label", style = "dart_minimap_label", name = bn, caption = name },
