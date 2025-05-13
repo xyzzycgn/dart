@@ -121,7 +121,7 @@ function eventHandlers.close(gae, event)
             rogui.visible = false
         else
             -- special handling for dart-radar
-            if gae.dart_gui_type == "dart_radar_gui" then
+            if gae.dart_gui_type == components.dart_guis.dart_radar_gui then
                guiToBeCLosed.visible = false
                guiToBeCLosed.destroy()
             end

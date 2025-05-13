@@ -76,7 +76,7 @@ local function update_gui(event)
             Log.logBlock(opengui, function(m)log(m)end, Log.FINE)
 
             -- distinguish the different (sub-)guis
-            if opengui.dart_gui_type == "main_gui" then
+            if opengui.dart_gui_type == components.dart_guis.main_gui then
                 update_main(pd, opengui, event)
             else
                 -- currently only "dart_radar_gui"
@@ -185,7 +185,7 @@ local function gui_open(event)
         local pd = components.openNewGui(event.player_index, gui, elems, entity)
         elems.fcc_view.entity = entity
         pd.guis.open.activeTab = 1
-        pd.guis.open.dart_gui_type = "main_gui"
+        pd.guis.open.dart_gui_type = components.dart_guis.main_gui
 
         -- prepare sorting
         local allSortings = pd.guis.open.sortings or {}

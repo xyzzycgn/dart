@@ -102,7 +102,7 @@ local function clicked(gae, event)
     local elems, gui = radars.buildGui(player, entity)
 
     local pd = components.openNewGui(event.player_index, gui, elems, entity)
-    pd.guis.open.dart_gui_type = "dart_radar_gui"
+    pd.guis.open.dart_gui_type = components.dart_guis.dart_radar_gui
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
