@@ -130,6 +130,11 @@ styles.dart_camera = {
     size = 90,
 }
 
+styles.dart_camera_wide = {
+    type = "camera_style",
+    size = 180,
+}
+
 local function graphical_set(filename)
     return { filename = "__core__/graphics/arrows/" .. filename, size = { 16, 16 }, scale = 0.5, }
 end

@@ -65,23 +65,26 @@ function radars.buildGui(player, entity)
                 },
             },
             { type = "frame", name = "content_frame", direction = "vertical", style = "dart_content_frame",
-              {
-                  type = "frame",
-                  style = "entity_button_frame",
-                  {
-                      type = "entity-preview",
-                      style = "wide_entity_button",
-                      position = entity.position,
-                      name = "radar_view",
-                  },
-              },
-                --{
-                --    type = "tabbed-pane",
-                --    style = "dart_tabbed_pane",
-                --    handler = { [defines.events.on_gui_selected_tab_changed] = handlers.change_tab },
-                --    radars.build(),
-                --    turrets.build(),
-                --},
+                {
+                    type = "frame",
+                    style = "dart_content_frame",
+                    style_mods = { vertical_align = "center", },
+                    {
+                        type = "camera",
+                        style = "dart_camera_wide",
+                        position = entity.position,
+                        surface_index = entity.surface_index,
+                        name = "radar_view",
+                   },
+                },
+                {
+                    type = "frame",
+                    style = "dart_content_frame",
+                    direction = "vertical",
+                    -- TODO values from entity
+                    components.radar_slider({ "gui.dart-radar-detect" }, 0, 30, 20),
+                    components.radar_slider({ "gui.dart-radar-defense"}, 0, 30, 30),
+                },
             }
         }
     })

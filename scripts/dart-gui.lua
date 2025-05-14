@@ -62,8 +62,7 @@ local function update_main(pd, opengui, event)
         Log.log("no valid pons for entity=" .. entity.unit_number, function(m)log(m)end, Log.WARN)
     end
 end
-
-
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function update_gui(event)
     Log.logLine(event, function(m)log(m)end, Log.FINER)
@@ -81,6 +80,7 @@ local function update_gui(event)
             else
                 -- currently only "dart_radar_gui"
                 Log.log("update dart-radar NYI", function(m)log(m)end, Log.FINE)
+                opengui.elems.radar_view.entity = opengui.entity
             end
         end
     end

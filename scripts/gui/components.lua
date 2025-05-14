@@ -14,12 +14,68 @@ components.dart_guis =  {
     main_gui = 1,
     dart_radar_gui = 2,
 }
+-- ###############################################################
+
+--- @param guiOrEntity LuaGuiElement|LuaEntity
+--- @return true if guiOrEntity is a valid LuaGuiElement
+function components.radar_slider(caption, min, max, val)
+    return {
+        type = "frame",
+        style = "dart_content_frame",
+        direction = "horizontal",
+        {
+            type = "flow",
+            direction = "vertical",
+            {
+                type = "flow",
+                direction = "horizontal",
+                style_mods = { horizontally_stretchable = true, horizontal_spacing = 140,},
+                {
+                    type = "flow",
+                    style_mods = { horizontally_stretchable = true, horizontal_align = "left", },
+                    direction = "horizontal",
+                    {
+                        type = "label",
+                        style = "dart_stretchable_label_style",
+                        caption = min,
+                        natural_width = 38,
+                    },
+                },
+                {
+                    type = "flow",
+                    direction = "horizontal",
+                    style_mods = { horizontally_stretchable = true, horizontal_align = "right", },
+                    {
+                        type = "label",
+                        style = "dart_stretchable_label_style",
+                        caption = max,
+                        natural_width = 38,
+                    },
+                },
+            },
+            {
+                type = "slider",
+                minimum_value = min,
+                maximum_value = max,
+                value = val,
+                style_mods = { top_margin = 10 },
+            },
+        },
+        { type = "label",
+          style = "dart_stretchable_label_style",
+          style_mods = { top_margin = 10 },
+          caption = caption,
+        },
+    }
+end
+-- ###############################################################
 
 --- @param guiOrEntity LuaGuiElement|LuaEntity
 --- @return true if guiOrEntity is a valid LuaGuiElement
 function components.checkIfValidGuiElement(guiOrEntity)
     return guiOrEntity and guiOrEntity.valid and guiOrEntity.object_name == "LuaGuiElement"
 end
+-- ###############################################################
 
 --- Creates a column header with a sort toggle.
 --- @param name string used for name and (as base) for caption
