@@ -11,6 +11,6 @@ require("scripts.internalEvents")
 handler.add_lib(require("scripts.dart"))
 -- GUI handling
 handler.add_lib(require("__flib__.gui"))
-handler.add_lib(require("scripts.dart-gui"))
+handler.add_lib(require("scripts.gui.dart-gui"))
 
 
