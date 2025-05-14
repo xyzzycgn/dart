@@ -7,6 +7,7 @@ local Log = require("__log4factorio__.Log")
 local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
 local asyncHandler = require("scripts.asyncHandler")
+local constants = require("scripts.constants")
 
 -- Type definitions for this file
 
@@ -91,12 +92,6 @@ local function dumpPrototypes(sev)
         Log.log(dumpOnePrototype(k, v), function(m)log(m)end, sev)
     end
 end
--- ###############################################################
-
--- constants
-local defenseRange = 16   -- TODO gui or at least configurable
-local detectionRange = 35 -- TODO configurable or depending on quality?
-
 -- ###############################################################
 
 --- Calculates whether an asteroid hits, grazes or passes the defended area.
@@ -613,8 +608,8 @@ local function newRadar(entity)
     local dart = {
         radar_un = radar_un,
         radar = entity,
-        detectionRange = detectionRange, -- TODO set via GUI / quality
-        defenseRange = defenseRange,     -- TODO set via GUI
+        detectionRange = constants.default_detectionRange,
+        defenseRange = constants.default_defenseRange,
     }
     -- save it in platform
     local gdp = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform

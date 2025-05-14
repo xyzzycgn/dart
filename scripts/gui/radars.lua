@@ -9,6 +9,7 @@ local utils = require("scripts/utils")
 local eventHandler = require("scripts/gui/eventHandler")
 local global_data = require("scripts.global_data")
 local dump = require("scripts.dump")
+local constants = require("scripts.constants")
 
 local radars = {}
 
@@ -34,8 +35,9 @@ end
 
 --- custom gui for dart-radar for setting defense-radius
 --- @param player LuaPlayer
---- @param entity LuaEntity a dart-radar
-function radars.buildGui(player, entity)
+--- @param rop RadarOnPlatform a dart-radar
+function radars.buildGui(player, rop)
+    local entity = rop.radar
     local elems, gui = flib_gui.add(player.gui.screen, {
         {
             type = "frame",
@@ -81,9 +83,8 @@ function radars.buildGui(player, entity)
                     type = "frame",
                     style = "dart_content_frame",
                     direction = "vertical",
-                    -- TODO values from entity
-                    components.radar_slider({ "gui.dart-radar-detect" }, 0, 30, 20),
-                    components.radar_slider({ "gui.dart-radar-defense"}, 0, 30, 30),
+                    components.radar_slider({ "gui.dart-radar-detect" }, 0, constants.max_detectionRange, rop.detectionRange),
+                    components.radar_slider({ "gui.dart-radar-defense"}, 0, constants.max_defenseRange, rop.defenseRange),
                 },
             }
         }
@@ -101,9 +102,10 @@ local function clicked(gae, event)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
     local entity = event.element.entity
     local player = game.get_player(event.player_index)
-    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
-    local elems, gui = radars.buildGui(player, entity)
+    local rop = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform[entity.unit_number]
+    local elems, gui = radars.buildGui(player, rop)
 
+    ---@type PlayerData
     local pd = components.openNewGui(event.player_index, gui, elems, entity)
     pd.guis.open.dart_gui_type = components.dart_guis.dart_radar_gui
 end
