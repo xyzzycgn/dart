@@ -26,7 +26,7 @@ styles.dart_camera = {
 
 styles.dart_camera_wide = {
     type = "camera_style",
-    size = 180,
+    size = 360,
 }
 
 styles.dart_content_frame = {

@@ -83,6 +83,14 @@ local function clicked(gae, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param gae GuiAndElements
+--- @param event EventData
+local function slider_moved(gae, event)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
+    -- TODO???
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- common function to close gui
 --- @param gae GuiAndElements
 --- @param event EventData
@@ -153,6 +161,7 @@ eventHandlers.handlers = {
     camera_left = camera_leave,
     clicked = clicked,
     close_gui = eventHandlers.close,
+    slider_moved = slider_moved,
 }
 
 -- register local handlers in flib

@@ -45,6 +45,7 @@ function radars.buildGui(player, rop)
             visible = false,
             handler = { [defines.events.on_gui_closed] = eventHandler.handlers.close_gui },
             style = "dart_top_frame",
+            style_mods = { maximal_height = 700, },
             {
                 type = "flow",
                 direction = "horizontal",
@@ -70,21 +71,30 @@ function radars.buildGui(player, rop)
                 {
                     type = "frame",
                     style = "dart_content_frame",
-                    style_mods = { vertical_align = "center", },
+                    direction = "vertical",
                     {
-                        type = "camera",
-                        style = "dart_camera_wide",
-                        position = entity.position,
-                        surface_index = entity.surface_index,
-                        name = "radar_view",
-                   },
+                        type = "flow",
+                        direction = "horizontal",
+                        style_mods = { horizontal_align = "center", horizontally_stretchable = true, },
+                        {
+                            type = "camera",
+                            style = "dart_camera_wide",
+                            position = entity.position,
+                            surface_index = entity.surface_index,
+                            name = "radar_view",
+                            zoom = 0.50,
+                        },
+                    },
+                    components.radar_slider({ "gui.dart-radar-zoom-camera" }, 0, 100, 50, eventHandler.handlers.slider_moved, true),
                 },
                 {
                     type = "frame",
                     style = "dart_content_frame",
                     direction = "vertical",
-                    components.radar_slider({ "gui.dart-radar-detect" }, 0, constants.max_detectionRange, rop.detectionRange),
-                    components.radar_slider({ "gui.dart-radar-defense"}, 0, constants.max_defenseRange, rop.defenseRange),
+                    components.radar_slider({ "gui.dart-radar-detect" }, 0,
+                                            constants.max_detectionRange, rop.detectionRange, eventHandler.handlers.slider_moved),
+                    components.radar_slider({ "gui.dart-radar-defense"}, 0,
+                                            constants.max_defenseRange, rop.defenseRange, eventHandler.handlers.slider_moved),
                 },
             }
         }
