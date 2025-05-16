@@ -114,8 +114,9 @@ local function clicked(gae, event)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
     local entity = event.element.entity
     local player = game.get_player(event.player_index)
-    local rop = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform[entity.unit_number]
+    local rop = global_data.getRadarOnPlatform(entity)
     local elems, gui = radars.buildGui(player, rop)
+    rop.edited = true
 
     ---@type PlayerData
     local pd = components.openNewGui(event.player_index, gui, elems, entity)
@@ -137,7 +138,7 @@ end
 local function detection_slider_moved(gae, event)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event), element = dump.dumpLuaGuiElement(event.element) }, function(m)log(m)end, Log.FINE)
     local entity = gae.entity
-    local rop = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform[entity.unit_number]
+    local rop = global_data.getRadarOnPlatform(entity)
     local slider = event.element
     local val = slider.slider_value
     rop.detectionRange = val
@@ -149,7 +150,7 @@ end
 local function defense_slider_moved(gae, event)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event), element = dump.dumpLuaGuiElement(event.element) }, function(m)log(m)end, Log.FINE)
     local entity = gae.entity
-    local rop = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform[entity.unit_number]
+    local rop = global_data.getRadarOnPlatform(entity)
     local slider = event.element
     local val = slider.slider_value
     rop.defenseRange = val
@@ -170,7 +171,7 @@ flib_gui.add_handlers(handlers, function(e, handler)
         handler(guiAndElements, e)
     end
 end)
-
+-- ###############################################################
 
 local function names(ndx)
     local prefix = "radar_" .. ndx

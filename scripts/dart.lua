@@ -379,23 +379,26 @@ local function detection(pons)
         for _, asteroid  in pairs(asteroids) do
             detectedAsteroids[asteroid.unit_number] = asteroid
         end
+        local width = rop.edited and 3 or 1
         -- would be nice if only done when hovering over a dart-radar - unfortunately there seems to be no suitable event
-        if settings.global["dart-show-detection-area"].value then
+        if settings.global["dart-show-detection-area"].value or rop.edited then
             rendering.draw_circle({
                 target = pos,
                 color = { 0, 0, 0.7, 1 },
                 surface = surface,
                 time_to_live = 55,
                 radius = rop.detectionRange,
+                width = width,
             })
         end
-        if settings.global["dart-show-defended-area"].value then
+        if settings.global["dart-show-defended-area"].value or rop.edited then
             rendering.draw_circle({
                 target = pos,
                 color = { 0, 0.7, 0.7, 1 },
                 surface = surface,
                 time_to_live = 55,
                 radius = rop.defenseRange,
+                width = width,
             })
         end
     end

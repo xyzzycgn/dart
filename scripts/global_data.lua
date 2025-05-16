@@ -35,7 +35,16 @@ end
 function global_data.getPlatforms()
     return storage.platforms
 end
+-- ###############################################################
 
+--- returns RadarOnPlatform for a dart-radar
+--- @param entity LuaEntity a dart-radar
+--- @return RadarOnPlatform
+function global_data.getRadarOnPlatform(entity)
+    if (entity.name == "dart-radar") then
+        return storage.platforms[entity.surface.index].radarsOnPlatform[entity.unit_number]
+    end
+end
 -- ###############################################################
 
 --- structure containing all data concerning queued async functions

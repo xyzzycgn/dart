@@ -122,8 +122,12 @@ function eventHandlers.close(gae, event)
         else
             -- special handling for dart-radar
             if gae.dart_gui_type == components.dart_guis.dart_radar_gui then
-               guiToBeCLosed.visible = false
-               guiToBeCLosed.destroy()
+                local entity = gae.entity
+                local rop = global_data.getRadarOnPlatform(entity)
+                rop.edited = false
+
+                guiToBeCLosed.visible = false
+                guiToBeCLosed.destroy()
             end
             -- remove closed gui from list
             guis.recentlyopen[#guis.recentlyopen] = nil
