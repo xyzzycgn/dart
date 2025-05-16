@@ -19,6 +19,8 @@ local sortFields = {
     defense = "radar-defense",
 }
 
+local handlers -- forward declaration
+
 --- @param elems table<string, LuaGuiElement>
 local function getTableAndTab(elems)
     return elems.radars_table, elems.radars_tab
@@ -85,16 +87,16 @@ function radars.buildGui(player, rop)
                             zoom = 0.50,
                         },
                     },
-                    components.radar_slider({ "gui.dart-radar-zoom-camera" }, 0, 100, 50, eventHandler.handlers.slider_moved, true),
+                    components.radar_slider("zoom-slider", { "gui.dart-radar-zoom-camera" }, 0, 100, 50, handlers.zoom_slider_moved, true),
                 },
                 {
                     type = "frame",
                     style = "dart_content_frame",
                     direction = "vertical",
-                    components.radar_slider({ "gui.dart-radar-detect" }, 0,
-                                            constants.max_detectionRange, rop.detectionRange, eventHandler.handlers.slider_moved),
-                    components.radar_slider({ "gui.dart-radar-defense"}, 0,
-                                            constants.max_defenseRange, rop.defenseRange, eventHandler.handlers.slider_moved),
+                    components.radar_slider("detect-slider", { "gui.dart-radar-detect" }, 0,
+                                            constants.max_detectionRange, rop.detectionRange, handlers.detection_slider_moved),
+                    components.radar_slider("defense-slider", { "gui.dart-radar-defense"}, 0,
+                                            constants.max_defenseRange, rop.defenseRange, handlers.defense_slider_moved),
                 },
             }
         }
@@ -121,8 +123,44 @@ local function clicked(gae, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local handlers = {
+--- @param gae GuiAndElements
+--- @param event EventData
+local function zoom_slider_moved(gae, event)
+    local slider = event.element
+    local val = slider.slider_value
+    gae.elems.radar_view.zoom = val / 100
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param gae GuiAndElements
+--- @param event EventData
+local function detection_slider_moved(gae, event)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event), element = dump.dumpLuaGuiElement(event.element) }, function(m)log(m)end, Log.FINE)
+    local entity = gae.entity
+    local rop = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform[entity.unit_number]
+    local slider = event.element
+    local val = slider.slider_value
+    rop.detectionRange = val
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param gae GuiAndElements
+--- @param event EventData
+local function defense_slider_moved(gae, event)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event), element = dump.dumpLuaGuiElement(event.element) }, function(m)log(m)end, Log.FINE)
+    local entity = gae.entity
+    local rop = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform[entity.unit_number]
+    local slider = event.element
+    local val = slider.slider_value
+    rop.defenseRange = val
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+handlers = {
     radar_clicked = clicked,
+    zoom_slider_moved = zoom_slider_moved,
+    detection_slider_moved = detection_slider_moved,
+    defense_slider_moved = defense_slider_moved,
 }
 
 -- register local handlers in flib

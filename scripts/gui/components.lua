@@ -17,31 +17,34 @@ components.dart_guis =  {
 -- ###############################################################
 
 --- adds a slider
+--- @param name string name for the slider widget
 --- @param min uint min value for slider
 --- @param max uint max value for slider
 --- @param val uint actual value for slider
 --- @param handler function event handler
-local function sliderOnly(min, max, val, handler)
+local function sliderOnly(name, min, max, val, handler)
     return {
         type = "slider",
         minimum_value = min,
         maximum_value = max,
         value = val,
         style_mods = { top_margin = 10 },
+        name = name,
         handler = { [defines.events.on_gui_value_changed] = handler}
     }
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- adds a slider and a scale (if desired)
+--- @param name string name for the slider widget
 --- @param min uint min value for slider
 --- @param max uint max value for slider
 --- @param val uint actual value for slider
 --- @param handler function event handler
 --- @param omitScale boolean if true, only the slider is returned
-local function sliderWithScale(min, max, val, handler, omitScale)
+local function sliderWithScale(name, min, max, val, handler, omitScale)
     if omitScale then
-        return sliderOnly(min, max, val, handler)
+        return sliderOnly(name, min, max, val, handler)
     else
         return {
             type = "flow",
@@ -73,13 +76,14 @@ local function sliderWithScale(min, max, val, handler, omitScale)
                     },
                 },
             },
-            sliderOnly(min, max, val, handler),
+            sliderOnly(name, min, max, val, handler),
         }
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- adds a slider + text
+--- @param name string name for the slider widget
 --- @param caption string short description
 --- @param min uint min value for slider
 --- @param max uint max value for slider
@@ -87,12 +91,12 @@ end
 --- @param handler function event handler
 --- @param omitScale boolean (opt.) flag if the scale shouldn't be shown
 --- @return
-function components.radar_slider(caption, min, max, val, handler, omitScale)
+function components.radar_slider(name, caption, min, max, val, handler, omitScale)
     return {
         type = "frame",
         style = "dart_content_frame",
         direction = "horizontal",
-        sliderWithScale(min, max, val, handler, omitScale),
+        sliderWithScale(name, min, max, val, handler, omitScale),
         { type = "label",
           style = "dart_stretchable_label_style",
           style_mods = { top_margin = 10 },
