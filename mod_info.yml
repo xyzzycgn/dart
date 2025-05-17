@@ -4,7 +4,7 @@ mod_info:
   title: D.A.R.T
   attach_source_link: true
   license: mit
-  category: Content
+  category: content
   tags:
-    - Combat
-    - Circuit network
+    - combat
+    - circuit-network
