@@ -72,14 +72,13 @@ local function update_gui(event)
         -- the actual opened gui
         local opengui = pd.guis.open
         if opengui then
-            Log.logBlock(opengui, function(m)log(m)end, Log.FINE)
+            Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
 
             -- distinguish the different (sub-)guis
             if opengui.dart_gui_type == components.dart_guis.main_gui then
                 update_main(pd, opengui, event)
             else
                 -- currently only "dart_radar_gui"
-                Log.log("update dart-radar NYI", function(m)log(m)end, Log.FINE)
                 opengui.elems.radar_view.entity = opengui.entity
             end
         end
@@ -176,7 +175,7 @@ end
 
 local function gui_open(event)
     local entity = event.entity
-    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINEST)
     if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-fcc" then
 
         local player = game.get_player(event.player_index)
@@ -197,7 +196,7 @@ local function gui_open(event)
     elseif event.gui_type == defines.gui_type.custom then
         local pd = global_data.getPlayer_data(event.player_index)
         local entity = pd.guis.open and pd.guis.open.entity
-        Log.logBlock(entity, function(m)log(m)end, Log.FINE)
+        Log.logBlock(entity, function(m)log(m)end, Log.FINER)
         if entity and entity.name == "dart-radar" then
             event.entity = entity -- pimp the event ;-)
             script.raise_event(on_dart_gui_needs_update, event)
@@ -207,7 +206,7 @@ end
 -- ###############################################################
 
 local function standard_gui_closed(event) -- TODO better name for function
-    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINEST)
     local pd = global_data.getPlayer_data(event.player_index)
     --- @type LuaEntity
     local entity = event.entity
@@ -216,27 +215,19 @@ local function standard_gui_closed(event) -- TODO better name for function
             local platform = entity.surface.platform
 
             if platform then
-                Log.log("turret on platform", function(m)log(m)end, Log.FINE)
+                Log.log("turret on platform", function(m)log(m)end, Log.FINER)
                 local pons = pd.pons[platform.index]
 
                 for _, top in pairs(pons.turretsOnPlatform) do
                     if top.turret == entity then
                         local gae = pd.guis.open
-                        Log.log("closed turret on platform", function(m)log(m)end, Log.FINE)
+                        Log.log("closed turret on platform", function(m)log(m)end, Log.FINER)
                         if gae then -- chained?
-                            eventHandler.close(gae, event) -- yes -- TODO better solution than calling eventHandler.close
+                            eventHandler.close(gae, event) -- yes
                         end
                         break
                     end
                 end
-            end
-        elseif entity.name == "dart-fcc" then
-            Log.log("close fcc", function(m)log(m)end, Log.FINE)
-            local gae = pd.guis.open
-            local fcc_gui = gae and gae.gui
-            if (fcc_gui.valid) then
-                Log.log("omit close(gae, event))", function(m)log(m)end, Log.FINE)
-                --close(gae, event)
             end
         end
     end

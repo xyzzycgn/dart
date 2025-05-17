@@ -8,7 +8,7 @@ local Log = require("__log4factorio__.Log")
 local global_data = {}
 
 function global_data.init()
-    Log.log('global_data.init', function(m)log(m)end, Log.FINE)
+    Log.log('global_data.init', function(m)log(m)end, Log.FINER)
     storage.players = storage.players or {}
     storage.platforms = storage.platforms or {}
     storage.queued = storage.queued or {}

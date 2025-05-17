@@ -111,7 +111,7 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 local function clicked(gae, event)
-    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINEST)
     local entity = event.element.entity
     local player = game.get_player(event.player_index)
     local rop = global_data.getRadarOnPlatform(entity)
@@ -136,7 +136,7 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 local function detection_slider_moved(gae, event)
-    Log.logBlock({ gae = gae, event = dump.dumpEvent(event), element = dump.dumpLuaGuiElement(event.element) }, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event), element = dump.dumpLuaGuiElement(event.element) }, function(m)log(m)end, Log.FINEST)
     local entity = gae.entity
     local rop = global_data.getRadarOnPlatform(entity)
     local slider = event.element
@@ -148,7 +148,7 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 local function defense_slider_moved(gae, event)
-    Log.logBlock({ gae = gae, event = dump.dumpEvent(event), element = dump.dumpLuaGuiElement(event.element) }, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event), element = dump.dumpLuaGuiElement(event.element) }, function(m)log(m)end, Log.FINEST)
     local entity = gae.entity
     local rop = global_data.getRadarOnPlatform(entity)
     local slider = event.element

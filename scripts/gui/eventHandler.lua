@@ -15,18 +15,18 @@ local eventHandlers = {}
 local function sort_clicked_handler(gae, event)
     --- @type LuaGuiElement
     local element =  event.element
-    Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINER)
-    Log.logBlock({ active = gae.activeTab, sortings = gae.sortings}, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINEST)
+    Log.logBlock({ active = gae.activeTab, sortings = gae.sortings}, function(m)log(m)end, Log.FINEST)
 
     local column = element.name
     local sortings = gae.sortings[gae.activeTab] -- turrets are on 2nd tab
 
     if (sortings.active == column) then
         -- toggled sort
-        Log.log("toggled sort", function(m)log(m)end, Log.FINE)
+        Log.log("toggled sort", function(m)log(m)end, Log.FINER)
         sortings.sorting[column] = element.state
     else
-        Log.log("changed column", function(m)log(m)end, Log.FINE)
+        Log.log("changed column", function(m)log(m)end, Log.FINER)
         -- changed sort column
         element.state = sortings.sorting[column]
         element.style = "dart_selected_sort_checkbox"
@@ -75,9 +75,9 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 local function clicked(gae, event)
-    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINEST)
     local entity = event.element.entity
-    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINE)
+    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINEST)
 
     components.openNewGui(event.player_index, entity, nil, entity)
 end
@@ -87,7 +87,7 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 function eventHandlers.close(gae, event)
-    Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINEST)
     local guis = global_data.getPlayer_data(event.player_index).guis
     local guiToBeCLosed = gae.gui
     guis.recentlyopen = guis.recentlyopen or {}
@@ -101,8 +101,8 @@ function eventHandlers.close(gae, event)
         gae.highlight = nil
     end
 
-    Log.logBlock(ropen, function(m)log(m)end, Log.FINE)
-    Log.logLine((ropen and ropen.gui) == event.element, function(m)log(m)end, Log.FINE)
+    Log.logBlock(ropen, function(m)log(m)end, Log.FINER)
+    Log.logLine((ropen and ropen.gui) == event.element, function(m)log(m)end, Log.FINER)
 
     -- 3 cases
     -- only fcc-gui open and close it                                 -- ropen == nil
@@ -113,11 +113,10 @@ function eventHandlers.close(gae, event)
     -- close or chaining gui?
     if ropen then
         local rogui = ropen.gui
-        Log.logBlock(dump.dumpLuaGuiElement(rogui), function(m)log(m)end, Log.FINE)
+        Log.logBlock(dump.dumpLuaGuiElement(rogui), function(m)log(m)end, Log.FINER)
         -- chaining gui?
         if (rogui.valid and rogui == event.element) then
             -- chaining to turret gui
-            Log.log("visible = false", function(m)log(m)end, Log.FINE)
             rogui.visible = false
         else
             -- special handling for dart-radar
@@ -143,7 +142,7 @@ function eventHandlers.close(gae, event)
         -- close single gui - either fcc or turret
         if components.checkIfValidGuiElement(guiToBeCLosed) then
             -- must be fcc
-            Log.log("destroy custom gui", function(m)log(m)end, Log.FINE)
+            Log.log("destroy custom gui", function(m)log(m)end, Log.FINER)
             guiToBeCLosed.destroy()
             guis.open = nil
         end

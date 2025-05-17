@@ -280,7 +280,7 @@ end
 --- open new gui and chain it with formerly opened
 --- @return PlayerData
 function components.openNewGui(player_index, gui, elems, entity)
-    Log.logBlock({player_index = player_index, gui = gui, elems = elems, entity = entity}, function(m)log(m)end, Log.FINE)
+    Log.logBlock({player_index = player_index, gui = gui, elems = elems, entity = entity}, function(m)log(m)end, Log.FINEST)
 
     local pd = global_data.getPlayer_data(player_index)
     local player = game.get_player(player_index)
@@ -297,9 +297,8 @@ function components.openNewGui(player_index, gui, elems, entity)
     }
     pd.guis.recentlyopen = pd.guis.recentlyopen or {}
     pd.guis.recentlyopen[#pd.guis.recentlyopen + 1] = pd.guis.open
-    Log.log("set recentlyopen", function(m)log(m)end, Log.FINE)
 
-    Log.logBlock(pd.guis, function(m)log(m)end, Log.FINE)
+    Log.logBlock(pd.guis, function(m)log(m)end, Log.FINER)
     local open = pd.guis.open
     if open and components.checkIfValidGuiElement(open.gui) then
         -- hide former gui

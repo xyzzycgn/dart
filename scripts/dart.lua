@@ -554,7 +554,7 @@ local function hub_died(entity)
             pd.pons[platform.index] = nil
         end
     else
-        Log.log("platfrom already invalid - surfaceid = " .. event.surface_index, function(m)log(m)end, Log.WARN)
+        Log.log("platform already invalid - surfaceid = " .. event.surface_index, function(m)log(m)end, Log.WARN)
     end
 end
 
@@ -620,7 +620,7 @@ local function newRadar(entity)
 
     raiseDartComponentBuild(entity)
 
-    Log.logBlock(dart, function(m)log(m)end, Log.FINE)
+    Log.logBlock(dart, function(m)log(m)end, Log.FINER)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -643,7 +643,7 @@ end
 
 --- @param entity LuaEntity
 local function newTurret(entity)
-    Log.log(entity.unit_number, function(m)log(m)end, Log.FINE)
+    Log.log(entity.unit_number, function(m)log(m)end, Log.FINER)
 
     local pons = global_data.getPlatforms()[entity.surface.index]
     addTurretToPons(pons.turretsOnPlatform, entity)
@@ -704,7 +704,7 @@ end
 
 --- @param entity LuaEntity
 local function removedTurret(entity)
-    Log.log(entity.unit_number, function(m)log(m)end, Log.FINE)
+    Log.log(entity.unit_number, function(m)log(m)end, Log.FINER)
 
     -- remove turret
     local pons = global_data.getPlatforms()[entity.surface.index]
