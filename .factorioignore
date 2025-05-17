@@ -5,6 +5,8 @@
 .tmp
 .vscode/
 doc/
+lib/
+test/
 *.bak
 *.tmp
 *.tmp.*
