@@ -132,7 +132,7 @@ local function build(player, entity)
                 {
                     type = "label",
                     style = "frame_title",
-                    caption = { "mod-name.dart" },
+                    caption = { "entity-name.dart-fcc" },
                     ignored_by_interaction = true,
                 },
                 { type = "empty-widget", style = "flib_titlebar_drag_handle", ignored_by_interaction = true },

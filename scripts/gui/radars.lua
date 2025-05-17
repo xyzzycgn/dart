@@ -55,7 +55,7 @@ function radars.buildGui(player, rop)
                 {
                     type = "label",
                     style = "frame_title",
-                    caption = { "mod-name.dart" },
+                    caption = { "entity-name.dart-radar" },
                     ignored_by_interaction = true,
                 },
                 { type = "empty-widget", style = "flib_titlebar_drag_handle", ignored_by_interaction = true },
