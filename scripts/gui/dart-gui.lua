@@ -195,7 +195,7 @@ local function gui_open(event)
         script.raise_event(on_dart_gui_needs_update, event)
     elseif event.gui_type == defines.gui_type.custom then
         local pd = global_data.getPlayer_data(event.player_index)
-        local entity = pd.guis.open and pd.guis.open.entity
+        local entity = pd and pd.guis and pd.guis.open and pd.guis.open.entity
         Log.logBlock(entity, function(m)log(m)end, Log.FINER)
         if entity and entity.name == "dart-radar" then
             event.entity = entity -- pimp the event ;-)
