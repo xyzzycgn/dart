@@ -59,6 +59,9 @@ D.A.R.T. activates a turret by setting its circuit network condition to 1.
 # Have fun
 
 # Supported languages in this version:
-  - deutsch de
-  - English en
+  - deutsch (de)
+  - english (en)
+  - español (es-ES)
+  - français (fr)
+  - português (pt-BR)
 ----
