@@ -1,0 +1,13 @@
+.git/
+.github/
+.gitignore
+.log
+.tmp
+.vscode/
+doc/
+*.bak
+*.tmp
+*.tmp.*
+.idea/
+*.iml
+.factorioignore
