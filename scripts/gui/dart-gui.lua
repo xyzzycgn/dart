@@ -234,7 +234,7 @@ local function standard_gui_closed(event) -- TODO better name for function
 end
 -- ###############################################################
 
--- GUI events - TODO TBC
+-- GUI events
 local dart_gui = {}
 
 dart_gui.events = {
