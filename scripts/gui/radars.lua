@@ -93,10 +93,10 @@ function radars.buildGui(player, rop)
                     type = "frame",
                     style = "dart_content_frame",
                     direction = "vertical",
-                    components.radar_slider("detect-slider", { "gui.dart-radar-detect" }, 0,
-                                            constants.max_detectionRange, rop.detectionRange, handlers.detection_slider_moved),
                     components.radar_slider("defense-slider", { "gui.dart-radar-defense"}, 0,
                                             constants.max_defenseRange, rop.defenseRange, handlers.defense_slider_moved),
+                    components.radar_slider("detect-slider", { "gui.dart-radar-detect" }, 0,
+                                            constants.max_detectionRange, rop.detectionRange, handlers.detection_slider_moved),
                 },
             }
         }

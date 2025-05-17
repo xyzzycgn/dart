@@ -28,7 +28,7 @@ local function sliderOnly(name, min, max, val, handler)
         minimum_value = min,
         maximum_value = max,
         value = val,
-        style_mods = { top_margin = 10 },
+        style_mods = { top_margin = 10, horizontally_stretchable = true, maximal_width = 190, },
         name = name,
         handler = { [defines.events.on_gui_value_changed] = handler}
     }
@@ -49,31 +49,29 @@ local function sliderWithScale(name, min, max, val, handler, omitScale)
         return {
             type = "flow",
             direction = "vertical",
+            style = "dart_stretchable_vertical_flow_style",
             {
                 type = "flow",
                 direction = "horizontal",
-                style_mods = { horizontally_stretchable = true, horizontal_spacing = 140,},
+                style = "dart_stretchable_flow_style",
                 {
-                    type = "flow",
-                    style_mods = { horizontally_stretchable = true, horizontal_align = "left", },
-                    direction = "horizontal",
-                    {
-                        type = "label",
-                        style = "dart_stretchable_label_style",
-                        caption = min,
-                        natural_width = 38,
-                    },
+                    type = "label",
+                    style = "dart_stretchable_label_style",
+                    style_mods = { horizontal_align = "left", },
+                    caption = min,
+                    natural_width = 38,
                 },
                 {
                     type = "flow",
                     direction = "horizontal",
-                    style_mods = { horizontally_stretchable = true, horizontal_align = "right", },
-                    {
-                        type = "label",
-                        style = "dart_stretchable_label_style",
-                        caption = max,
-                        natural_width = 38,
-                    },
+                    style_mods = { natural_width = 155, maximal_width = 155, },
+                },
+                {
+                    type = "label",
+                    style = "dart_stretchable_label_style",
+                    style_mods = { horizontal_align = "right", },
+                    caption = max,
+                    natural_width = 38,
                 },
             },
             sliderOnly(name, min, max, val, handler),
@@ -94,12 +92,13 @@ end
 function components.radar_slider(name, caption, min, max, val, handler, omitScale)
     return {
         type = "frame",
-        style = "dart_content_frame",
+        style = "dart_content_frame_stretchable",
+        style_mods = { width = 360, },
         direction = "horizontal",
         sliderWithScale(name, min, max, val, handler, omitScale),
         { type = "label",
           style = "dart_stretchable_label_style",
-          style_mods = { top_margin = 10 },
+          style_mods = { top_margin = 10, left_margin = 8, },
           caption = caption,
         },
     }

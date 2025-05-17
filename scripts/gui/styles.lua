@@ -142,6 +142,24 @@ styles.dart_stretchable_label_style = {
     type = "label_style"
 }
 
+styles.dart_stretchable_flow_style = {
+    type = "horizontal_flow_style",
+    horizontally_stretchable = "stretch_and_expand",
+}
+
+styles.dart_stretchable_vertical_flow_style = {
+    type = "vertical_flow_style",
+    horizontally_stretchable = "stretch_and_expand",
+}
+
+styles.dart_content_frame_stretchable = {
+    type = "frame_style",
+    parent = "inside_shallow_frame_with_padding",
+    vertically_stretchable = "off",
+    horizontally_stretchable = "stretch_and_expand",
+    horizontal_flow_style = styles.dart_stretchable_flow_style
+}
+
 styles.dart_tabbed_pane = {
     type = "tabbed_pane_style",
     tab_content_frame = {
