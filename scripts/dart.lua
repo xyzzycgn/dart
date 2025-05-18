@@ -6,6 +6,7 @@
 local Log = require("__log4factorio__.Log")
 local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
+local player_data = require("scripts.player_data")
 local asyncHandler = require("scripts.asyncHandler")
 local constants = require("scripts.constants")
 
@@ -645,7 +646,7 @@ local function newFcc(entity)
     -- save it in platform
     local gdp = global_data.getPlatforms()[entity.surface.index].fccsOnPlatform
     gdp[fccun] = dart
-    Log.logBlock(dart, function(m)log(m)end, Log.FINER)
+    Log.logBlock(dart, function(m)log(m)end, Log.FINE)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -671,7 +672,7 @@ local createFuncs = {
 --- event handler called if a new dart-fcc/dart-radar or a turret is build on a platform
 --- @param entity LuaEntity
 local function entityCreated(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINER)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
 
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
@@ -733,6 +734,7 @@ local removedFuncs = {
 
 --- event handler called if a dart-fcc/dart-radar or a turret is removed from platform
 local function entityRemoved(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
     local entity = event.entity
     local func = removedFuncs[entity.name] or removedFuncs[entity.type]
 
@@ -744,38 +746,51 @@ end
 --- @param surface LuaSurface holding the new platform
 --- @return Pons created from surface
 local function newSurface(surface)
+    Log.log("detected new surface with platform - index=" .. surface.index, function(m)log(m)end, Log.INFO)
     return { surface = surface, platform = surface.platform, turretsOnPlatform = {},
              fccsOnPlatform = {}, radarsOnPlatform = {}, knownAsteroids = {} }
 end
 -- ###############################################################
 
-local function surfaceCreated(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINER)
-    local surface = game.surfaces[event.surface_index]
+--- creates the administrative structure for a new platform and stores it in
+--- global_data resp. PlayerData of the owner
+--- @param surface LuaSurface
+local function createPonsAndAddToGDPAndPD(surface)
     local platform = surface.platform
 
-    if (platform) then
-        Log.log("add new platform " .. event.surface_index, function(m)log(m)end, Log.FINER)
+    if platform then
+        local sid = surface.index
+        Log.log("add new platform on surface index=" .. sid, function(m)log(m)end, Log.INFO)
 
         local pons = newSurface(surface)
-        global_data.getPlatforms()[event.surface_index] = pons
+        global_data.getPlatforms()[sid] = pons
 
         for _, player in pairs(platform.force.players) do
             local pd = global_data.getPlayer_data(player.index)
+            if not pd then
+                pd = player_data.init_player_data(player)
+                global_data.addPlayer_data(player, pd)
+            end
             pd.pons[platform.index] = pons
         end
     end
 end
 -- ###############################################################
 
+--- event handler for on_surface_created
+--- @param event EventData
+local function surfaceCreated(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    local surface = game.surfaces[event.surface_index]
+
+    createPonsAndAddToGDPAndPD(surface)
+end
+-- ###############################################################
+
 -- part of initialization
 local function searchPlatforms()
-    local gdp = global_data.getPlatforms()
-
     for _, surface in pairs(game.surfaces) do
-        if surface.platform then
-            gdp[surface.index] = newSurface(surface)
-        end
+        createPonsAndAddToGDPAndPD(surface)
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -795,7 +810,7 @@ end
 --- as this is called from on_init, there can't be any dart-radar/dart-fcc enties
 --- that's why we only look for turrets on platforms
 local function searchDartInfrastructure()
-    Log.log("searchDartInfrastructure", function(m)log(m)end, Log.FINER)
+    Log.log("searchDartInfrastructure", function(m)log(m)end, Log.INFO)
 
     searchPlatforms()
 
