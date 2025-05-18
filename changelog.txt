@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.2
+Date: 2025-05-18
+  Bugfixes:
+    - Fixed missing initialization of internal data when mod is loaded for the first time in existing save file
+      with platforms
+    - reestablished ability to set log-level
+---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Date: 2025-05-18
   Bugfixes:
