@@ -1,5 +1,10 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.0.1
-Date: 2025-03-10
+Version: 1.0.1
+Date: 2025-05-18
+  Bugfixes:
+    - Fixed nil access when asteroid on a surface is destroyed, but internal data for that surface don't exist
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 2025-05-17
   Major Features:
     - Initial version

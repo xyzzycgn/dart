@@ -512,49 +512,57 @@ local function asteroid_died(entity)
 
     --- @type Pons
     local pons = global_data.getPlatforms()[entity.surface.index]
-    local managedTurrets = getManagedTurrets(pons)
-    local knownAsteroids = pons.knownAsteroids
-    local aun = entity.unit_number
-    local size = knownAsteroids[aun] and knownAsteroids[aun].size
+    if pons then
+        local managedTurrets = getManagedTurrets(pons)
+        local knownAsteroids = pons.knownAsteroids
+        local aun = entity.unit_number
+        local size = knownAsteroids[aun] and knownAsteroids[aun].size
 
-    -- delete it from list of known asteroids
-    knownAsteroids[aun] = nil
+        -- delete it from list of known asteroids
+        knownAsteroids[aun] = nil
 
-    -- delete it from target list
-    for _, v in pairs(managedTurrets) do
-        v.targets_of_turret[aun] = nil
+        -- delete it from target list
+        for _, v in pairs(managedTurrets) do
+            v.targets_of_turret[aun] = nil
+        end
+
+        -- if destroyed asteroid is not small (=> larger than small), start a search for the fragments
+        if size and (size ~= "small") then
+            -- execute fragments() in 2 ticks
+            local deltatick = 2
+            local nextPos = entity.position
+            nextPos.y = nextPos.y + pons.platform.speed * deltatick / 60
+            asyncHandler.enqueue(asyncFragments,
+                    { aun = aun, surface = entity.surface, position = nextPos, knownAsteroids = knownAsteroids },
+                    deltatick)
+        end
+
+        -- assign remaining asteroids to turrets
+        assignTargets(pons, knownAsteroids, managedTurrets)
+    else
+        Log.log("asteroid_died - unknown pons for surface=" .. entity.surface.index, function(m)log(m)end, Log.WARN)
     end
-
-    -- if destroyed asteroid is not small (=> larger than small), start a search for the fragments
-    if size and (size ~= "small") then
-        -- execute fragments() in 2 ticks
-        local deltatick = 2
-        local nextPos = entity.position
-        nextPos.y = nextPos.y + pons.platform.speed * deltatick / 60
-        asyncHandler.enqueue(asyncFragments,
-                { aun = aun, surface = entity.surface, position = nextPos, knownAsteroids = knownAsteroids },
-                deltatick)
-    end
-
-    -- assign remaining asteroids to turrets
-    assignTargets(pons, knownAsteroids, managedTurrets)
 end
 
 local function hub_died(entity)
     -- remove references to platform or objects on it
     local sid = entity.surface.index
     local pons = global_data.getPlatforms()[sid]
-    Log.log("removing all D.A.R.T. installations on platform=" .. pons.platform.name, function(m)log(m)end, Log.INFO)
-    global_data.getPlatforms()[sid] = nil
-    -- remove references to platform in player_data
-    local platform = pons.platform
-    if platform.valid then
-        for _, player in pairs(platform.force.players) do
-            local pd = global_data.getPlayer_data(player.index)
-            pd.pons[platform.index] = nil
+    if pons then
+        Log.log("removing all D.A.R.T. installations on platform=" .. pons.platform.name, function(m)log(m)end, Log.INFO)
+        global_data.getPlatforms()[sid] = nil
+        -- remove references to platform in player_data
+        local platform = pons.platform
+        if platform.valid then
+            for _, player in pairs(platform.force.players) do
+                local pd = global_data.getPlayer_data(player.index)
+                pd.pons[platform.index] = nil
+            end
+        else
+            Log.log("platform already invalid - surfaceid = " .. event.surface_index, function(m)log(m)end, Log.WARN)
         end
     else
-        Log.log("platform already invalid - surfaceid = " .. event.surface_index, function(m)log(m)end, Log.WARN)
+        Log.log("hub_died - unknown pons for surface=" .. sid, function(m)log(m)end, Log.WARN)
     end
 end
 
