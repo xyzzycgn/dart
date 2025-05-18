@@ -899,6 +899,34 @@ local function tbdal(event)
 end
 --###############################################################
 
+local function alterSetting(event, which, func)
+    if event.setting == which then
+        local new = settings.global[which].value
+        if type(new) == "nil" then
+            new = "<NIL>"
+        elseif type(new) == "boolean" then
+            new = new and "true" or "false"
+        end
+        Log.log('setting ' .. which .. ' changed to ' .. new, function(m)log(m)end, Log.CONFIG)
+        if func then
+            func(new)
+        end
+        return true
+    end
+    return false
+end
+
+local function changeSettings(e)
+    -- local var to make lua happy
+    local _ =
+        alterSetting(e, "dart-logLevel", function(newval) Log.setSeverity(Log[newval]) end)
+        or alterSetting(e, "dart-show-detection-area")
+        or alterSetting(e, "dart-show-defended-area")
+        or alterSetting(e, "dart-mark-targets")
+end
+
+--###############################################################
+
 local dart = {}
 
 -- mod initialization
@@ -915,6 +943,7 @@ dart.events = {
     [defines.events.on_player_joined_game] = tbd,
     [defines.events.on_player_left_game] = tbd,
     [defines.events.on_player_removed] = tbd,
+    [defines.events.on_runtime_mod_setting_changed] = changeSettings,
 
     [defines.events.on_tick] = asyncHandler.dequeue,
 
