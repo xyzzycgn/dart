@@ -21,6 +21,7 @@ local sortFields = {
 --- @class Network a certain circuit network (either green or red) and its CircuitCondition of a turret
 --- @field network_id number the unique ID of the network
 --- @field circuit_condition CircuitConditionDefinition
+--- @field circuit_enable_disable boolean
 
 --- @param top TurretOnPlatform
 --- @return Network[] indexed by connector (circuit_red/circuit_green)
@@ -37,6 +38,7 @@ local function getNetworksOfTurretOnPlatform(top)
             networks[connector] = {
                 network_id = cn.network_id,
                 circuit_condition = cb.circuit_condition,
+                circuit_enable_disable = cb.circuit_enable_disable,
             }
         end
     end
@@ -156,6 +158,10 @@ local function networkCondition(tc)
     elseif tc.num_connections == 2 then
         -- connected twice
         lblcaption = { "gui.dart-turret-connected-twice" }
+        lblstyle = "bold_orange_label"
+    elseif not tc.circuit_enable_disable then
+        -- connected twice
+        lblcaption = { "gui.dart-turret-not-controlled" }
         lblstyle = "bold_orange_label"
     else
         -- connected once
@@ -298,7 +304,8 @@ end
 --- @field num_connections number of connections to fcc 0 - 2
 --- @field cc CircuitCondition
 --- @field connector uint defines.wire_connector_id.circuit_red or defines.wire_connector_id.circuit_green
-
+--- @field circuit_enable_disable boolean true if the turret enable/disable state is controlled by circuit condition
+---
 --- @param data TurretOnPlatform[]
 --- @param nwOfFcc uint[] IDs of the circuit networks of fcc shown in gui
 --- @return TurretConnection[]
@@ -310,7 +317,7 @@ local function extractDataForPresentation(data, nwOfFcc)
         local networks = getNetworksOfTurretOnPlatform(top)
 
         local num_connections = 0 -- how often is the turret connected to fcc
-        local nwid, cc, conn
+        local nwid, cc, conn, circuit_enable_disable
 
         for connector, nw in pairs(networks) do
             if (nwOfFcc[nw.network_id]) then
@@ -322,6 +329,7 @@ local function extractDataForPresentation(data, nwOfFcc)
                 -- network of turret is connected to fcc managed in gui
                 nwid = nw.network_id
                 cc = nw.circuit_condition
+                circuit_enable_disable = nw.circuit_enable_disable
                 conn = connector
                 num_connections = 1
             end
@@ -333,6 +341,7 @@ local function extractDataForPresentation(data, nwOfFcc)
             connector = conn,
             cc = cc,
             num_connections = num_connections,
+            circuit_enable_disable = circuit_enable_disable
         }
     end
 
