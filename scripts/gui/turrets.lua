@@ -136,22 +136,40 @@ local col_style = {
      [defines.wire_connector_id.circuit_green] =  "green_label",
 }
 
+local ccInvalidCapsAndStyles = {
+    [utils.CircuitConditionChecks.firstSignalEmpty]         = { { "gui.dart-turret-1stsignal-empty" }, "bold_orange_label" },
+    [utils.CircuitConditionChecks.secondSignalNotSupported] = { { "gui.dart-turret-2ndsignal-unsupported" }, "bold_orange_label" },
+    [utils.CircuitConditionChecks.invalidComparator]        = { { "gui.dart-turret-invalidComparator" }, "bold_orange_label" },
+    [utils.CircuitConditionChecks.noFalse]                  = { { "gui.dart-turret-noFalse" }, "bold_orange_label" },
+    [utils.CircuitConditionChecks.noTrue]                   = { { "gui.dart-turret-noTrue" }, "bold_orange_label" },
+    [utils.CircuitConditionChecks.unknown]                  = { { "gui.dart-turret-unknown" }, "bold_red_label" },
+}
+
 --- @param tc TurretConnection
 local function networkCondition(tc)
     local lblcaption, lblstyle, cc
-    if tc.num_connections == 1 then
-        -- connected once
-        lblcaption = tc.network_id
-        lblstyle = col_style[tc.connector]
-        cc = tc.cc -- TODO check empty 1st signal
-    elseif tc.num_connections == 0 then
+
+    if tc.num_connections == 0 then
         -- not connected
         lblcaption = { "gui.dart-turret-offline" }
         lblstyle = "bold_red_label"
-    else
+    elseif tc.num_connections == 2 then
         -- connected twice
         lblcaption = { "gui.dart-turret-connected-twice" }
         lblstyle = "bold_orange_label"
+    else
+        -- connected once
+        local valid, details = utils.checkCircuitCondition(tc.cc)
+        if valid then
+            -- the CircuitCondition is valid for use in D.A.R.T.
+            lblcaption = tc.network_id
+            lblstyle = col_style[tc.connector]
+            cc = tc.cc
+        else
+            local capStyle = ccInvalidCapsAndStyles[details] or ccInvalidCapsAndStyles[utils.CircuitConditionChecks.unknown]
+            lblcaption =  capStyle[1]
+            lblstyle = capStyle[2]
+        end
     end
 
     return lblcaption, lblstyle, cc
