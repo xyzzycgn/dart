@@ -83,24 +83,32 @@ end
 --- @param data2 TurretConnection
 --- @return true if circuit condition of data1 < circuit condition of data2
 local function cmpCond(data1, data2)
-    local n1 = data1.num_connections
-    local n2 = data2.num_connections
     local cc1 = data1.cc
     local cc2 = data2.cc
+    local valid1 = utils.checkCircuitCondition(cc1)
+    local valid2 = utils.checkCircuitCondition(cc2)
 
-    if (n1 == 1) and (n2 == 1) then
-        -- both connected to one network => compare circuit conditions (name of 1st signal)
-        return (cc1.first_signal.name < cc2.first_signal.name)
-    elseif n1 == 1 then
-        -- only 1st connected to one network => treat it as smaller
-        return true
-    elseif n2 == 1 then
-        -- only 2nd connected to one network => treat it as smaller
-        return false
+    if valid1 and valid2 then
+        -- further comparisions only if both CircuitCondtions are valid for use in D.A.R.T
+        local n1 = data1.num_connections
+        local n2 = data2.num_connections
+        if (n1 == 1) and (n2 == 1) then
+            -- both connected to one network => compare circuit conditions (name of 1st signal)
+            return (cc1.first_signal.name < cc2.first_signal.name)
+        elseif n1 == 1 then
+            -- only 1st connected to one network => treat it as smaller
+            return true
+        elseif n2 == 1 then
+            -- only 2nd connected to one network => treat it as smaller
+            return false
+        else
+            -- both are either not connected or connected twice => treat not connected as smaller
+            return n1 > n2
+        end
     else
-        -- both are either not connected or connected twice => treat not connected as smaller
-        return n1 > n2
+        return not valid1 -- treat cc1 as smaller if it's not valid - covers the other 3 cases too
     end
+
 end
 -- ###############################################################
 
@@ -135,7 +143,7 @@ local function networkCondition(tc)
         -- connected once
         lblcaption = tc.network_id
         lblstyle = col_style[tc.connector]
-        cc = tc.cc
+        cc = tc.cc -- TODO check empty 1st signal
     elseif tc.num_connections == 0 then
         -- not connected
         lblcaption = { "gui.dart-turret-offline" }
@@ -214,7 +222,7 @@ local function appendTableRow(table, v, at_row)
     -- set the values for the choose-elem-button, ...
     if cc then
         local elem = elems[ceb]
-        elem.elem_value = cc.first_signal
+        elem.elem_value = cc.first_signal-- TODO check empty 1st signal
         elem.locked = true
 
         elems[ddb].caption = cc.comparator
@@ -248,7 +256,7 @@ local function updateTableRow(table, v, at_row)
     if cc then
         local cebelem = ccflow[ceb]
         cebelem.visible = true
-        cebelem.elem_value = cc.first_signal
+        cebelem.elem_value = cc.first_signal -- TODO check empty 1st signal???
         cebelem.locked = true
 
         local ddbelem = ccflow[ddb]

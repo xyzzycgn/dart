@@ -9,6 +9,7 @@ local global_data = require("scripts.global_data")
 local player_data = require("scripts.player_data")
 local asyncHandler = require("scripts.asyncHandler")
 local constants = require("scripts.constants")
+local utils = require("scripts.utils")
 
 -- Type definitions for this file
 
@@ -202,15 +203,19 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
             --- @type CircuitCondition
             Log.logBlock(managedTurret.circuit_condition, function(m)log(m)end, Log.FINER)
             local cc = managedTurret.circuit_condition
-            local filter = {
-                value = { type = cc.first_signal.type,
-                          name = cc.first_signal.name,
-                          quality = cc.first_signal.quality or 'normal',
-                        },
-                min = 1,
-            }
-            filter_setting_by_un[#filter_setting_by_un + 1] = filter
-            filter_settings[un] = filter_setting_by_un
+            if utils.checkCircuitCondition(cc) then
+                local filter = {
+                    value = { type = cc.first_signal.type,
+                              name = cc.first_signal.name,
+                              quality = cc.first_signal.quality or 'normal',
+                    },
+                    min = 1,
+                }
+                filter_setting_by_un[#filter_setting_by_un + 1] = filter
+                filter_settings[un] = filter_setting_by_un
+            else
+                Log.log("ignored turret with invalid CircuitCondition=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.WARN)
+            end
         else
             -- set no filter => disable turret using circuit network
             Log.log("try to disable turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINER)
