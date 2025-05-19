@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.3
+Date: 2025-05-19
+  Bugfixes:
+    - Fixed nil access when using invalid circuit network conditions in turrets
+  Gui:
+    - Display warnings when using invalid circuit network conditions in turrets
+---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 2025-05-18
   Bugfixes:

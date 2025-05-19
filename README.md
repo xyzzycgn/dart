@@ -48,12 +48,12 @@ To use D.A.R.T, it must be configured (per platform). This has to be done in the
 
 ![show turrets](https://github.com/xyzzycgn/dart/blob/main/doc/dart-configure-main-turrets.png?raw=true)
 
-  and clicking on the turret to be configured (mandatory)
+  and clicking on the turret to be configured (**mandatory**)
 
 ![configure turret](https://github.com/xyzzycgn/dart/blob/main/doc/gun-turret.png?raw=true|height=300)
 
 **Hint**
-D.A.R.T. activates a turret by setting its circuit network condition to 1.
+D.A.R.T. controls a turret by setting its circuit network condition to 0 resp. 1.
 
 
 # Have fun

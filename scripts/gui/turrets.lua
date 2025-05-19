@@ -21,6 +21,7 @@ local sortFields = {
 --- @class Network a certain circuit network (either green or red) and its CircuitCondition of a turret
 --- @field network_id number the unique ID of the network
 --- @field circuit_condition CircuitConditionDefinition
+--- @field circuit_enable_disable boolean
 
 --- @param top TurretOnPlatform
 --- @return Network[] indexed by connector (circuit_red/circuit_green)
@@ -37,6 +38,7 @@ local function getNetworksOfTurretOnPlatform(top)
             networks[connector] = {
                 network_id = cn.network_id,
                 circuit_condition = cb.circuit_condition,
+                circuit_enable_disable = cb.circuit_enable_disable,
             }
         end
     end
@@ -83,24 +85,32 @@ end
 --- @param data2 TurretConnection
 --- @return true if circuit condition of data1 < circuit condition of data2
 local function cmpCond(data1, data2)
-    local n1 = data1.num_connections
-    local n2 = data2.num_connections
     local cc1 = data1.cc
     local cc2 = data2.cc
+    local valid1 = utils.checkCircuitCondition(cc1)
+    local valid2 = utils.checkCircuitCondition(cc2)
 
-    if (n1 == 1) and (n2 == 1) then
-        -- both connected to one network => compare circuit conditions (name of 1st signal)
-        return (cc1.first_signal.name < cc2.first_signal.name)
-    elseif n1 == 1 then
-        -- only 1st connected to one network => treat it as smaller
-        return true
-    elseif n2 == 1 then
-        -- only 2nd connected to one network => treat it as smaller
-        return false
+    if valid1 and valid2 then
+        -- further comparisions only if both CircuitCondtions are valid for use in D.A.R.T
+        local n1 = data1.num_connections
+        local n2 = data2.num_connections
+        if (n1 == 1) and (n2 == 1) then
+            -- both connected to one network => compare circuit conditions (name of 1st signal)
+            return (cc1.first_signal.name < cc2.first_signal.name)
+        elseif n1 == 1 then
+            -- only 1st connected to one network => treat it as smaller
+            return true
+        elseif n2 == 1 then
+            -- only 2nd connected to one network => treat it as smaller
+            return false
+        else
+            -- both are either not connected or connected twice => treat not connected as smaller
+            return n1 > n2
+        end
     else
-        -- both are either not connected or connected twice => treat not connected as smaller
-        return n1 > n2
+        return not valid1 -- treat cc1 as smaller if it's not valid - covers the other 3 cases too
     end
+
 end
 -- ###############################################################
 
@@ -128,22 +138,44 @@ local col_style = {
      [defines.wire_connector_id.circuit_green] =  "green_label",
 }
 
+local ccInvalidCapsAndStyles = {
+    [utils.CircuitConditionChecks.firstSignalEmpty]         = { { "gui.dart-turret-1stsignal-empty" }, "bold_orange_label" },
+    [utils.CircuitConditionChecks.secondSignalNotSupported] = { { "gui.dart-turret-2ndsignal-unsupported" }, "bold_orange_label" },
+    [utils.CircuitConditionChecks.invalidComparator]        = { { "gui.dart-turret-invalidComparator" }, "bold_orange_label" },
+    [utils.CircuitConditionChecks.noFalse]                  = { { "gui.dart-turret-noFalse" }, "bold_orange_label" },
+    [utils.CircuitConditionChecks.noTrue]                   = { { "gui.dart-turret-noTrue" }, "bold_orange_label" },
+    [utils.CircuitConditionChecks.unknown]                  = { { "gui.dart-turret-unknown" }, "bold_red_label" },
+}
+
 --- @param tc TurretConnection
 local function networkCondition(tc)
     local lblcaption, lblstyle, cc
-    if tc.num_connections == 1 then
-        -- connected once
-        lblcaption = tc.network_id
-        lblstyle = col_style[tc.connector]
-        cc = tc.cc
-    elseif tc.num_connections == 0 then
+
+    if tc.num_connections == 0 then
         -- not connected
         lblcaption = { "gui.dart-turret-offline" }
         lblstyle = "bold_red_label"
-    else
+    elseif tc.num_connections == 2 then
         -- connected twice
         lblcaption = { "gui.dart-turret-connected-twice" }
         lblstyle = "bold_orange_label"
+    elseif not tc.circuit_enable_disable then
+        -- connected twice
+        lblcaption = { "gui.dart-turret-not-controlled" }
+        lblstyle = "bold_orange_label"
+    else
+        -- connected once
+        local valid, details = utils.checkCircuitCondition(tc.cc)
+        if valid then
+            -- the CircuitCondition is valid for use in D.A.R.T.
+            lblcaption = tc.network_id
+            lblstyle = col_style[tc.connector]
+            cc = tc.cc
+        else
+            local capStyle = ccInvalidCapsAndStyles[details] or ccInvalidCapsAndStyles[utils.CircuitConditionChecks.unknown]
+            lblcaption =  capStyle[1]
+            lblstyle = capStyle[2]
+        end
     end
 
     return lblcaption, lblstyle, cc
@@ -214,7 +246,7 @@ local function appendTableRow(table, v, at_row)
     -- set the values for the choose-elem-button, ...
     if cc then
         local elem = elems[ceb]
-        elem.elem_value = cc.first_signal
+        elem.elem_value = cc.first_signal-- TODO check empty 1st signal
         elem.locked = true
 
         elems[ddb].caption = cc.comparator
@@ -248,7 +280,7 @@ local function updateTableRow(table, v, at_row)
     if cc then
         local cebelem = ccflow[ceb]
         cebelem.visible = true
-        cebelem.elem_value = cc.first_signal
+        cebelem.elem_value = cc.first_signal -- TODO check empty 1st signal???
         cebelem.locked = true
 
         local ddbelem = ccflow[ddb]
@@ -272,7 +304,8 @@ end
 --- @field num_connections number of connections to fcc 0 - 2
 --- @field cc CircuitCondition
 --- @field connector uint defines.wire_connector_id.circuit_red or defines.wire_connector_id.circuit_green
-
+--- @field circuit_enable_disable boolean true if the turret enable/disable state is controlled by circuit condition
+---
 --- @param data TurretOnPlatform[]
 --- @param nwOfFcc uint[] IDs of the circuit networks of fcc shown in gui
 --- @return TurretConnection[]
@@ -284,7 +317,7 @@ local function extractDataForPresentation(data, nwOfFcc)
         local networks = getNetworksOfTurretOnPlatform(top)
 
         local num_connections = 0 -- how often is the turret connected to fcc
-        local nwid, cc, conn
+        local nwid, cc, conn, circuit_enable_disable
 
         for connector, nw in pairs(networks) do
             if (nwOfFcc[nw.network_id]) then
@@ -296,6 +329,7 @@ local function extractDataForPresentation(data, nwOfFcc)
                 -- network of turret is connected to fcc managed in gui
                 nwid = nw.network_id
                 cc = nw.circuit_condition
+                circuit_enable_disable = nw.circuit_enable_disable
                 conn = connector
                 num_connections = 1
             end
@@ -307,6 +341,7 @@ local function extractDataForPresentation(data, nwOfFcc)
             connector = conn,
             cc = cc,
             num_connections = num_connections,
+            circuit_enable_disable = circuit_enable_disable
         }
     end
 
