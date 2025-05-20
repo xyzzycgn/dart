@@ -41,4 +41,17 @@ data:extend({
     localised_description = { "mod-setting-description.dart-mark-targets" },
     default_value = false,
   },
-})
+  {
+    type = "string-setting",
+    name = "dart-msgLevel",
+    order = "d",
+    setting_type = "runtime-global",
+    localised_description = { "mod-setting-description.dart-msgLevel" },
+    default_value = "ALL",
+    allowed_values = {
+      "NONE",
+      "ALARM",
+      "WARNINGS",
+      "ALL",
+    }
+  },})

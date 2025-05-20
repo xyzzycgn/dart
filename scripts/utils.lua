@@ -98,22 +98,4 @@ function utils.checkCircuitCondition(cc)
     return false, details
 end
 -- ###############################################################
-
----@type PrintSettings
-local settings = {
-    sound = defines.print_sound.use_player_settings,
-    skip = defines.print_skip.if_visible,
-}
-
---- write msg to console for all members of a force or all players
----@param msg LocalisedString
----@param force LuaForce?
-function utils.printmsg(msg, force)
-    if force and force.valid then
-        force.print(msg, settings)
-    else
-        game.print(msg, settings)
-    end
-end
-
 return utils
