@@ -31,12 +31,13 @@ local function getNetworksOfTurretOnPlatform(top)
 
     for connector, wc in pairs(redAndGreenWC) do
         ---  @type LuaCircuitNetwork
-        local cn = cb.get_circuit_network(wc)
+        local cn = cb.valid and cb.get_circuit_network(wc)
 
         if cn then
             --- @type CnOfTurret
             networks[connector] = {
                 network_id = cn.network_id,
+                -- we assume that cb still is valid here. If not - that is really bad karma ;-)
                 circuit_condition = cb.circuit_condition,
                 circuit_enable_disable = cb.circuit_enable_disable,
             }
