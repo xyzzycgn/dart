@@ -275,7 +275,7 @@ local function circuitNetworkOfTurrets(pons)
         local cb = top.control_behavior
         -- turrets only have simple green or red wire connectors
         for _, wc in pairs({ defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }) do
-            local network = cb.get_circuit_network(wc)
+            local network = cb.valid and cb.get_circuit_network(wc)
 
             if network then
                 --- @type CnOfTurret
