@@ -239,8 +239,15 @@ function TestDart:test_on_init()
             index = 1,
         },
         platform_1 =  {
-            index = 2,
-            platform = {},
+            index = 2,     -- index of surface
+            platform = {
+                index = 1, -- index of platform
+                force = {
+                    players = {
+                        { index = 1 } -- index of player
+                    }
+                }
+            },
             find_entities_filtered = function()
                 return {
                     tur1 = {

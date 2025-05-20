@@ -10,7 +10,6 @@ local utils = {}
 function utils.sort(data, ascending, func)
     local sortedData = {}
 
-    local ndx = 0
     for _, row in pairs(data) do
         for i = 1, #sortedData do
             if (func(sortedData[i], row) ~= ascending) then
@@ -26,6 +25,7 @@ function utils.sort(data, ascending, func)
 
     return sortedData
 end
+-- ###############################################################
 
 --- possible details for checkCircuitCondition()
 utils.CircuitConditionChecks = {
@@ -74,7 +74,7 @@ local function testCondition(cc)
 end
 
 
---- checks a CircuitCondition
+--- checks a CircuitCondition for validity (and usability for D.A.R.T.)
 --- @param cc CircuitCondition to check
 --- @return boolean retc returns true if the CircuitCondition is valid set and supported
 --- @return number details @see utils.CircuitConditionChecks
@@ -96,6 +96,24 @@ function utils.checkCircuitCondition(cc)
     end
 
     return false, details
+end
+-- ###############################################################
+
+---@type PrintSettings
+local settings = {
+    sound = defines.print_sound.use_player_settings,
+    skip = defines.print_skip.if_visible,
+}
+
+--- write msg to console for all members of a force or all players
+---@param msg LocalisedString
+---@param force LuaForce?
+function utils.printmsg(msg, force)
+    if force and force.valid then
+        force.print(msg, settings)
+    else
+        game.print(msg, settings)
+    end
 end
 
 return utils
