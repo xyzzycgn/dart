@@ -385,7 +385,7 @@ local function detection(pons)
         for _, asteroid  in pairs(asteroids) do
             detectedAsteroids[asteroid.unit_number] = asteroid
         end
-        local width = rop.edited and 3 or 1
+        local width = rop.edited and 3 or 1 -- thickness of drawn circle
         -- would be nice if only done when hovering over a dart-radar - unfortunately there seems to be no suitable event
         if settings.global["dart-show-detection-area"].value or rop.edited then
             rendering.draw_circle({
@@ -463,6 +463,9 @@ local function businessLogic()
 
                 calculatePrio(managedTurrets, asteroid, D)
             else
+                if table_size(knownAsteroids) == 0 then
+                    utils.printmsg({ "dart-message.dart-asteroids-approaching", pons.platform.name }, pons.platform.force)
+                end
                 newAsteroid(knownAsteroids, asteroid)
             end
             processed[aun] = true
