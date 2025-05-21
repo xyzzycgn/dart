@@ -247,11 +247,11 @@ local function appendTableRow(table, v, at_row)
     -- set the values for the choose-elem-button, ...
     if cc then
         local elem = elems[ceb]
-        elem.elem_value = cc.first_signal-- TODO check empty 1st signal
+        elem.elem_value = cc.first_signal
         elem.locked = true
 
         elems[ddb].caption = cc.comparator
-        elems[sig2].caption = cc.constant -- TODO or second_signal
+        elems[sig2].caption = cc.constant
     end
 end
 -- ###############################################################
@@ -314,36 +314,40 @@ local function extractDataForPresentation(data, nwOfFcc)
     local pdata = {}
 
     for _, top in pairs(data) do
-        -- all networks of turret
-        local networks = getNetworksOfTurretOnPlatform(top)
+        if top.turret.valid then
+            -- all networks of turret
+            local networks = getNetworksOfTurretOnPlatform(top)
 
-        local num_connections = 0 -- how often is the turret connected to fcc
-        local nwid, cc, conn, circuit_enable_disable
+            local num_connections = 0 -- how often is the turret connected to fcc
+            local nwid, cc, conn, circuit_enable_disable
 
-        for connector, nw in pairs(networks) do
-            if (nwOfFcc[nw.network_id]) then
-                if num_connections > 0 then
-                    -- 2nd connection :-/
-                    num_connections = 2
-                    break
+            for connector, nw in pairs(networks) do
+                if (nwOfFcc[nw.network_id]) then
+                    if num_connections > 0 then
+                        -- 2nd connection :-/
+                        num_connections = 2
+                        break
+                    end
+                    -- network of turret is connected to fcc managed in gui
+                    nwid = nw.network_id
+                    cc = nw.circuit_condition
+                    circuit_enable_disable = nw.circuit_enable_disable
+                    conn = connector
+                    num_connections = 1
                 end
-                -- network of turret is connected to fcc managed in gui
-                nwid = nw.network_id
-                cc = nw.circuit_condition
-                circuit_enable_disable = nw.circuit_enable_disable
-                conn = connector
-                num_connections = 1
             end
-        end
 
-        pdata[#pdata + 1] = {
-            turret = top.turret,
-            network_id = nwid,
-            connector = conn,
-            cc = cc,
-            num_connections = num_connections,
-            circuit_enable_disable = circuit_enable_disable
-        }
+            pdata[#pdata + 1] = {
+                turret = top.turret,
+                network_id = nwid,
+                connector = conn,
+                cc = cc,
+                num_connections = num_connections,
+                circuit_enable_disable = circuit_enable_disable
+            }
+        else
+            Log.logBlock("ignored invalid turret during display", function(m)log(m)end, Log.WARN)
+        end
     end
 
     return pdata

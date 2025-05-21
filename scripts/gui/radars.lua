@@ -278,7 +278,17 @@ function radars.update(elems, data, pd)
     Log.logBlock(data, function(m)log(m)end, Log.FINER)
 
     -- sort data
-    local sorteddata = data
+    local sorteddata = {}
+
+    -- prevent access to invalid radars
+    for _, rop in pairs(data) do
+        if rop.radar.valid then
+            sorteddata[#sorteddata + 1] = rop
+        else
+            Log.logBlock("ignored invalid dart-radar during display", function(m)log(m)end, Log.WARN)
+        end
+    end
+
     local gae = pd.guis.open
 
     local sortings = gae.sortings[gae.activeTab] -- radars are on 1st tab
