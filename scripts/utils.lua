@@ -99,21 +99,24 @@ function utils.checkCircuitCondition(cc)
 end
 -- ###############################################################
 
----@type PrintSettings
-local settings = {
-    sound = defines.print_sound.use_player_settings,
-    skip = defines.print_skip.if_visible,
+--- @class BitOperations
+utils.bitOps = {
+    OR = 1,
+    XOR = 3,
+    AND = 4
 }
 
---- write msg to console for all members of a force or all players
----@param msg LocalisedString
----@param force LuaForce?
-function utils.printmsg(msg, force)
-    if force and force.valid then
-        force.print(msg, settings)
-    else
-        game.print(msg, settings)
-    end
+--- @see https://stackoverflow.com/questions/32387117/bitwise-and-in-lua
+--- @param oper BitOperations
+--- @param a uint
+--- @param a uint
+function utils.bitoper(a, b, oper)
+    local r, m, s = 0, 2 ^ 31
+    repeat
+        s, a, b = a + b + m, a % m, b % m
+        r, m = r + m * oper % (s - a - b), m / 2
+    until m < 1
+    return r
 end
 
 return utils

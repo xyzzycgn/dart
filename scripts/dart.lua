@@ -10,6 +10,7 @@ local player_data = require("scripts.player_data")
 local asyncHandler = require("scripts.asyncHandler")
 local constants = require("scripts.constants")
 local utils = require("scripts.utils")
+local messaging = require("scripts.messaging")
 
 -- Type definitions for this file
 
@@ -416,11 +417,12 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param ls LocalisedString
---- @param num number number of asteroids hitting or grazing
+--- @param filter MessageFilter
+--- @param num number number of asteroids hitting or grazing or ...
 --- @param pons Pons
-local function messageConcerningAsteroids(ls, num, pons)
-    if num > 0 then
-        utils.printmsg({ ls, num, pons.platform.name }, pons.platform.force)
+local function messageConcerningAsteroids(ls, filter, num, pons)
+    if (num > 0) and pons.platform.valid  then
+        messaging.printmsg({ ls, num, pons.platform.name }, filter, pons.platform.force)
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -437,75 +439,80 @@ local function businessLogic()
         local managedTurrets = getManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
 
+        if platform.valid then
+            Log.log(platform.speed, function(m)log(m)end, Log.FINEST)
+            -- detect all asteroids around platform
+            local processed = {}
+            local hitting = 0
+            local grazing = 0
+            for aun, asteroid in pairs(detection(pons)) do
+                if (knownAsteroids[aun]) then
+                    -- well known asteroid
+                    local target = knownAsteroids[aun]
 
-        Log.log(platform.speed, function(m)log(m)end, Log.FINEST)
-        -- detect all asteroids around platform
-        local processed = {}
-        local hitting = 0
-        local grazing = 0
-        for aun, asteroid in pairs(detection(pons)) do
-            if (knownAsteroids[aun]) then
-                -- well known asteroid
-                local target = knownAsteroids[aun]
+                    target.movement.x = target.position.x - asteroid.position.x
+                    target.movement.y = target.position.y - asteroid.position.y
+                    target.position = asteroid.position
 
-                target.movement.x = target.position.x - asteroid.position.x
-                target.movement.y = target.position.y - asteroid.position.y
-                target.position = asteroid.position
+                    local D = targeting(pons, target)
 
-                local D = targeting(pons, target)
+                    local color
+                    if (D < 0) then
+                        color = { 0, 0.7, 0, 1 }
+                    elseif (D == 0) then
+                        color = { 0.7, 0.7, 0, 1 }
+                        grazing = grazing + 1
+                    else
+                        color = { 0.7, 0, 0, 1 }
+                        hitting = hitting + 1
+                    end
 
-                local color
-                if (D < 0) then
-                    color = { 0, 0.7, 0, 1 }
-                elseif (D == 0) then
-                    color = { 0.7, 0.7, 0, 1 }
-                    grazing = grazing + 1
+                    if settings.global["dart-mark-targets"].value then
+                        rendering.draw_circle({
+                            target = target.position,
+                            color = color,
+                            time_to_live = 55,
+                            surface = surface,
+                            radius = 0.8,
+                        })
+                    end
+
+                    calculatePrio(managedTurrets, asteroid, D)
                 else
-                    color = { 0.7, 0, 0, 1 }
-                    hitting = hitting + 1
+                    -- new asteroid
+                    if table_size(knownAsteroids) == 0 then
+                        messaging.printmsg({ "dart-message.dart-asteroids-approaching", pons.platform.name },
+                                messaging.level.WARNING,
+                                pons.platform.force)
+                    end
+                    newAsteroid(knownAsteroids, asteroid)
                 end
-
-                if settings.global["dart-mark-targets"].value then
-                    rendering.draw_circle({
-                        target = target.position,
-                        color = color,
-                        time_to_live = 55,
-                        surface = surface,
-                        radius = 0.8,
-                    })
-                end
-
-                calculatePrio(managedTurrets, asteroid, D)
-            else
-                -- new asteroid
-                if table_size(knownAsteroids) == 0 then
-                    utils.printmsg({ "dart-message.dart-asteroids-approaching", pons.platform.name }, pons.platform.force)
-                end
-                newAsteroid(knownAsteroids, asteroid)
+                processed[aun] = true
             end
-            processed[aun] = true
-        end
 
-        -- messages if asteroid(s) on collision course/grazing
-        messageConcerningAsteroids("dart-message.dart-asteroids-collision-course", hitting, pons)
-        messageConcerningAsteroids("dart-message.dart-asteroids-grazing", grazing, pons)
+            -- messages if asteroid(s) on collision course/grazing
+            messageConcerningAsteroids("dart-message.dart-asteroids-collision-course", messaging.level.ALERT, hitting, pons)
+            messageConcerningAsteroids("dart-message.dart-asteroids-grazing", messaging.level.WARNING, grazing, pons)
 
-        -- prevent memory leak - remove unprocessed asteroids (should be those which left detection range)
-        local left = 0
-        for un, asteroid in pairs(knownAsteroids) do
-            if not processed[un] then
-                script.raise_event(on_asteroid_lost_event, { asteroid = asteroid.entity, un = un, reason="lost"} )
-                knownAsteroids[un] = nil -- remove from knownAsteroids
+            -- prevent memory leak - remove unprocessed asteroids (should be those which left detection range)
+            local left = 0
+            for un, asteroid in pairs(knownAsteroids) do
+                if not processed[un] then
+                    script.raise_event(on_asteroid_lost_event, { asteroid = asteroid.entity, un = un, reason="lost"} )
+                    knownAsteroids[un] = nil -- remove from knownAsteroids
 
-                for _, v in pairs(managedTurrets) do
-                    v.targets_of_turret[un] = nil -- remove from targets_of_turret
+                    for _, v in pairs(managedTurrets) do
+                        v.targets_of_turret[un] = nil -- remove from targets_of_turret
+                    end
+                    left = left + 1
                 end
-                left = left + 1
             end
-        end
-        messageConcerningAsteroids("dart-message.dart-asteroids-left", left, pons)
+            messageConcerningAsteroids("dart-message.dart-asteroids-left", messaging.level.INFO, left, pons)
 
-        assignTargets(pons, knownAsteroids, managedTurrets)
+            assignTargets(pons, knownAsteroids, managedTurrets)
+        else
+            Log.log("skipped invalid platform during processing", function(m)log(m)end, Log.WARN)
+        end
     end
     Log.log("leave BL", function(m)log(m)end, Log.FINER)
 end
@@ -968,6 +975,7 @@ local function changeSettings(e)
         or alterSetting(e, "dart-show-detection-area")
         or alterSetting(e, "dart-show-defended-area")
         or alterSetting(e, "dart-mark-targets")
+        or alterSetting(e, "dart-msgLevel")
 end
 
 --###############################################################

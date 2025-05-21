@@ -153,5 +153,65 @@ function TestUtils:testCheckCircuitConditionWithInvalidOperator()
     lu.assertEquals(details, utils.CircuitConditionChecks.invalidComparator)
 end
 
+function TestUtils:testBitOperAND()
+    -- simple cases
+    lu.assertEquals(utils.bitoper(0, 0, utils.bitOps.AND), 0)
+    lu.assertEquals(utils.bitoper(1, 0, utils.bitOps.AND), 0)
+    lu.assertEquals(utils.bitoper(0, 1, utils.bitOps.AND), 0)
+    lu.assertEquals(utils.bitoper(1, 1, utils.bitOps.AND), 1)
+    
+    -- more complex
+    lu.assertEquals(utils.bitoper(6, 4, utils.bitOps.AND), 4)  -- 110 AND 100 = 100
+    lu.assertEquals(utils.bitoper(7, 5, utils.bitOps.AND), 5)  -- 111 AND 101 = 101
+    lu.assertEquals(utils.bitoper(15, 7, utils.bitOps.AND), 7) -- 1111 AND 0111 = 0111
+end
+
+function TestUtils:testBitOperOR()
+    -- simple cases
+    lu.assertEquals(utils.bitoper(0, 0, utils.bitOps.OR), 0)
+    lu.assertEquals(utils.bitoper(1, 0, utils.bitOps.OR), 1)
+    lu.assertEquals(utils.bitoper(0, 1, utils.bitOps.OR), 1)
+    lu.assertEquals(utils.bitoper(1, 1, utils.bitOps.OR), 1)
+    
+    -- more complex
+    lu.assertEquals(utils.bitoper(6, 3, utils.bitOps.OR), 7)   -- 110 OR 011 = 111
+    lu.assertEquals(utils.bitoper(10, 5, utils.bitOps.OR), 15) -- 1010 OR 0101 = 1111
+    lu.assertEquals(utils.bitoper(12, 3, utils.bitOps.OR), 15) -- 1100 OR 0011 = 1111
+end
+
+function TestUtils:testBitOperXOR()
+    -- simplest cases
+    lu.assertEquals(utils.bitoper(0, 0, utils.bitOps.XOR), 0)
+    lu.assertEquals(utils.bitoper(1, 0, utils.bitOps.XOR), 1)
+    lu.assertEquals(utils.bitoper(0, 1, utils.bitOps.XOR), 1)
+    lu.assertEquals(utils.bitoper(1, 1, utils.bitOps.XOR), 0)
+    
+    -- greater numbers
+    lu.assertEquals(utils.bitoper(6, 3, utils.bitOps.XOR), 5)   -- 110 XOR 011 = 101
+    lu.assertEquals(utils.bitoper(10, 5, utils.bitOps.XOR), 15) -- 1010 XOR 0101 = 1111
+    lu.assertEquals(utils.bitoper(15, 7, utils.bitOps.XOR), 8)  -- 1111 XOR 0111 = 1000
+end
+
+function TestUtils:testBitOperBordercases()
+    local maxUint = 4294967295  -- maximum for 32-Bit uint (2^32 - 1)
+    
+    -- Maximum uint Tests
+    lu.assertEquals(utils.bitoper(maxUint, 0, utils.bitOps.AND), 0)
+    lu.assertEquals(utils.bitoper(maxUint, maxUint, utils.bitOps.AND), maxUint)
+    lu.assertEquals(utils.bitoper(maxUint, 0, utils.bitOps.OR), maxUint)
+    lu.assertEquals(utils.bitoper(maxUint, maxUint, utils.bitOps.XOR), 0)
+    
+    local halfMax = 2147483647  -- 2^31 - 1
+    lu.assertEquals(utils.bitoper(halfMax, halfMax, utils.bitOps.AND), halfMax)
+    lu.assertEquals(utils.bitoper(halfMax, 0, utils.bitOps.AND), 0)
+    
+    -- tests some patterns
+    local pattern1 = 0xAAAAAAAA  -- 10101010...
+    local pattern2 = 0x55555555  -- 01010101...
+    lu.assertEquals(utils.bitoper(pattern1, pattern2, utils.bitOps.AND), 0)
+    lu.assertEquals(utils.bitoper(pattern1, pattern2, utils.bitOps.OR), maxUint)
+    lu.assertEquals(utils.bitoper(pattern1, pattern2, utils.bitOps.XOR), maxUint)
+end
+
 -- Run the tests
 BaseTest:hookTests()
