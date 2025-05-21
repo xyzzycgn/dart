@@ -98,4 +98,25 @@ function utils.checkCircuitCondition(cc)
     return false, details
 end
 -- ###############################################################
+
+--- @class BitOperations
+utils.bitOps = {
+    OR = 1,
+    XOR = 3,
+    AND = 4
+}
+
+--- @see https://stackoverflow.com/questions/32387117/bitwise-and-in-lua
+--- @param oper BitOperations
+--- @param a uint
+--- @param a uint
+function utils.bitoper(a, b, oper)
+    local r, m, s = 0, 2 ^ 31
+    repeat
+        s, a, b = a + b + m, a % m, b % m
+        r, m = r + m * oper % (s - a - b), m / 2
+    until m < 1
+    return r
+end
+
 return utils

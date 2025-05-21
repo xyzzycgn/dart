@@ -50,8 +50,8 @@ data:extend({
     default_value = "ALL",
     allowed_values = {
       "NONE",
-      "ALARM",
-      "WARNINGS",
+      "ALERTS",
+      "INFOSONLY",
       "ALL",
     }
   },})
