@@ -1,10 +1,18 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.4
+Date: 2025-05-21
+  Bugfixes:
+    - Fixed accesses to already invalidated objects
+  Features:
+    - Display messages concerning asteroids approaching your platforms in console.
+      Level of messages shown can be configured in the mod settings
+---------------------------------------------------------------------------------------------------
 Version: 1.0.3
 Date: 2025-05-19
   Bugfixes:
     - Fixed nil access when using invalid circuit network conditions in turrets
   Gui:
-    - Display warnings when using invalid circuit network conditions in turrets
+    - Display warnings when using invalid or improper circuit network settings in turrets
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 2025-05-18
