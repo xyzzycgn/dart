@@ -524,6 +524,21 @@ local function space_platform_changed_state(event)
 end
 -- ###############################################################
 
+--- @param event EventData
+local function playerChangedSurface(event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    local guis = global_data.getPlayer_data(event.player_index).guis
+
+    if guis and guis.open then
+        Log.log("close gui", function(m)log(m)end, Log.FINE)
+        if guis.open.gui and guis.open.gui.valid then
+            guis.open.gui.destroy()
+            guis.open = {}
+        end
+    end
+end
+-- ###############################################################
+
 --- add new asteroid fragments arising from the destroyed one (will be called asynchronusly after destruction of an asteroid)
 --- @param dest_target DestroyedTarget
 local function fragments(dest_target)
@@ -996,7 +1011,8 @@ dart.events = {
     [defines.events.on_player_joined_game] = tbd,
     [defines.events.on_player_left_game] = tbd,
     [defines.events.on_player_removed] = tbd,
-    [defines.events.on_runtime_mod_setting_changed] = changeSettings,
+    [defines.events.on_player_changed_surface]       = playerChangedSurface,
+    [defines.events.on_runtime_mod_setting_changed]  = changeSettings,
 
     [defines.events.on_tick] = asyncHandler.dequeue,
 
