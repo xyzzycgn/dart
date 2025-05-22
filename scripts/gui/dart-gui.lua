@@ -175,22 +175,38 @@ end
 
 local function gui_open(event)
     local entity = event.entity
-    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINEST)
+    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
     if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-fcc" then
 
-        local player = game.get_player(event.player_index)
-        local elems, gui = build(player, entity)
+        -- check whether there is an already open but hidden instance (see ticket #20)
+        local guis = global_data.getPlayer_data(event.player_index).guis
+        Log.logBlock(guis, function(m)log(m)end, Log.FINER)
 
-        local pd = components.openNewGui(event.player_index, gui, elems, entity)
-        elems.fcc_view.entity = entity
-        pd.guis.open.activeTab = 1
-        pd.guis.open.dart_gui_type = components.dart_guis.main_gui
+        local hiddengui = false
+        if guis and guis.open and guis.open.entity then
+            -- same fcc already opened?
+            hiddengui = guis.open.entity.unit_number == entity.unit_number
+        end
 
-        -- prepare sorting
-        local allSortings = pd.guis.open.sortings or {}
-        allSortings[1] = allSortings[1] or radars.sortings()
-        allSortings[2] = allSortings[2] or turrets.sortings()
-        pd.guis.open.sortings = allSortings
+        if hiddengui then
+            Log.log("hidden gui already opened", function(m)log(m)end, Log.FINE)
+            local player = game.get_player(event.player_index)
+            player.opened = guis.open.gui
+        else
+            local player = game.get_player(event.player_index)
+            local elems, gui = build(player, entity)
+
+            local pd = components.openNewGui(event.player_index, gui, elems, entity)
+            elems.fcc_view.entity = entity
+            pd.guis.open.activeTab = 1
+            pd.guis.open.dart_gui_type = components.dart_guis.main_gui
+
+            -- prepare sorting
+            local allSortings = pd.guis.open.sortings or {}
+            allSortings[1] = allSortings[1] or radars.sortings()
+            allSortings[2] = allSortings[2] or turrets.sortings()
+            pd.guis.open.sortings = allSortings
+        end
 
         script.raise_event(on_dart_gui_needs_update, event)
     elseif event.gui_type == defines.gui_type.custom then

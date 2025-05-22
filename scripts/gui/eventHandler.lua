@@ -87,7 +87,7 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 function eventHandlers.close(gae, event)
-    Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINEST)
+    Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINE)
     local guis = global_data.getPlayer_data(event.player_index).guis
     local guiToBeCLosed = gae.gui
     guis.recentlyopen = guis.recentlyopen or {}
@@ -111,7 +111,7 @@ function eventHandlers.close(gae, event)
     -- close chained turret                                           -- ropen != nil
 
     -- close or chaining gui?
-    if ropen then
+    if ropen and ropen.gui then
         local rogui = ropen.gui
         Log.logBlock(dump.dumpLuaGuiElement(rogui), function(m)log(m)end, Log.FINER)
         -- chaining gui?
@@ -142,7 +142,7 @@ function eventHandlers.close(gae, event)
         -- close single gui - either fcc or turret
         if components.checkIfValidGuiElement(guiToBeCLosed) then
             -- must be fcc
-            Log.log("destroy custom gui", function(m)log(m)end, Log.FINER)
+            Log.log("destroy custom gui", function(m)log(m)end, Log.FINE)
             guiToBeCLosed.destroy()
             guis.open = nil
         end

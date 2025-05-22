@@ -278,9 +278,10 @@ end
 -- ###############################################################
 
 --- open new gui and chain it with formerly opened
+--- @param gui LuaGuiElement | LuaEntity new gui to open
 --- @return PlayerData
 function components.openNewGui(player_index, gui, elems, entity)
-    Log.logBlock({player_index = player_index, gui = gui, elems = elems, entity = entity}, function(m)log(m)end, Log.FINEST)
+    Log.logBlock({player_index = player_index, gui = gui, elems = elems, entity = entity}, function(m)log(m)end, Log.FINE)
 
     local pd = global_data.getPlayer_data(player_index)
     local player = game.get_player(player_index)

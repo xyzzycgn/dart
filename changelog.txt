@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.5
+Date: 2025-05-22
+  Bugfixes:
+    - Fixed unexpected behaviour of fcc GUI when dart-radar GUI is open and FCC is clicked again
+    - Fixed that zoom slider could set zomm to 0
+---------------------------------------------------------------------------------------------------
 Version: 1.0.4
 Date: 2025-05-21
   Bugfixes:
