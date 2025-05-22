@@ -87,7 +87,7 @@ function radars.buildGui(player, rop)
                             zoom = 0.50,
                         },
                     },
-                    components.radar_slider("zoom-slider", { "gui.dart-radar-zoom-camera" }, 0, 100, 50, handlers.zoom_slider_moved, true),
+                    components.radar_slider("zoom-slider", { "gui.dart-radar-zoom-camera" }, 1, 100, 50, handlers.zoom_slider_moved, true),
                 },
                 {
                     type = "frame",
