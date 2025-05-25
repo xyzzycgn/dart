@@ -4,6 +4,7 @@
 .log
 .tmp
 .vscode/
+.luacov
 doc/
 lib/
 test/
