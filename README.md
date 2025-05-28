@@ -63,5 +63,9 @@ D.A.R.T. controls a turret by setting its circuit network condition to 0 resp. 1
   - english (en)
   - español (es-ES)
   - français (fr)
+  - 日本語 (ja)
+  - 한국인 (ko)
   - português (pt-BR)
+  - 中国人 (zh-CN)
+  - 中國人 (zh-TW)
 ----

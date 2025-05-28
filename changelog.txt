@@ -1,4 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.6
+Date: 2025-05-28
+  Features:
+    - introduced enhancements of ranges for dart-radar by higher quality level
+  Locale:
+    - new locales
+      日本語 (ja)
+      한국인 (ko)
+      中国人 (zh-CN)
+      中國人 (zh-TW)
+---------------------------------------------------------------------------------------------------
 Version: 1.0.5
 Date: 2025-05-22
   Bugfixes:
