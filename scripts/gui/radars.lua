@@ -35,6 +35,28 @@ local function dataOfRow(data)
 end
 -- ###############################################################
 
+local function getMaxBasedOnQuality(rop, base)
+    local entity = rop.radar
+    local quality_level = (entity.valid and entity.quality.level) or 0
+    Log.logBlock(quality_level, function(m)log(m)end, Log.FINE)
+
+    -- yields differences of 4, 3, 2, 1 for the next higher level
+    return base + (9 - quality_level) * (quality_level) / 2
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param rop RadarOnPlatform
+local function getMaxDefenseRange(rop)
+    return getMaxBasedOnQuality(rop, constants.max_defenseRange)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param rop RadarOnPlatform
+local function getMaxDetectionRange(rop)
+    return getMaxBasedOnQuality(rop, constants.max_detectionRange)
+end
+-- ###############################################################
+
 --- custom gui for dart-radar for setting defense-radius
 --- @param player LuaPlayer
 --- @param rop RadarOnPlatform a dart-radar
@@ -94,9 +116,9 @@ function radars.buildGui(player, rop)
                     style = "dart_content_frame",
                     direction = "vertical",
                     components.radar_slider("defense-slider", { "gui.dart-radar-defense"}, 0,
-                                            constants.max_defenseRange, rop.defenseRange, handlers.defense_slider_moved),
+                                            getMaxDefenseRange(rop), rop.defenseRange, handlers.defense_slider_moved),
                     components.radar_slider("detect-slider", { "gui.dart-radar-detect" }, 0,
-                                            constants.max_detectionRange, rop.detectionRange, handlers.detection_slider_moved),
+                                            getMaxDetectionRange(rop), rop.detectionRange, handlers.detection_slider_moved),
                 },
             }
         }
