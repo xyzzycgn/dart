@@ -707,8 +707,10 @@ local function newTurret(entity)
     Log.log(entity.unit_number, function(m)log(m)end, Log.FINER)
 
     local pons = global_data.getPlatforms()[entity.surface.index]
-    addTurretToPons(pons.turretsOnPlatform, entity)
-    raiseDartComponentBuild(entity)
+    if pons then -- fix for #25
+        addTurretToPons(pons.turretsOnPlatform, entity)
+        raiseDartComponentBuild(entity)
+    end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -769,9 +771,11 @@ local function removedTurret(entity)
 
     -- remove turret
     local pons = global_data.getPlatforms()[entity.surface.index]
-    local turretsOnPlatform = pons.turretsOnPlatform
-    turretsOnPlatform[entity.unit_number] = nil
-    raiseDartComponentRemoved(entity)
+    if pons then -- fix for #25
+        local turretsOnPlatform = pons.turretsOnPlatform
+        turretsOnPlatform[entity.unit_number] = nil
+        raiseDartComponentRemoved(entity)
+    end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
