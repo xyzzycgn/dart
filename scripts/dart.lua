@@ -11,6 +11,7 @@ local asyncHandler = require("scripts.asyncHandler")
 local constants = require("scripts.constants")
 local utils = require("scripts.utils")
 local messaging = require("scripts.messaging")
+local ammoTurretMapping = require("scripts.ammoTurretMapping")
 
 -- Type definitions for this file
 
@@ -23,6 +24,7 @@ local messaging = require("scripts.messaging")
 --- @field fcc LuaEntity dart-fcc
 --- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
 --- @field fcc_un uint64 unit_number of dart-fcc
+--- @field ammo_warning_threshold uint threshold for warning for low ammo
 
 --- @class RadarOnPlatform a dart-radar on a platform
 --- @field radar LuaEntity dart-radar
@@ -438,11 +440,33 @@ local function messageConcerningAsteroids(ls, filter, pons, num)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param pons Pons
+--- @param managedTurrets ManagedTurret[]
+local function checkLowAmmo(pons, managedTurrets)
+    Log.log("check low ammo", function(m)log(m)end, Log.FINER)
+
+    local platform = pons.platform
+    local hub = platform.hub
+    --- @type LuaInventory
+    local inv = hub.get_inventory(defines.inventory.hub_main)
+    if inv then
+
+        local contents = inv.get_contents()
+        Log.logBlock({ platform = platform.name, inv=contents }, function(m)log(m)end, Log.FINEST)
+
+        Log.logBlock(ammoTurretMapping.getAmmoTurretMapping, function(m)log(m)end, Log.FINE)
+    else
+        Log.log("hub without hub_main inventory", function(m)log(m)end, Log.WARN)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- perform decision which asteroid should be targeted
 local function businessLogic()
     Log.log("enter BL", function(m)log(m)end, Log.FINER)
     Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINEST)
 
+    local warnLowAmmo = settings.global["dart-low-ammo-warning"].value
     for _, pons in pairs(global_data.getPlatforms()) do
         local surface = pons.surface
         --- @type LuaSpacePlatform
@@ -521,6 +545,11 @@ local function businessLogic()
             assignTargets(pons, knownAsteroids, managedTurrets)
         else
             Log.log("skipped invalid platform during processing", function(m)log(m)end, Log.WARN)
+        end
+
+        -- check low ammo if enabled, hub present and protected by D.A.R.T. (FCC built)
+        if warnLowAmmo and platform.hub and pons.fccsOnPlatform and table_size(pons.fccsOnPlatform) > 0 then
+            checkLowAmmo(pons, managedTurrets)
         end
     end
     Log.log("leave BL", function(m)log(m)end, Log.FINER)
@@ -703,6 +732,7 @@ local function newFcc(entity)
         fcc_un = fccun,
         fcc = entity,
         control_behavior = entity.get_or_create_control_behavior(),
+        ammo_warning_threshold = settings.global["dart-low-ammo-warning-threshold-default"].value
     }
     -- save it in platform
     local gdp = global_data.getPlatforms()[entity.surface.index].fccsOnPlatform
@@ -1047,6 +1077,8 @@ local function changeSettings(e)
         or alterSetting(e, "dart-show-defended-area")
         or alterSetting(e, "dart-mark-targets")
         or alterSetting(e, "dart-msgLevel")
+        or alterSetting(e, "dart-low-ammo-warning")
+        or alterSetting(e, "dart-low-ammo-warning-threshold-default")
 end
 
 --###############################################################

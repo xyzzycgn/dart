@@ -1,23 +1,5 @@
 data:extend({
   {
-    type = "string-setting",
-    name = "dart-logLevel",
-    order = "a",
-    setting_type = "runtime-global",
-    localised_description = { "mod-setting-description.dart-logLevel" },
-    default_value = "FINE",
-    allowed_values = {
-      "FATAL",
-      "ERROR",
-      "WARN",
-      "INFO",
-      "CONFIG",
-      "FINE",
-      "FINER",
-      "FINEST",
-    }
-  },
-  {
     type = "bool-setting",
     name = "dart-show-detection-area",
     order = "a",
@@ -44,7 +26,7 @@ data:extend({
   {
     type = "string-setting",
     name = "dart-msgLevel",
-    order = "d",
+    order = "m",
     setting_type = "runtime-global",
     localised_description = { "mod-setting-description.dart-msgLevel" },
     default_value = "ALL",
@@ -54,4 +36,40 @@ data:extend({
       "INFOSONLY",
       "ALL",
     }
-  },})
+  },
+  {
+    type = "bool-setting",
+    name = "dart-low-ammo-warning",
+    order = "m-a",
+    setting_type = "runtime-global",
+    localised_description = { "mod-setting-description.dart-low-ammo-warning" },
+    default_value = true,
+  },
+  {
+    type = "int-setting",
+    name = "dart-low-ammo-warning-threshold-default",
+    order = "m-aa",
+    setting_type = "runtime-global",
+    localised_description = { "mod-setting-description.dart-low-ammo-warning-threshold-default" },
+    default_value = 200,
+    minimum_value = 10,
+  },
+  {
+    type = "string-setting",
+    name = "dart-logLevel",
+    order = "z",
+    setting_type = "runtime-global",
+    localised_description = { "mod-setting-description.dart-logLevel" },
+    default_value = "FINE",
+    allowed_values = {
+      "FATAL",
+      "ERROR",
+      "WARN",
+      "INFO",
+      "CONFIG",
+      "FINE",
+      "FINER",
+      "FINEST",
+    }
+  },
+})
