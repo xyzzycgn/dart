@@ -317,9 +317,12 @@ function components.openNewGui(player_index, gui, elems, entity)
 
     return pd
 end
+-- ###############################################################
 
-
-
-
+--- @param flag boolean
+--- @return SwitchState
+function components.switchState(flag)
+    return flag and "right" or "left"
+end
 
 return components

@@ -11,9 +11,9 @@ local eventHandler = require("scripts/gui/eventHandler")
 local ammos = {}
 
 local sortFields = {
-    slot = "ammos-slot",
-    switch = "ammos-switch",
-    threshold = "ammos-threshold",
+    type = "ammo-type",
+    enable_warn = "ammo-enable-warn",
+    threshold = "ammo-threshold",
 }
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -33,8 +33,18 @@ local function getTableAndTab(elems)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param v AmmoWarningThreshold
+local function dataOfRow(v)
+    local ammo = v.type
+    local enabled = v.enabled
+    local th_val = v.threshold
+
+    return ammo, enabled, th_val
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- @param table LuaGuiElement table for update of row
---- @param v TurretConnection
+--- @param v AmmoWarningThreshold
 --- @param at_row number of row
 local function updateTableRow(table, v, at_row)
     local slot, switch, threshold = names(at_row)
@@ -42,14 +52,23 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param table LuaGuiElement table to add row
---- @param v TurretConnection
+--- @param v AmmoWarningThreshold
 --- @param at_row number of row
 local function appendTableRow(table, v, at_row)
     local slot, switch, threshold = names(at_row)
+    local ammo, enabled, th_val = dataOfRow(v)
+
+
     local elems, slot_table = flib_gui.add(table, {
         components.slot_table(slot, 1),
-        { type = "switch", left_label_caption = "aus", right_label_caption = "an", name = switch },
-        { type = "label", caption = "123", name = threshold }, -- TODO
+        {
+            type = "switch",
+            left_label_caption = { "gui.dart-ammo-enable-warn-left" },
+            right_label_caption = { "gui.dart-ammo-enable-warn-right" },
+            name = switch,
+            switch_state = components.switchState(enabled)
+        },
+        { type = "textfield", numeric = true, text = th_val, name = threshold, enabled = enabled },
     })
 
     Log.logBlock(elems, function(m)log(m)end, Log.FINE)
@@ -65,8 +84,8 @@ end
 function ammos.sortings()
     return {
         sorting = {
-            [sortFields.slot] = false,
-            [sortFields.switch] = false,
+            [sortFields.type] = false,
+            [sortFields.enable_warn] = false,
             [sortFields.threshold] = false,
         },
         active = ""
@@ -77,7 +96,7 @@ end
 --- @param data1 ???
 --- @param data2 ??
 --- @return true if ???
-local function cmpSlot(data1, data2)
+local function cmpType(data1, data2)
     --return data1.radar.backer_name < data2.radar.backer_name
     return true -- TODO
 end
@@ -86,7 +105,7 @@ end
 --- @param data1 ???
 --- @param data2 ??
 --- @return true if ???
-local function cmpSwitch(data1, data2)
+local function cmpEnableWarn(data1, data2)
     --return data1.detectionRange < data2.detectionRange
     return true -- TODO
 end
@@ -102,8 +121,8 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local comparators = {
-    [sortFields.slot] = cmpSlot,
-    [sortFields.switch] = cmpSwitch,
+    [sortFields.type] = cmpType,
+    [sortFields.enable_warn] = cmpEnableWarn,
     [sortFields.threshold] = cmpThreshold,
 }
 
@@ -111,12 +130,12 @@ local comparators = {
 --- @param data FccOnPlatform[]
 --- @param pd PlayerData
 function ammos.update(elems, data, pd)
-    -- fcc managed in gui
+    -- fcc entity managed in gui
     local entity = elems.entity
+    -- corresponding FccOnPlatform
+    local fop = data[entity.unit_number]
 
-    local shownFcc = data[entity.unit_number]
-
-    local sorteddata = shownFcc.ammo_warning.thresholds
+    local sorteddata = fop.ammo_warning.thresholds
     Log.logBlock(sorteddata, function(m)log(m)end, Log.FINE)
 
     local gae = pd.guis.open
@@ -151,8 +170,8 @@ function ammos.build()
                   style = "dart_table_style",
                   name = "ammos_table",
                   visible = true, -- TODO false
-                  sort_checkbox(sortFields.slot),
-                  sort_checkbox(sortFields.switch),
+                  sort_checkbox(sortFields.type),
+                  sort_checkbox(sortFields.enable_warn),
                   sort_checkbox(sortFields.threshold),
                 }
             },

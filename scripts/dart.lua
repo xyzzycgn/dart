@@ -21,6 +21,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field range float range of the turret
 
 --- @class AmmoWarningThreshold threshold for warning of ammo shortage of a certain ammo type
+--- @field type string ammo type
 --- @field enabled boolean flag wether warning (for a certain ammo type) is active
 --- @field threshold uint threshold value for warning for low ammo
 
@@ -520,6 +521,7 @@ local function updateTurretTypes(pons, managedTurrets)
                                 local first = table_size(awa.thresholds) == 0 -- check if it's the first one
                                 Log.log("setting initial values for ammo warning fcc=" .. fop.fcc.unit_number .. " ammo=" .. ammo, function(m)log(m)end, Log.FINE)
                                 awa.thresholds[ammo] = {
+                                    type = ammo,
                                     enabled = first, -- for the first new ammo warning is enabled
                                     threshold = settings.global["dart-low-ammo-warning-threshold-default"].value
                                 }
