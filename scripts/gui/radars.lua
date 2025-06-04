@@ -263,6 +263,19 @@ local function sort_checkbox(name)
 end
 -- ###############################################################
 
+---  @return Sortings defaults for the turret tab
+function radars.sortings()
+    return {
+        sorting = {
+            [sortFields.unit] = false,
+            [sortFields.detect] = false,
+            [sortFields.defense] = false,
+        },
+        active = ""
+    }
+end
+-- ###############################################################
+
 --- @param data1 RadarOnPlatform
 --- @param data2 RadarOnPlatform
 --- @return true if backer_name of data1 < backer_name of data2
@@ -320,19 +333,6 @@ function radars.update(elems, data, pd)
     end
 
     components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow, updateTableRow)
-end
--- ###############################################################
-
----  @return Sortings defaults for the turret tab
-function radars.sortings()
-    return {
-        sorting = {
-            [sortFields.unit] = false,
-            [sortFields.detect] = false,
-            [sortFields.defense] = false,
-        },
-        active = ""
-    }
 end
 -- ###############################################################
 

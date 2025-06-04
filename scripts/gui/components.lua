@@ -135,7 +135,7 @@ function components.slot_table(name, size)
     size = size or 4
     return {
         type = "frame",
-        style = "rldman_small_slot_table_frame",
+        style = "dart_small_slot_table_frame",
         {
             type = "flow",
             direction = "horizontal",

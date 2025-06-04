@@ -11,6 +11,7 @@ local components = require("scripts.gui.components")
 local eventHandler = require("scripts.gui.eventHandler")
 local radars = require("scripts.gui.radars")
 local turrets = require("scripts.gui.turrets")
+local ammos = require("scripts.gui.ammos")
 
 local flib_gui = require("__flib__.gui")
 local flib_format = require("__flib__.format")
@@ -29,11 +30,22 @@ local function update_turrets(elems, pons, pd)
     turrets.update(elems, pons, pd)
 end
 
+--- @param elems GuiAndElements
+--- @param pons Pons
+--- @param pd PlayerData
+local function update_ammos(elems, pons, pd)
+    ammos.update(elems, pons.fccsOnPlatform, pd)
+end
+
 local switch = {
     [1] = update_radars,
     [2] = update_turrets,
+    [3] = update_ammos,
 }
 
+--- @param pd PlayerData
+--- @param opengui GuiAndElements
+--- @param event EventData
 local function update_main(pd, opengui, event)
     ---  @type LuaEntity
     local entity = event.entity
@@ -52,6 +64,8 @@ local function update_main(pd, opengui, event)
         opengui.elems.radars_tab.badge_text = flib_format.number(table_size(ponsOfEntity.radarsOnPlatform))
         -- turrets may be controlled by other FCC => don't use simply ponsOfEntity.turretsOnPlatform
         opengui.elems.turrets_tab.badge_text = flib_format.number(table_size(turrets.dataForPresentation(opengui, ponsOfEntity)))
+        -- TODO opengui.elems.ammos_tab.badge_text ....
+
 
         local func = switch[opengui.activeTab]
         if (func) then
@@ -166,6 +180,7 @@ local function build(player, entity)
                   handler = { [defines.events.on_gui_selected_tab_changed] = handlers.change_tab },
                   radars.build(),
                   turrets.build(),
+                  ammos.build(),
               },
             }
         }
@@ -209,6 +224,7 @@ local function gui_open(event)
             local allSortings = pd.guis.open.sortings or {}
             allSortings[1] = allSortings[1] or radars.sortings()
             allSortings[2] = allSortings[2] or turrets.sortings()
+            allSortings[3] = allSortings[3] or ammos.sortings()
             pd.guis.open.sortings = allSortings
         end
 
