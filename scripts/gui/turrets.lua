@@ -285,7 +285,7 @@ local function updateTableRow(table, v, at_row)
     if cc then
         local cebelem = ccflow[ceb]
         cebelem.visible = true
-        cebelem.elem_value = cc.first_signal -- TODO check empty 1st signal???
+        cebelem.elem_value = cc.first_signal
         cebelem.locked = true
 
         local ddbelem = ccflow[ddb]
@@ -294,7 +294,7 @@ local function updateTableRow(table, v, at_row)
 
         local sig2elem = ccflow[sig2]
         sig2elem.visible = true
-        sig2elem.caption = cc.constant -- TODO or second_signal
+        sig2elem.caption = cc.constant
     else
         ccflow[ceb].visible = false
         ccflow[ddb].visible = false
