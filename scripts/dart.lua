@@ -20,11 +20,20 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field control_behavior LuaTurretControlBehavior of the turret
 --- @field range float range of the turret
 
+--- @class AmmoWarningThreshold threshold for warning of ammo shortage of a certain ammo type
+--- @field enabled boolean flag wether warning (for a certain ammo type) is active
+--- @field threshold uint threshold value for warning for low ammo
+
+--- @class AmmoWarning settings for warning of ammo shortage for a fcc
+--- @field autoValues boolean flag if thresholds have been initially set, but may (probably) need updates in gui
+--- @field turret_types table<string> List of turret-types connected to a fcc
+--- @field thresholds table<string, AmmoWarningThreshold> thresholds for warning for low ammo (indexed by ammo type)
+
 --- @class FccOnPlatform a dart-fcc on a platform
 --- @field fcc LuaEntity dart-fcc
 --- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
 --- @field fcc_un uint64 unit_number of dart-fcc
---- @field ammo_warning_threshold uint threshold for warning for low ammo
+--- @field ammo_warning AmmoWarning
 
 --- @class RadarOnPlatform a dart-radar on a platform
 --- @field radar LuaEntity dart-radar
@@ -42,7 +51,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field surface LuaSurface surface containing the platform
 --- @field platform LuaSpacePlatform the platform
 --- @field turretsOnPlatform TurretOnPlatform[] array of turrets located on the platform, indexed by unit_number
---- @field fccsOnPlatform FccOnPlatform[] array of D.A.R.T. fcc entities located on the platform
+--- @field fccsOnPlatform table<uint, FccOnPlatform> array of D.A.R.T. fcc entities located on the platform, indexed by un of fcc
 --- @field radarsOnPlatform RadarOnPlatform[] array of D.A.R.T. radar entities located on the platform
 --- @field knownAsteroids KnownAsteroid[] array of asteroids currently known and in detection range
 
@@ -461,7 +470,74 @@ local function checkLowAmmo(pons, managedTurrets)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- perform decision which asteroid should be targeted
+--- determines which types of turrets are connected to fcc and initializes settings per ammo-type if needed
+--- @param pons Pons
+--- @param managedTurrets ManagedTurret[]
+local function updateTurretTypes(pons, managedTurrets)
+    if table_size(pons.fccsOnPlatform) > 0 then
+        -- only platforms with a fcc
+        for _, mt in pairs(managedTurrets) do
+            local fcc = mt.fcc -- fcc managing the turret
+            local fop = pons.fccsOnPlatform[fcc.unit_number]
+
+            if not fop.ammo_warning then
+                -- this fcc is uninitialized (for ammo warnings)
+
+                Log.log("initializing fcc for ammo warning fcc=" .. fcc.unit_number, function(m)log(m)end, Log.FINE)
+                fop.ammo_warning = {
+                    autoValues = true,
+                    turret_types = {},
+                    thresholds = {},
+                }
+            end
+
+            --- @type AmmoWarning
+            local awa = fop.ammo_warning
+            local turret = mt.turret
+            awa.turret_types[turret.name] = true
+        end
+
+        local atms = ammoTurretMapping.getAmmoTurretMapping()
+        Log.logBlock(atms, function(m)log(m)end, Log.FINER)
+
+        for _, fop in pairs(pons.fccsOnPlatform) do
+            local awa = fop.ammo_warning
+            -- now look for the needed ammos
+            for tt, _ in pairs(awa.turret_types) do
+                Log.logBlock(tt, function(m)log(m)end, Log.FINER)
+
+                local atm = atms[tt]
+
+                if atm then
+                    Log.logBlock(atm, function(m)log(m)end, Log.FINE)
+                    for _, ammo_cat in pairs(atm) do
+                        Log.logBlock(ammo_cat, function(m)log(m)end, Log.FINER)
+                        for _, ammo in pairs(ammo_cat) do
+                            Log.logBlock(ammo, function(m)log(m)end, Log.FINER)
+                            local threshold = awa.thresholds[ammo]
+                            if not threshold then
+                                -- yet unknown ammo type for this fcc
+                                local first = table_size(awa.thresholds) == 0 -- check if it's the first one
+                                Log.log("setting initial values for ammo warning fcc=" .. fop.fcc.unit_number .. " ammo=" .. ammo, function(m)log(m)end, Log.FINE)
+                                awa.thresholds[ammo] = {
+                                    enabled = first, -- for the first new ammo warning is enabled
+                                    threshold = settings.global["dart-low-ammo-warning-threshold-default"].value
+                                }
+                            end
+                        end
+                    end
+                else
+                    Log.log("unmapped turret_type=" .. tt, function(m)log(m)end, Log.WARN)
+                end
+            end
+        end
+
+        Log.logBlock(pons, function(m)log(m)end, Log.FINEST)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- performs decision which asteroid should be targeted
 local function businessLogic()
     Log.log("enter BL", function(m)log(m)end, Log.FINER)
     Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINEST)
@@ -473,6 +549,8 @@ local function businessLogic()
         local platform = pons.platform
         local managedTurrets = getManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
+
+        updateTurretTypes(pons, managedTurrets)
 
         if platform.valid then
             Log.log(platform.speed, function(m)log(m)end, Log.FINEST)
@@ -763,7 +841,7 @@ local createFuncs = {
 }
 
 --- event handler called if a new dart-fcc/dart-radar or a turret is build on a platform
---- @param entity LuaEntity
+--- @param event EventData
 local function entityCreated(event)
     Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
 

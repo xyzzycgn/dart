@@ -27,12 +27,10 @@ end
 -- get all types of ammo-turrets
 local turrets = prototypes.get_entity_filtered ({ { filter = "type", type = "ammo-turret" }})
 
---- @class AmmoTurretMapping table<string, {ammo_categories: AmmosByCategory}> contains the mapping from ammo-turret to corresponding ammo
+--- @class AmmoTurretMapping table<string, AmmosByCategory> contains the mapping from ammo-turret to corresponding ammo
 --- i.e.: {
 ---   ["gun-turret"] = {
----     ammo_categories = {
 ---       ["bullet"] = {"firearm-magazine", "piercing-rounds-magazine"}
----     }
 ---   }
 --- }
 local mapAmmos = {}
@@ -40,9 +38,9 @@ local mapAmmos = {}
 for name, turret in pairs(turrets) do
     Log.logLine({ name=name, turret = turret, ap = turret.attack_parameters }, function(m)log(m)end, Log.FINE)
 
-    mapAmmos[name] = { ammo_categories = {} }
+    mapAmmos[name] = {}
     for _, cat in pairs(turret.attack_parameters.ammo_categories) do
-        mapAmmos[name].ammo_categories[cat] = ammosByCategory[cat] or {}
+        mapAmmos[name][cat] = ammosByCategory[cat]
     end
 end
 Log.logBlock(mapAmmos, function(m)log(m)end, Log.FINE)
