@@ -6,6 +6,7 @@ local flib_gui = require("__flib__.gui")
 local components = require("scripts/gui/components")
 local Log = require("__log4factorio__.Log")
 local utils = require("scripts/utils")
+local Hub = require("scripts.Hub")
 local eventHandler = require("scripts/gui/eventHandler")
 
 local ammos = {}
@@ -129,9 +130,15 @@ local comparators = {
 }
 
 --- @param elems GuiAndElements
---- @param data FccOnPlatform[]
+--- @param pons Pons
 --- @param pd PlayerData
-function ammos.update(elems, data, pd)
+function ammos.update(elems, pons, pd)
+    --- @type FccOnPlatform[]
+    local data = pons.fccsOnPlatform
+
+    local inv = Hub.getInventoryOfHub(pons)
+    Log.logBlock({ platform = pons.platform.name, inv=inv }, function(m)log(m)end, Log.FINE)
+
     -- fcc entity managed in gui
     local entity = elems.entity
     -- corresponding FccOnPlatform
@@ -142,7 +149,7 @@ function ammos.update(elems, data, pd)
 
     local gae = pd.guis.open
 
-    local sortings = gae.sortings[gae.activeTab] -- radars are on 1st tab
+    local sortings = gae.sortings[gae.activeTab] -- ammos are on 3rd tab
     local active = sortings.active
     if (active ~= "") then
         sorteddata = utils.sort(data, sortings.sorting[active], comparators[active])

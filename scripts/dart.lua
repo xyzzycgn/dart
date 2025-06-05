@@ -10,6 +10,7 @@ local player_data = require("scripts.player_data")
 local asyncHandler = require("scripts.asyncHandler")
 local constants = require("scripts.constants")
 local utils = require("scripts.utils")
+local Hub = require("scripts.Hub")
 local messaging = require("scripts.messaging")
 local ammoTurretMapping = require("scripts.ammoTurretMapping")
 
@@ -455,19 +456,13 @@ end
 local function checkLowAmmo(pons, managedTurrets)
     Log.log("check low ammo", function(m)log(m)end, Log.FINER)
 
-    local platform = pons.platform
-    local hub = platform.hub
-    --- @type LuaInventory
-    local inv = hub.get_inventory(defines.inventory.hub_main)
-    if inv then
+    local inv = Hub.getInventoryOfHub(pons)
 
-        local contents = inv.get_contents()
-        Log.logBlock({ platform = platform.name, inv=contents }, function(m)log(m)end, Log.FINEST)
+    Log.logBlock({ platform = pons.platform.name, inv=inv }, function(m)log(m)end, Log.FINEST)
 
-        Log.logBlock(ammoTurretMapping.getAmmoTurretMapping, function(m)log(m)end, Log.FINE)
-    else
-        Log.log("hub without hub_main inventory", function(m)log(m)end, Log.WARN)
-    end
+
+    -- TODO Log.logBlock(ammoTurretMapping.getAmmoTurretMapping, function(m)log(m)end, Log.FINE)
+
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

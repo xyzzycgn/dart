@@ -34,7 +34,7 @@ end
 --- @param pons Pons
 --- @param pd PlayerData
 local function update_ammos(elems, pons, pd)
-    ammos.update(elems, pons.fccsOnPlatform, pd)
+    ammos.update(elems, pons, pd)
 end
 
 local switch = {

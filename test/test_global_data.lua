@@ -59,16 +59,4 @@ function TestGlobalData:test_addPlayerGetPLayerWithRealPD()
 end
 -- ###############################################################
 
-local function checkDart(dart, output, run, oun, cb)
-    run = run or 4711
-    oun = oun or 0815
-    cb = cb or "mocked CB"
-    lu.assertNotNil(dart)
-    lu.assertEquals(dart.output_un, oun)
-    lu.assertEquals(dart.radar_un, run)
-    lu.assertEquals(dart.control_behavior, cb)
-    lu.assertEquals(dart.output, output)
-end
-
-
 BaseTest:hookTests()
