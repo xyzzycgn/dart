@@ -52,7 +52,6 @@ function TestDart:setUp()
     --game.tick = 4711
     --game.connected_players = {}
 
-
     rendering = {
         draw_animation = function()
             return "mocked Animation"
@@ -61,6 +60,12 @@ function TestDart:setUp()
 
     -- mock the prototypes
     prototypes = {
+        get_item_filtered = function()
+            return {}
+        end,
+        get_entity_filtered = function()
+            return {}
+        end,
         asteroid_chunk = {},
         entity = {
             ["gun-turret"] = {
@@ -75,6 +80,13 @@ function TestDart:setUp()
     script.on_event = function()
         on_event_called = on_event_called + 1
     end
+
+    -- mock the settings object
+    settings = {
+        global = {
+            ["dart-low-ammo-warning-threshold-default"] = { value = 200 }
+        }
+    }
 end
 -- ###############################################################
 
