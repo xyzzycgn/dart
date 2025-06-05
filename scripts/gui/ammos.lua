@@ -19,11 +19,11 @@ local sortFields = {
 
 local function names(ndx)
     local prefix = "ammos_" .. ndx
-    local slot = prefix .. "_slot"
+    local slot = prefix .. "_slot_table"
     local switch = prefix .. "_switch"
     local threshold = prefix .. "_threshold"
 
-    return slot, switch, threshold
+    return prefix, slot, switch, threshold
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -55,12 +55,13 @@ end
 --- @param v AmmoWarningThreshold
 --- @param at_row number of row
 local function appendTableRow(table, v, at_row)
-    local slot, switch, threshold = names(at_row)
+    Log.logBlock(v, function(m)log(m)end, Log.FINE)
+
+    local prefix, slot, switch, threshold = names(at_row)
     local ammo, enabled, th_val = dataOfRow(v)
 
-
     local elems, slot_table = flib_gui.add(table, {
-        components.slot_table(slot, 1),
+        components.slot_table(prefix, 1),
         {
             type = "switch",
             left_label_caption = { "gui.dart-ammo-enable-warn-left" },
@@ -71,7 +72,8 @@ local function appendTableRow(table, v, at_row)
         { type = "textfield", numeric = true, text = th_val, name = threshold, enabled = enabled },
     })
 
-    Log.logBlock(elems, function(m)log(m)end, Log.FINE)
+    local item = "item=" .. ammo
+    components.addSprites2Slots(elems[slot], { [item] = 8000 })
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

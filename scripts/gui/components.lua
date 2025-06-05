@@ -189,8 +189,9 @@ function components.addSprites2Slots(slot_table, data, func)
             if not button then
                 _, button = flib_gui.add(slot_table, {
                     type = "sprite-button",
-                    style = "rldman_small_slot_button_default",
+                    style = "dart_small_slot_button_default",
                 })
+                Log.logBlock(button.type, function(m)log(m)end, Log.FINE)
             end
 
             button.sprite = sprite

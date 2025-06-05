@@ -510,7 +510,7 @@ local function updateTurretTypes(pons, managedTurrets)
                 local atm = atms[tt]
 
                 if atm then
-                    Log.logBlock(atm, function(m)log(m)end, Log.FINE)
+                    Log.logBlock(atm, function(m)log(m)end, Log.FINER)
                     for _, ammo_cat in pairs(atm) do
                         Log.logBlock(ammo_cat, function(m)log(m)end, Log.FINER)
                         for _, ammo in pairs(ammo_cat) do
