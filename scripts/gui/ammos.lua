@@ -34,13 +34,25 @@ local function getTableAndTab(elems)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param v AmmoWarningThreshold
+--- @class AmmoWarningThresholdWithAmount threshold for warning of ammo shortage of a certain ammo type
+--- @field type string ammo type
+--- @field enabled boolean flag wether warning (for a certain ammo type) is active
+--- @field threshold uint threshold value for warning for low ammo
+--- @field stockInHub uint stock in hub
+--- @param v AmmoWarningThresholdWithAmount
 local function dataOfRow(v)
     local ammo = v.type
+    local stock = v.stockInHub or 0
     local enabled = v.enabled
     local th_val = v.threshold
 
-    return ammo, enabled, th_val
+    return ammo, stock, enabled, th_val
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function setStock(button, v)
+    button.number = v
+    button.tooltip = nil -- TODO tooltip would be cool
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -48,7 +60,24 @@ end
 --- @param v AmmoWarningThreshold
 --- @param at_row number of row
 local function updateTableRow(table, v, at_row)
-    local slot, switch, threshold = names(at_row)
+    Log.logBlock(table, function(m)log(m)end, Log.FINE)
+    Log.logBlock(table.children_names, function(m)log(m)end, Log.FINE)
+
+    local prefix, slot, switch, threshold = names(at_row)
+
+    Log.logBlock({slot=slot, switch=switch, threshold=threshold}, function(m)log(m)end, Log.FINE)
+
+    local ammo, stock, enabled, th_val = dataOfRow(v)
+    local offset = at_row * 3 + 1
+
+    table[switch].switch_state = components.switchState(enabled)
+    --- @type LuaGuiElement
+    local tfield = table[threshold]
+    tfield.enabled = enabled
+    tfield.text = "" .. th_val
+
+    local item = "item=" .. ammo
+    components.updateSpritesInSlots(table.children[offset], { [item] = stock }, setStock)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -59,9 +88,9 @@ local function appendTableRow(table, v, at_row)
     Log.logBlock(v, function(m)log(m)end, Log.FINE)
 
     local prefix, slot, switch, threshold = names(at_row)
-    local ammo, enabled, th_val = dataOfRow(v)
+    local ammo, stock, enabled, th_val = dataOfRow(v)
 
-    local elems, slot_table = flib_gui.add(table, {
+    local elems, _ = flib_gui.add(table, {
         components.slot_table(prefix, 1),
         {
             type = "switch",
@@ -74,7 +103,7 @@ local function appendTableRow(table, v, at_row)
     })
 
     local item = "item=" .. ammo
-    components.addSprites2Slots(elems[slot], { [item] = 8000 })
+    components.addSprites2Slots(elems[slot], { [item] = stock }, setStock)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -96,30 +125,47 @@ function ammos.sortings()
 end
 -- ###############################################################
 
---- @param data1 ???
---- @param data2 ??
---- @return true if ???
+--- @param data1 AmmoWarningThresholdWithAmount
+--- @param data2 AmmoWarningThresholdWithAmount
+--- @return true if data1.stockInHub < data2.stockInHub
 local function cmpType(data1, data2)
-    --return data1.radar.backer_name < data2.radar.backer_name
-    return true -- TODO
+    return data1.stockInHub < data2.stockInHub
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param data1 ???
---- @param data2 ??
---- @return true if ???
+--- @param data1 AmmoWarningThresholdWithAmount
+--- @param data2 AmmoWarningThresholdWithAmount
+--- @return true if data1.enabled < data2.enabled (false considered < true)
 local function cmpEnableWarn(data1, data2)
-    --return data1.detectionRange < data2.detectionRange
-    return true -- TODO
+    local d1 = data1.enabled and 1 or 0
+    local d2 = data2.enabled and 1 or 0
+    return d1 < d2
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param data1 ???
---- @param data2 ??
---- @return true if ???
+--- @param data1 AmmoWarningThresholdWithAmount
+--- @param data2 AmmoWarningThresholdWithAmount
+--- @return true if data1.threshold < data2.threshold
 local function cmpThreshold(data1, data2)
-    --return data1.defenseRange < data2.defenseRange
-    return true -- TODO
+    return data1.threshold < data2.threshold
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function presentationData(thresholds, inv)
+    Log.logBlock(thresholds, function(m)log(m)end, Log.FINE)
+
+    local pdata = {}
+    for ammo, threshold in pairs(thresholds) do
+        local ad = {
+            enabled = threshold.enabled,
+            threshold = threshold.threshold,
+            type = threshold.type,
+            stockInHub = inv[ammo] or 0,
+        }
+        pdata[#pdata + 1] = ad
+    end
+
+    return pdata
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -136,7 +182,7 @@ function ammos.update(elems, pons, pd)
     --- @type FccOnPlatform[]
     local data = pons.fccsOnPlatform
 
-    local inv = Hub.getInventoryOfHub(pons)
+    local inv = Hub.getInventoryContent(pons)
     Log.logBlock({ platform = pons.platform.name, inv=inv }, function(m)log(m)end, Log.FINE)
 
     -- fcc entity managed in gui
@@ -144,7 +190,7 @@ function ammos.update(elems, pons, pd)
     -- corresponding FccOnPlatform
     local fop = data[entity.unit_number]
 
-    local sorteddata = fop.ammo_warning.thresholds
+    local sorteddata = presentationData(fop.ammo_warning.thresholds, inv)
     Log.logBlock(sorteddata, function(m)log(m)end, Log.FINE)
 
     local gae = pd.guis.open
@@ -152,7 +198,7 @@ function ammos.update(elems, pons, pd)
     local sortings = gae.sortings[gae.activeTab] -- ammos are on 3rd tab
     local active = sortings.active
     if (active ~= "") then
-        sorteddata = utils.sort(data, sortings.sorting[active], comparators[active])
+        sorteddata = utils.sort(sorteddata, sortings.sorting[active], comparators[active])
     end
 
     components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow, updateTableRow)

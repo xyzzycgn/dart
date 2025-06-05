@@ -74,7 +74,7 @@ function TestHub:test_getInventoryOfHub()
             }
         }
     }
-    local erg = Hub.getInventoryOfHub(pons)
+    local erg = Hub.getInventoryContent(pons)
 
     lu.assertNotNil(erg)
 

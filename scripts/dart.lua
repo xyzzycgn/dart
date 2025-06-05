@@ -456,7 +456,7 @@ end
 local function checkLowAmmo(pons, managedTurrets)
     Log.log("check low ammo", function(m)log(m)end, Log.FINER)
 
-    local inv = Hub.getInventoryOfHub(pons)
+    local inv = Hub.getInventoryContent(pons)
 
     Log.logBlock({ platform = pons.platform.name, inv=inv }, function(m)log(m)end, Log.FINEST)
 

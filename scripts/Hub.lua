@@ -25,7 +25,7 @@ end
 
 --- @param pons Pons
 --- @return ItemWithQualityCounts[] @List of all items in the inventory of the Hub.
-function Hub.getInventoryOfHub(pons)
+function Hub.getInventoryContent(pons)
     local platform = pons.platform
     local hub = platform.hub
     --- @type LuaInventory

@@ -3,6 +3,7 @@
 ---
 local Log = require("__log4factorio__.Log")
 
+-- determine mapping only once per game session
 local needs_initialization = true
 local mapAmmos = {}
 
@@ -19,7 +20,7 @@ local function getMapAmmos()
         -- (an **Entity**ProtoType), when clicking on "Prototype type"
         for name, item in pairs(prototypes.get_item_filtered ({ { filter = "type", type = "ammo" }})) do
             local ac = item.ammo_category
-            Log.logBlock({name = name, item=item, ac=ac, acname=ac.name, actype=ac.type, acgroup=ac.group}, function(m)log(m)end, Log.FINE)
+            Log.logLine({name = name, item=item, ammo_cat=ac, ammo_cat_name=ac.name, ammo_cat_type=ac.type, }, function(m)log(m)end, Log.FINER)
 
             local ammoCat = ammosByCategory[ac.name] or {}
             ammoCat[#ammoCat + 1] = name
@@ -37,13 +38,14 @@ local function getMapAmmos()
         --- }
 
         for name, turret in pairs(turrets) do
-            Log.logLine({ name=name, turret = turret, ap = turret.attack_parameters }, function(m)log(m)end, Log.FINE)
+            Log.logLine({ name=name, turret = turret, ap = turret.attack_parameters }, function(m)log(m)end, Log.FINER)
 
             mapAmmos[name] = {}
             for _, cat in pairs(turret.attack_parameters.ammo_categories) do
                 mapAmmos[name][cat] = ammosByCategory[cat]
             end
         end
+        -- mapAmmos now conatins the mapping between turret and ammo (grouped by ammo-type)
         Log.logBlock(mapAmmos, function(m)log(m)end, Log.FINE)
 
         needs_initialization = false

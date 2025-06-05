@@ -191,7 +191,6 @@ function components.addSprites2Slots(slot_table, data, func)
                     type = "sprite-button",
                     style = "dart_small_slot_button_default",
                 })
-                Log.logBlock(button.type, function(m)log(m)end, Log.FINE)
             end
 
             button.sprite = sprite
