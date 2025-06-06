@@ -79,7 +79,9 @@ local function update_gui(event)
                 update_main(pd, opengui, event)
             else
                 -- currently only "dart_radar_gui"
-                opengui.elems.radar_view.entity = opengui.entity
+                if opengui.elems then
+                    opengui.elems.radar_view.entity = opengui.entity
+                end
             end
         end
     end
