@@ -7,7 +7,7 @@ local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
 local components = require("scripts.gui.components")
 
-local eventHandlers = {}
+local eventHandler = {}
 -- ###############################################################
 
 --- @param gae GuiAndElements
@@ -86,7 +86,7 @@ end
 --- common function to close gui
 --- @param gae GuiAndElements
 --- @param event EventData
-function eventHandlers.close(gae, event)
+function eventHandler.close(gae, event)
     Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINE)
     local guis = global_data.getPlayer_data(event.player_index).guis
     local guiToBeCLosed = gae.gui
@@ -101,7 +101,7 @@ function eventHandlers.close(gae, event)
         gae.highlight = nil
     end
 
-    Log.logBlock(ropen, function(m)log(m)end, Log.FINER)
+    Log.logBlock(ropen, function(m)log(m)end, Log.FINE)
     Log.logLine((ropen and ropen.gui) == event.element, function(m)log(m)end, Log.FINER)
 
     -- 3 cases
@@ -113,7 +113,7 @@ function eventHandlers.close(gae, event)
     -- close or chaining gui?
     if ropen and ropen.gui then
         local rogui = ropen.gui
-        Log.logBlock(dump.dumpLuaGuiElement(rogui), function(m)log(m)end, Log.FINER)
+        Log.logBlock(dump.dumpLuaGuiElement(rogui), function(m)log(m)end, Log.FINE)
         -- chaining gui?
         if (rogui.valid and rogui == event.element) then
             -- chaining to turret gui
@@ -133,10 +133,12 @@ function eventHandlers.close(gae, event)
             -- make former gui visible again
             ropen.gui.visible = true
             guis.open = ropen
-            if (not event.entity) then
-                event.entity = gae.entity
-            end
-            script.raise_event(on_dart_gui_needs_update, event)
+            --if (not event.entity) then
+            --    event.entity = gae.entity
+            --end
+            Log.log("raise on_dart_gui_needs_update", function(m)log(m)end, Log.FINE)
+            --script.raise_event(on_dart_gui_needs_update, event)
+            script.raise_event(on_dart_gui_needs_update, { player_index = event.player_index, entity = ropen.entity })
         end
     else
         -- close single gui - either fcc or turret
@@ -150,20 +152,20 @@ function eventHandlers.close(gae, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-eventHandlers.handlers = {
+eventHandler.handlers = {
     sort_clicked = sort_clicked_handler,
     camera_hovered = camera_hover,
     camera_left = camera_leave,
     clicked = clicked,
-    close_gui = eventHandlers.close,
+    close_gui = eventHandler.close,
 }
 
 -- register local handlers in flib
-flib_gui.add_handlers(eventHandlers.handlers, function(e, handler)
+flib_gui.add_handlers(eventHandler.handlers, function(e, handler)
     local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
     if guiAndElements then
         handler(guiAndElements, e)
     end
 end)
 
-return eventHandlers
+return eventHandler

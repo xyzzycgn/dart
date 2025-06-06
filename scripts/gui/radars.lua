@@ -38,7 +38,7 @@ end
 local function getMaxBasedOnQuality(rop, base)
     local entity = rop.radar
     local quality_level = (entity.valid and entity.quality.level) or 0
-    Log.logBlock(quality_level, function(m)log(m)end, Log.FINE)
+    Log.logBlock(quality_level, function(m)log(m)end, Log.FINER)
 
     -- yields differences of 4, 3, 2, 1 for the next higher level
     return base + (9 - quality_level) * (quality_level) / 2
