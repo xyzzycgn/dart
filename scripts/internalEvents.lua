@@ -24,3 +24,5 @@ log("registered on_dart_component_removed_event: " .. on_dart_component_removed_
 
 on_dart_gui_needs_update = script.generate_event_name()
 log("registered on_dart_gui_needs_update: " .. on_dart_gui_needs_update)
+on_dart_gui_close = script.generate_event_name()
+log("registered on_dart_gui_close: " .. on_dart_gui_close)

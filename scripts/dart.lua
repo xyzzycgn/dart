@@ -743,10 +743,27 @@ local function raiseDartComponentRemoved(entity)
 end
 
 --- @param entity LuaEntity
-local function removedRadar(entity)
+local function removedRadar(entity, event)
     local darts = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform
     local fccun = entity.unit_number
-    Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
+    Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINE)
+
+    -- check if deleted radar is just show in a GUI -> close it (for all players of the force owning the entity)
+    for _, player in pairs(entity.force.players) do
+        local pd = global_data.getPlayer_data(player.index)
+        if pd and pd.guis and pd.guis.open then
+            -- there is an open GUI
+            local opengui = pd.guis.open -- the actual opened gui
+            if opengui.entity.unit_number == entity.unit_number then
+                -- for the deleted dart-radar
+                event.gae = opengui
+                event.player_index = player.index
+                -- close the opened gui for this dart-radar
+                Log.log("raising on_dart_gui_close", function(m)log(m)end, Log.FINE)
+                script.raise_event(on_dart_gui_close, event)
+            end
+        end
+    end
 
     -- clear the data belonging to the dart-radar
     darts[fccun] = nil

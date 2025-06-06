@@ -65,12 +65,13 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function update_gui(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINER)
+    Log.logLine(event, function(m)log(m)end, Log.FINE)
 
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
         -- the actual opened gui
         local opengui = pd.guis.open
+        Log.logLine(opengui, function(m)log(m)end, Log.FINE)
         if opengui then
             Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
 
@@ -250,6 +251,13 @@ local function standard_gui_closed(event) -- TODO better name for function
 end
 -- ###############################################################
 
+-- delegates the on_dart_gui_close event to the standard handler
+local function handle_on_dart_gui_close(event)
+    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    eventHandler.close(event.gae, event)
+end
+
+
 -- GUI events
 local dart_gui = {}
 
@@ -261,6 +269,8 @@ dart_gui.events = {
     [on_dart_component_build_event] = update_gui,
     [on_dart_component_removed_event] = update_gui,
     [on_dart_gui_needs_update] = update_gui,
+
+    [on_dart_gui_close] = handle_on_dart_gui_close
 }
 
 return dart_gui
