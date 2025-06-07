@@ -133,11 +133,7 @@ function eventHandler.close(gae, event)
             -- make former gui visible again
             ropen.gui.visible = true
             guis.open = ropen
-            --if (not event.entity) then
-            --    event.entity = gae.entity
-            --end
             Log.log("raise on_dart_gui_needs_update", function(m)log(m)end, Log.FINE)
-            --script.raise_event(on_dart_gui_needs_update, event)
             script.raise_event(on_dart_gui_needs_update, { player_index = event.player_index, entity = ropen.entity })
         end
     else
