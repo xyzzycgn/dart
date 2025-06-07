@@ -957,8 +957,25 @@ local function dart_config_changed()
 end
 --###############################################################
 
+--- creates the PlayerData if needed and stores them in global storage
+--- @param player_index uint
+local function init_player_data(player_index)
+    local pd = global_data.getPlayer_data(player_index)
+    if (pd == nil) then
+        local player = game.get_player(player_index)
+        pd = player_data.init_player_data(player)
+        global_data.addPlayer_data(player, pd)
+    end
+end
+
+local function player_joined_or_created(event)
+    Log.logLine(event, function(m)log(m)end)
+    init_player_data(event.player_index)
+end
+--###############################################################
+
 local function tbd(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINER)
+    Log.logLine(event, function(m)log(m)end)
 end
 --###############################################################
 
@@ -1029,7 +1046,8 @@ dart.events = {
     [defines.events.script_raised_destroy]           = entityRemoved,
     [defines.events.on_surface_created]              = surfaceCreated,
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
-    [defines.events.on_player_joined_game] = tbd,
+    [defines.events.on_player_created]               = player_joined_or_created,
+    [defines.events.on_player_joined_game]           = player_joined_or_created,
     [defines.events.on_player_left_game] = tbd,
     [defines.events.on_player_removed] = tbd,
     [defines.events.on_player_changed_surface]       = playerChangedSurface,

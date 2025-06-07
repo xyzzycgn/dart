@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.9
+Date: 2025-06-07
+  Bugfixes:
+    - Fixed problem in interaction with mod Blueprint Sandboxes when switching to sandbox in a freshly created game
+---------------------------------------------------------------------------------------------------
 Version: 1.0.8
 Date: 2025-06-06
   Bugfixes:
