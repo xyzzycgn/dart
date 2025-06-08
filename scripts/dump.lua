@@ -6,7 +6,32 @@
 
 local dump = {}
 
-local function dumpPlatform(surface)
+local reverseTypes = {}
+
+local function fillReverseTypes(types)
+    local rtypes = {}
+    for k,v in pairs(defines.events) do
+        rtypes[v] = k
+    end
+
+    reverseTypes[types] = rtypes
+end
+-- ###############################################################
+
+local function getTypeName(types, value)
+    if value then
+        if not reverseTypes[types] then
+            fillReverseTypes(types)
+        end
+
+        return reverseTypes[types][value] or ("unknown-" .. types)
+    end
+    return nil
+end
+-- ###############################################################
+
+--- @param surface LuaSurface
+local function dumpPlatformOfSurface(surface)
     local platform = surface.platform
 
     if platform then
@@ -26,13 +51,14 @@ local function dumpPlatform(surface)
 end
 -- ###############################################################
 
+--- @param surface LuaSurface
 function dump.dumpSurface(surface)
     local ds = {}
 
     if surface then
         ds.name = surface.name
         ds.localised_name  = surface.localised_name
-        ds.platform = dumpPlatform(surface)
+        ds.platform = dumpPlatformOfSurface(surface)
         ds.planet = surface.planet
         --ds.map_gen_settings = surface.map_gen_settings
         ds.wind_speed = surface.wind_speed
@@ -63,17 +89,6 @@ local function dumpGroup(group)
     return dg
 end
 
-local function getTypeName(types, value)
-    if value then
-        for name, val in pairs(defines[types]) do
-            if val == value then
-                return name
-            end
-        end
-        return "unknown"
-    end
-    return nil
-end
 -- ###############################################################
 
 function dump.dumpAsteroidPropertyPrototype(prototype)
@@ -193,17 +208,20 @@ end
 local function tableCopy(obj)
     if type(obj) ~= 'table' then return obj end
     local res = {}
-    for k, v in pairs(obj) do res[tableCopy(k)] = tableCopy(v) end
+    for k, v in pairs(obj) do
+        res[tableCopy(k)] = tableCopy(v)
+    end
     return res
 end
 
 
 
---- @param lge LuaGuiElement
+--- @param event EventData
 function dump.dumpEvent(event)
     local function f()
         local erg = tableCopy(event)
         erg.gui_type = getTypeName("gui_type", event.gui_type)
+        erg.name = getTypeName("events", event.name)
         return erg
     end
 

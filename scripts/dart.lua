@@ -519,14 +519,13 @@ end
 -- ###############################################################
 
 local function space_platform_changed_state(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINER)
-    Log.logBlock(event.platform.speed, function(m)log(m)end, Log.FINER)
+    Log.logLine({ event = dump.dumpEvent(event), speed=event.platform.speed}, function(m)log(m)end, Log.FINER)
 end
 -- ###############################################################
 
 --- @param event EventData
 local function playerChangedSurface(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
     local guis = global_data.getPlayer_data(event.player_index).guis
 
     if guis and guis.open then
@@ -726,7 +725,7 @@ local createFuncs = {
 --- event handler called if a new dart-fcc/dart-radar or a turret is build on a platform
 --- @param entity LuaEntity
 local function entityCreated(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
 
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
@@ -807,7 +806,7 @@ local removedFuncs = {
 
 --- event handler called if a dart-fcc/dart-radar or a turret is removed from platform
 local function entityRemoved(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
     local entity = event.entity
     local func = removedFuncs[entity.name] or removedFuncs[entity.type]
 
@@ -853,7 +852,7 @@ end
 --- event handler for on_surface_created
 --- @param event EventData
 local function surfaceCreated(event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
     local surface = game.surfaces[event.surface_index]
 
     createPonsAndAddToGDPAndPD(surface)
@@ -968,39 +967,46 @@ local function init_player_data(player_index)
     end
 end
 
+--- @param event EventData
 local function player_joined_or_created(event)
-    Log.logLine(event, function(m)log(m)end)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end)
     init_player_data(event.player_index)
 end
 --###############################################################
 
+--- @param event EventData
 local function tbd(event)
-    Log.logLine(event, function(m)log(m)end)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end)
 end
 --###############################################################
 
+--- @param event EventData
 local function tbda(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINER)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
+--- @param event EventData
 local function tbdu(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINER)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
+--- @param event EventData
 local function tbdd(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINER)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
+--- @param event EventData
 local function tbdad(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINER)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
+--- @param event EventData
 local function tbdal(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINER)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
