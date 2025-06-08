@@ -944,7 +944,7 @@ end
 --- creates the administrative structure for a new platform and stores it in
 --- global_data resp. PlayerData of the owner
 --- @param surface LuaSurface
-local function createPonsAndAddToGDPAndPD(surface)
+local function createPonsAndAddToGDAndPD(surface)
     local platform = surface.platform
 
     if platform then
@@ -972,14 +972,14 @@ local function surfaceCreated(event)
     Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
     local surface = game.surfaces[event.surface_index]
 
-    createPonsAndAddToGDPAndPD(surface)
+    createPonsAndAddToGDAndPD(surface)
 end
 -- ###############################################################
 
 -- part of initialization
 local function searchPlatforms()
     for _, surface in pairs(game.surfaces) do
-        createPonsAndAddToGDPAndPD(surface)
+        createPonsAndAddToGDAndPD(surface)
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
