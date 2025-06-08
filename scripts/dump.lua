@@ -20,7 +20,7 @@ end
 
 local function getTypeName(types, value)
     if value then
-        if #reverseTypes[types] == 0 then
+        if not reverseTypes[types] then
             fillReverseTypes(types)
         end
 
