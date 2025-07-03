@@ -72,7 +72,9 @@ local function update_gui(event)
         -- the actual opened gui
         local opengui = pd.guis.open
         Log.logLine(opengui, function(m)log(m)end, Log.FINE)
-        if opengui then
+        -- fix for #28
+        -- ignore events raised when no (D.A.R.T.) gui is open
+        if opengui and opengui.elems then
             Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
 
             -- distinguish the different (sub-)guis
