@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.11
+Date: 2025-07-04
+  Bugfixes:
+    - Fixed problem when removing a dart-radar from platform
+    - Fixed compability problem with Factorissimo 3
+---------------------------------------------------------------------------------------------------
 Version: 1.0.10
 Date: 2025-07-03
   Bugfixes:
