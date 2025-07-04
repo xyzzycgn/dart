@@ -526,7 +526,8 @@ end
 --- @param event EventData
 local function playerChangedSurface(event)
     Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
-    local guis = global_data.getPlayer_data(event.player_index).guis
+    local pd = global_data.getPlayer_data(event.player_index)
+    local guis = pd and pd.guis
 
     if guis and guis.open then
         Log.log("close gui", function(m)log(m)end, Log.FINE)
