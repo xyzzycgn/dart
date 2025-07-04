@@ -753,7 +753,9 @@ local function removedRadar(entity, event)
         if pd and pd.guis and pd.guis.open then
             -- there is an open GUI
             local opengui = pd.guis.open -- the actual opened gui
-            if opengui.entity.unit_number == entity.unit_number then
+            Log.logBlock(opengui, function(m)log(m)end, Log.FINE)
+
+            if opengui and opengui.entity and (opengui.entity.unit_number == entity.unit_number) then
                 -- for the deleted dart-radar
                 event.gae = opengui
                 event.player_index = player.index
