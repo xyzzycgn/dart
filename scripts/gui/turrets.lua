@@ -402,12 +402,11 @@ local function getNetworkOfFcc(fcc, networks)
         end
     end
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 --- @param elems GuiAndElements
 --- @param pons Pons
---- @param pd PlayerData
-function turrets.update(elems, pons, pd)
+function turrets.dataForPresentation(elems, pons)
     local data = pons.turretsOnPlatform
     -- fcc managed in gui
     local entity = elems.entity
@@ -428,8 +427,15 @@ function turrets.update(elems, pons, pd)
     Log.logLine(nwOfFcc, function(m)log(m)end, Log.FINE)
     Log.logLine(otherFccsNetworks, function(m)log(m)end, Log.FINE)
 
-    local pdata = extractDataForPresentation(data, nwOfFcc, otherFccsNetworks)
+    return extractDataForPresentation(data, nwOfFcc, otherFccsNetworks)
+end
+-- ###############################################################
 
+--- @param elems GuiAndElements
+--- @param pons Pons
+--- @param pd PlayerData
+function turrets.update(elems, pons, pd)
+    local pdata = turrets.dataForPresentation(elems, pons)
     -- sort data
     local sorteddata = pdata
     local gae = pd.guis.open
