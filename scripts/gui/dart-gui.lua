@@ -26,7 +26,7 @@ end
 --- @param pons Pons
 --- @param pd PlayerData
 local function update_turrets(elems, pons, pd)
-    turrets.update(elems, pons.turretsOnPlatform, pd)
+    turrets.update(elems, pons, pd)
 end
 
 local switch = {

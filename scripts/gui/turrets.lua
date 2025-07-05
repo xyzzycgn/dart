@@ -34,7 +34,7 @@ local function getNetworksOfTurretOnPlatform(top)
         local cn = cb.valid and cb.get_circuit_network(wc)
 
         if cn then
-            --- @type CnOfTurret
+            --- @type Network
             networks[connector] = {
                 network_id = cn.network_id,
                 -- we assume that cb still is valid here. If not - that is really bad karma ;-)
@@ -364,21 +364,42 @@ local comparators = {
     [sortFields.cn] = cmpNet,
     [sortFields.cond] = cmpCond,
 }
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param elems GuiAndElements
---- @param data TurretOnPlatform[]
---- @param pd PlayerData
-function turrets.update(elems, data, pd)
-    -- fcc managed in gui
-    local entity = elems.entity
-    -- get the circuit networks of it
-    local nwOfFcc = {}
+local function getNetworkOfFcc(fcc, networks)
     for _, wc in pairs(redAndGreenWC) do
-        local cn = entity.get_circuit_network(wc)
+        -- get the circuit networks of fcc in gui
+        local cn = fcc.get_circuit_network(wc)
         if cn then
-            nwOfFcc[cn.network_id] = true
+            networks[cn.network_id] = true
         end
     end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param elems GuiAndElements
+--- @param pons Pons
+--- @param pd PlayerData
+function turrets.update(elems, pons, pd)
+    local data = pons.turretsOnPlatform
+    -- fcc managed in gui
+    local entity = elems.entity
+
+    -- look for FCCs networks
+    local otherFccsNetworks = {}
+    local nwOfFcc = {}
+    for _, ofcc in pairs(pons.fccsOnPlatform) do
+        if ofcc.fcc_un == entity.unit_number then
+            -- get the circuit networks of fcc in gui
+            getNetworkOfFcc(entity, nwOfFcc)
+        else
+            -- other fcc on platform
+            getNetworkOfFcc(ofcc.fcc, otherFccsNetworks)
+        end
+    end
+
+    Log.logLine(nwOfFcc, function(m)log(m)end, Log.FINE)
+    Log.logLine(otherFccsNetworks, function(m)log(m)end, Log.FINE)
 
     local pdata = extractDataForPresentation(data, nwOfFcc)
 
