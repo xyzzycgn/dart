@@ -34,7 +34,7 @@ local function getNetworksOfTurretOnPlatform(top)
         local cn = cb.valid and cb.get_circuit_network(wc)
 
         if cn then
-            --- @type CnOfTurret
+            --- @type Network
             networks[connector] = {
                 network_id = cn.network_id,
                 -- we assume that cb still is valid here. If not - that is really bad karma ;-)
@@ -159,6 +159,10 @@ local function networkCondition(tc)
     elseif tc.num_connections == 2 then
         -- connected twice
         lblcaption = { "gui.dart-turret-connected-twice" }
+        lblstyle = "bold_orange_label"
+    elseif table_size(tc.managedBy) > 1 then
+        -- connected to multiple fccs
+        lblcaption = { "gui.dart-turret-connected-to-multiple-fccs" }
         lblstyle = "bold_orange_label"
     elseif not tc.circuit_enable_disable then
         -- connected twice
@@ -306,11 +310,13 @@ end
 --- @field cc CircuitCondition
 --- @field connector uint defines.wire_connector_id.circuit_red or defines.wire_connector_id.circuit_green
 --- @field circuit_enable_disable boolean true if the turret enable/disable state is controlled by circuit condition
+--- @field managedBy uint[] IDs of the circuit networks (of fccs) connected to this turret
 ---
 --- @param data TurretOnPlatform[]
 --- @param nwOfFcc uint[] IDs of the circuit networks of fcc shown in gui
+--- @param otherFccsNetworks uint[] IDs of the circuit networks of other fccs of platform (those not shown in gui)
 --- @return TurretConnection[]
-local function extractDataForPresentation(data, nwOfFcc)
+local function extractDataForPresentation(data, nwOfFcc, otherFccsNetworks)
     local pdata = {}
 
     for _, top in pairs(data) do
@@ -320,9 +326,11 @@ local function extractDataForPresentation(data, nwOfFcc)
 
             local num_connections = 0 -- how often is the turret connected to fcc
             local nwid, cc, conn, circuit_enable_disable
+            local managedBy = {}
 
             for connector, nw in pairs(networks) do
-                if (nwOfFcc[nw.network_id]) then
+                if nwOfFcc[nw.network_id] then
+                    managedBy[nw.network_id] = true
                     if num_connections > 0 then
                         -- 2nd connection :-/
                         num_connections = 2
@@ -334,17 +342,36 @@ local function extractDataForPresentation(data, nwOfFcc)
                     circuit_enable_disable = nw.circuit_enable_disable
                     conn = connector
                     num_connections = 1
+                elseif otherFccsNetworks[nw.network_id] then
+                    -- turret is connected to another fcc
+                    managedBy[nw.network_id] = true
                 end
             end
 
-            pdata[#pdata + 1] = {
-                turret = top.turret,
-                network_id = nwid,
-                connector = conn,
-                cc = cc,
-                num_connections = num_connections,
-                circuit_enable_disable = circuit_enable_disable
-            }
+            --[[
+            at this point we can have these combinations (other combinations are not possible)
+            num_connections | managedBy           | intended behaviour
+                 0          |  {}                 | show message "uncontrolled"
+                 0          |  { ofcc }           | suppress (turret is managed by other fcc)
+                 0          |  { ofcc1, ofcc2 }   | suppress (turret is managed by multiple other fccs, has to be managed there)
+                 1          |  { fcc }            | show (turret is managed by this fcc)
+                 1          |  { fcc, ofcc, ... } | show message "multiple fccs" (condition is more than 1 entry in managedBy)
+                 2          |  { fcc }            | show message "connected twice"
+                 2          |  { fcc, ofcc, ... } | show message "connected twice" (has precedence before "multiple fccs")
+            ]]
+
+            -- suppress this turret if num_connections == 0 and managedBy ~= {}
+            if (num_connections > 0) or (table_size(managedBy) == 0) then
+                pdata[#pdata + 1] = {
+                    turret = top.turret,
+                    network_id = nwid,
+                    connector = conn,
+                    cc = cc,
+                    num_connections = num_connections,
+                    circuit_enable_disable = circuit_enable_disable,
+                    managedBy = managedBy,
+                }
+            end
         else
             Log.logBlock("ignored invalid turret during display", function(m)log(m)end, Log.WARN)
         end
@@ -364,24 +391,51 @@ local comparators = {
     [sortFields.cn] = cmpNet,
     [sortFields.cond] = cmpCond,
 }
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function getNetworkOfFcc(fcc, networks)
+    for _, wc in pairs(redAndGreenWC) do
+        -- get the circuit networks of fcc in gui
+        local cn = fcc.get_circuit_network(wc)
+        if cn then
+            networks[cn.network_id] = true
+        end
+    end
+end
+-- ###############################################################
 
 --- @param elems GuiAndElements
---- @param data TurretOnPlatform[]
---- @param pd PlayerData
-function turrets.update(elems, data, pd)
+--- @param pons Pons
+function turrets.dataForPresentation(elems, pons)
+    local data = pons.turretsOnPlatform
     -- fcc managed in gui
     local entity = elems.entity
-    -- get the circuit networks of it
+
+    -- look for FCCs networks
+    local otherFccsNetworks = {}
     local nwOfFcc = {}
-    for _, wc in pairs(redAndGreenWC) do
-        local cn = entity.get_circuit_network(wc)
-        if cn then
-            nwOfFcc[cn.network_id] = true
+    for _, ofcc in pairs(pons.fccsOnPlatform) do
+        if ofcc.fcc_un == entity.unit_number then
+            -- get the circuit networks of fcc in gui
+            getNetworkOfFcc(entity, nwOfFcc)
+        else
+            -- other fcc on platform
+            getNetworkOfFcc(ofcc.fcc, otherFccsNetworks)
         end
     end
 
-    local pdata = extractDataForPresentation(data, nwOfFcc)
+    Log.logLine(nwOfFcc, function(m)log(m)end, Log.FINE)
+    Log.logLine(otherFccsNetworks, function(m)log(m)end, Log.FINE)
 
+    return extractDataForPresentation(data, nwOfFcc, otherFccsNetworks)
+end
+-- ###############################################################
+
+--- @param elems GuiAndElements
+--- @param pons Pons
+--- @param pd PlayerData
+function turrets.update(elems, pons, pd)
+    local pdata = turrets.dataForPresentation(elems, pons)
     -- sort data
     local sorteddata = pdata
     local gae = pd.guis.open
