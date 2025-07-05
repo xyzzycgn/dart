@@ -334,7 +334,8 @@ local function getManagedTurrets(pons)
     -- iterate over all known circuit networks containing a dart
     for nwid, cnOfDart in pairs(cnOfDarts) do
         -- iterate over all known turrets in this circuit network
-        for _, cnOfTurret in pairs(cnOfTurrets[nwid]) do
+        local cnot = cnOfTurrets[nwid] or {}
+        for _, cnOfTurret in pairs(cnot) do
             local turret = cnOfTurret.turret
 
             --- @type ManagedTurret
