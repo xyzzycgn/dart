@@ -55,17 +55,33 @@ To use D.A.R.T, it must be configured (per platform). This has to be done in the
 **Hint**
 D.A.R.T. controls a turret by setting its circuit network condition to 0 resp. 1.
 
+## Compatibility
+This mod should be compatible to vanilla game (= space age) and other mods introducing new turrets
+derived from ammo-turret prototype and/or new ammunition for these turrets. 
 
-# Have fun
+Currently these mods are known to work fine with it:
+- [Cupric Asteroids](https://mods.factorio.com/mod/cupric-asteroids)
+- [Modular Turrets](https://mods.factorio.com/mod/scattergun_turret)
 
-# Supported languages in this version:
+If you have experience with other mods working too, please let me know.
+
+## Supported languages in this version:
+  - čeština (cs)
   - deutsch (de)
   - english (en)
   - español (es-ES)
   - français (fr)
+  - italiano (it)
   - 日本語 (ja)
   - 한국인 (ko)
+  - nederlands (nl)
+  - polski (pl)
   - português (pt-BR)
+  - русский (ru)
+  - українська (uk-UA)    
   - 中国人 (zh-CN)
   - 中國人 (zh-TW)
+
+# Have fun
+
 ----
