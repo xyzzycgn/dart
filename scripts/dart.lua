@@ -417,13 +417,23 @@ local function detection(pons)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param pons Pons
+local function platform2richText(pons)
+    return string.format("[space-platform=%d]", pons.platform.index)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- @param ls LocalisedString
 --- @param filter MessageFilter
---- @param num number number of asteroids hitting or grazing or ...
 --- @param pons Pons
-local function messageConcerningAsteroids(ls, filter, num, pons)
-    if (num > 0) and pons.platform.valid  then
-        messaging.printmsg({ ls, num, pons.platform.name }, filter, pons.platform.force)
+--- @param num number|nil number of asteroids hitting or grazing or ...
+local function messageConcerningAsteroids(ls, filter, pons, num)
+    if pons.platform.valid then
+        if not num then
+            messaging.printmsg({ ls, platform2richText(pons) }, filter, pons.platform.force)
+        elseif (num > 0) then
+            messaging.printmsg({ ls, num, platform2richText(pons) }, filter, pons.platform.force)
+        end
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -482,9 +492,7 @@ local function businessLogic()
                 else
                     -- new asteroid
                     if table_size(knownAsteroids) == 0 then
-                        messaging.printmsg({ "dart-message.dart-asteroids-approaching", pons.platform.name },
-                                messaging.level.WARNING,
-                                pons.platform.force)
+                        messageConcerningAsteroids("dart-message.dart-asteroids-approaching", messaging.level.WARNING, pons)
                     end
                     newAsteroid(knownAsteroids, asteroid)
                 end
@@ -492,8 +500,8 @@ local function businessLogic()
             end
 
             -- messages if asteroid(s) on collision course/grazing
-            messageConcerningAsteroids("dart-message.dart-asteroids-collision-course", messaging.level.ALERT, hitting, pons)
-            messageConcerningAsteroids("dart-message.dart-asteroids-grazing", messaging.level.WARNING, grazing, pons)
+            messageConcerningAsteroids("dart-message.dart-asteroids-collision-course", messaging.level.ALERT, pons, hitting)
+            messageConcerningAsteroids("dart-message.dart-asteroids-grazing", messaging.level.WARNING, pons, grazing)
 
             -- prevent memory leak - remove unprocessed asteroids (should be those which left detection range)
             local left = 0
@@ -508,7 +516,7 @@ local function businessLogic()
                     left = left + 1
                 end
             end
-            messageConcerningAsteroids("dart-message.dart-asteroids-left", messaging.level.INFO, left, pons)
+            messageConcerningAsteroids("dart-message.dart-asteroids-left", messaging.level.INFO, pons, left)
 
             assignTargets(pons, knownAsteroids, managedTurrets)
         else
