@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.14
+Date: 2025-07-??
+  Ease of use:
+    - improved messages concerning asteroids with rich text, making it easier to
+      navigate to the platform affected
+---------------------------------------------------------------------------------------------------
 Version: 1.0.13
 Date: 2025-07-11
   Locale:
