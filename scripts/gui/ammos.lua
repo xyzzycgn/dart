@@ -50,9 +50,14 @@ local function dataOfRow(v)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function setStock(button, v)
+--- @param button LuaGuiElement the sprite-button
+--- @param v number its number to be shown
+--- @param k string|nil containing the item, i.e. "item=firearm-magazine"
+local function setStock(button, v, k)
     button.number = v
-    button.tooltip = nil -- TODO tooltip would be cool
+    if k then
+        button.elem_tooltip = { type="item", name=string.gsub(k, "item=", "")}
+    end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

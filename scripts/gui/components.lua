@@ -170,6 +170,8 @@ function components.addSprites2Slots(slot_table, data, func)
     Log.logBlock(data, function(m)log(m)end, Log.FINER)
     local children = slot_table.children
 
+    Log.logLine(data, function(m)log(m)end, Log.FINE)
+
     local i = 0
     for k, v in pairs(data) do
         local sprite
@@ -196,7 +198,7 @@ function components.addSprites2Slots(slot_table, data, func)
             button.sprite = sprite
             -- set number and/or other fields (e.g. tooltip)
             if (func) then
-                func(button, v)
+                func(button, v, k)
             end
         else
             Log.log("sprite-path not valid: '" .. sprite .. "'", function(m)log(m)end, Log.WARN)
