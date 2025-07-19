@@ -3,13 +3,16 @@
 --- DateTime: 03.06.25 20:23
 ---
 local flib_gui = require("__flib__.gui")
-local components = require("scripts/gui/components")
 local Log = require("__log4factorio__.Log")
+local dump = require("scripts.dump")
 local utils = require("scripts/utils")
 local Hub = require("scripts.Hub")
+local components = require("scripts/gui/components")
 local eventHandler = require("scripts/gui/eventHandler")
 
 local ammos = {}
+
+local handlers -- forward declaration
 
 local sortFields = {
     type = "ammo-type",
@@ -36,7 +39,7 @@ end
 
 --- @class AmmoWarningThresholdWithAmount threshold for warning of ammo shortage of a certain ammo type
 --- @field type string ammo type
---- @field enabled boolean flag wether warning (for a certain ammo type) is active
+--- @field enabled boolean flag whether warning (for a certain ammo type) is active
 --- @field threshold uint threshold value for warning for low ammo
 --- @field stockInHub uint stock in hub
 --- @param v AmmoWarningThresholdWithAmount
@@ -102,9 +105,17 @@ local function appendTableRow(table, v, at_row)
             left_label_caption = { "gui.dart-ammo-enable-warn-left" },
             right_label_caption = { "gui.dart-ammo-enable-warn-right" },
             name = switch,
-            switch_state = components.switchState(enabled)
+            switch_state = components.switchState(enabled),
+            handler = { [defines.events.on_gui_switch_state_changed] = handlers.switch_changed, }
         },
-        { type = "textfield", numeric = true, text = th_val, name = threshold, enabled = enabled },
+        {
+            type = "textfield",
+            numeric = true,
+            text = th_val,
+            name = threshold,
+            enabled = enabled,
+            handler = { [defines.events.on_gui_text_changed] = handlers.threshold_changed, }
+        },
     })
 
     local item = "item=" .. ammo
@@ -235,9 +246,67 @@ function ammos.build()
                   sort_checkbox(sortFields.threshold),
                 }
             },
+            {
+                type = "frame",
+                --style = "entity_button_frame",
+                {
+                    type="flow",
+                    direction="horizontal",
+                    --style="ugg_controls_flow"
+                    {
+                        type = "button",
+                        --style = "wide_entity_button",
+                        caption = { "gui.dart-ammo-save" },
+                        name = "ammos_save",
+                        handler = { [defines.events.on_gui_click] = handlers.save_clicked, }
+                    },
+                },
+            }
         }
     }
 end
+-- ###############################################################
+
+local function save_clicked(gae, event)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
+    -- TODO
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- en-/disables threshold depending on state of switch
+--- @param gae GuiAndElements
+--- @param event EventData
+local function switch_changed(gae, event)
+    Log.logBlock({ gae = gae,
+                   event = dump.dumpEvent(event),
+                   elem = dump.dumpLuaGuiElement(event.element) }, function(m)log(m)end, Log.FINER)
+    local switch = event.element
+    local onOff = switch.switch_state
+    local name = switch.name
+    local thres_name = string.gsub(name, "_switch", "_threshold")
+    local thres = gae.elems["ammos_table"][thres_name]
+
+    Log.logBlock({ name = name, onOff = onOff, thres_name = thres_name, thres = dump.dumpLuaGuiElement(thres) },
+                 function(m)log(m)end, Log.FINER)
+    thres.enabled = components.switchStateAsBoolean(onOff)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function threshold_changed(gae, event)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
+    -- TODO
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+handlers = {
+    save_clicked = save_clicked,
+    switch_changed = switch_changed,
+    threshold_changed = threshold_changed,
+}
+
+-- register local handlers in flib
+components.add_handler(handlers)
 -- ###############################################################
 
 return ammos

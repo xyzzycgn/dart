@@ -128,6 +128,7 @@ function radars.buildGui(player, rop)
 
     return elems, gui
 end
+-- ###############################################################
 
 -- as vanilla radar (and thus also dart-radar) doesn't have a standard gui a special handling is required
 --- @param gae GuiAndElements
@@ -187,12 +188,7 @@ handlers = {
 }
 
 -- register local handlers in flib
-flib_gui.add_handlers(handlers, function(e, handler)
-    local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
-    if guiAndElements then
-        handler(guiAndElements, e)
-    end
-end)
+components.add_handler(handlers)
 -- ###############################################################
 
 local function names(ndx)

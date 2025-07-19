@@ -326,5 +326,29 @@ end
 function components.switchState(flag)
     return flag and "right" or "left"
 end
+-- ###############################################################
+
+local switch = {
+    left = false,
+    right = true
+}
+--- converts a SwitchState to boolean
+--- @param state SwitchState
+--- @return boolean|nil "right" -> true, "left" -> false, "none" -> nil
+function components.switchStateAsBoolean(state)
+    return switch[state]
+end
+-- ###############################################################
+
+--- register local handlers in flib
+--- @param handlers any array with handler to be registered
+function components.add_handler(handlers)
+    flib_gui.add_handlers(handlers, function(e, handler)
+        local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
+        if guiAndElements then
+            handler(guiAndElements, e)
+        end
+    end)
+end
 
 return components
