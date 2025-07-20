@@ -167,6 +167,9 @@ local function cmpThreshold(data1, data2)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param thresholds AmmoWarningThreshold[]
+--- @param inv ItemWithQualityCounts[] @List of all items in the inventory of the Hub.
+--- @return AmmoWarningThresholdAndStock[]
 local function presentationData(thresholds, inv)
     Log.logBlock(thresholds, function(m)log(m)end, Log.FINE)
 
@@ -182,6 +185,18 @@ local function presentationData(thresholds, inv)
     end
 
     return pdata
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param elems GuiAndElements
+--- @param pons Pons
+function ammos.dataForPresentation(elems, pons)
+    local inv = Hub.getInventoryContent(pons)
+    -- fcc managed in gui
+    local entity = elems.entity
+    local fop = pons.fccsOnPlatform[entity.unit_number]
+
+    return presentationData(fop.ammo_warning.thresholds, inv)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

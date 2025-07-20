@@ -59,13 +59,13 @@ local function update_main(pd, opengui, event)
         end
     end
 
+    -- show the numbers of known radars, turrets, ammo types
     if ponsOfEntity then
-        -- show the numbers of known radars and turrets
         opengui.elems.radars_tab.badge_text = flib_format.number(table_size(ponsOfEntity.radarsOnPlatform))
         -- turrets may be controlled by other FCC => don't use simply ponsOfEntity.turretsOnPlatform
         opengui.elems.turrets_tab.badge_text = flib_format.number(table_size(turrets.dataForPresentation(opengui, ponsOfEntity)))
-        -- TODO opengui.elems.ammos_tab.badge_text ....
-
+        -- need to know the stock in hub
+        opengui.elems.ammos_tab.badge_text = flib_format.number(table_size(ammos.dataForPresentation(opengui, ponsOfEntity)))
 
         local func = switch[opengui.activeTab]
         if (func) then
