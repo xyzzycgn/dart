@@ -4,6 +4,9 @@
 ---
 --- Utility functions for dumping several game objects in more detail
 
+local internalEvents = require("scripts.internalEvents")
+
+
 local dump = {}
 
 local reverseTypes = {}
@@ -24,7 +27,7 @@ local function getTypeName(types, value)
             fillReverseTypes(types)
         end
 
-        return reverseTypes[types][value] or ("unknown-" .. types)
+        return reverseTypes[types][value] or ((types == "events") and internalEvents.getEventName(value)) or ("unknown-" .. types)
     end
     return nil
 end

@@ -68,12 +68,12 @@ end
 --- @param v AmmoWarningThreshold
 --- @param at_row number of row
 local function updateTableRow(table, v, at_row)
-    Log.logBlock(table, function(m)log(m)end, Log.FINE)
-    Log.logBlock(table.children_names, function(m)log(m)end, Log.FINE)
+    Log.logBlock(table, function(m)log(m)end, Log.FINER)
+    Log.logBlock(table.children_names, function(m)log(m)end, Log.FINEST)
 
     local prefix, slot, switch, threshold = names(at_row)
 
-    Log.logBlock({slot=slot, switch=switch, threshold=threshold}, function(m)log(m)end, Log.FINE)
+    Log.logBlock({slot=slot, switch=switch, threshold=threshold}, function(m)log(m)end, Log.FINER)
 
     local ammo, stock, enabled, th_val = dataOfRow(v)
     local offset = at_row * 3 + 1
@@ -93,7 +93,7 @@ end
 --- @param v AmmoWarningThreshold
 --- @param at_row number of row
 local function appendTableRow(table, v, at_row)
-    Log.logBlock(v, function(m)log(m)end, Log.FINE)
+    Log.logBlock(v, function(m)log(m)end, Log.FINER)
 
     local prefix, slot, switch, threshold = names(at_row)
     local ammo, stock, enabled, th_val = dataOfRow(v)
@@ -168,10 +168,10 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param thresholds AmmoWarningThreshold[]
---- @param inv ItemWithQualityCounts[] @List of all items in the inventory of the Hub.
+--- @param inv table<string, uint> List of all suitable ammos in the inventory of the Hub.
 --- @return AmmoWarningThresholdAndStock[]
 local function presentationData(thresholds, inv)
-    Log.logBlock(thresholds, function(m)log(m)end, Log.FINE)
+    Log.logBlock(thresholds, function(m)log(m)end, Log.FINER)
 
     local pdata = {}
     for ammo, threshold in pairs(thresholds) do
@@ -191,12 +191,11 @@ end
 --- @param elems GuiAndElements
 --- @param pons Pons
 function ammos.dataForPresentation(elems, pons)
-    local inv = Hub.getInventoryContent(pons)
     -- fcc managed in gui
     local entity = elems.entity
     local fop = pons.fccsOnPlatform[entity.unit_number]
 
-    return presentationData(fop.ammo_warning.thresholds, inv)
+    return presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -213,16 +212,13 @@ function ammos.update(elems, pons, pd)
     --- @type FccOnPlatform[]
     local data = pons.fccsOnPlatform
 
-    local inv = Hub.getInventoryContent(pons)
-    Log.logBlock({ platform = pons.platform.name, inv=inv }, function(m)log(m)end, Log.FINE)
-
     -- fcc entity managed in gui
     local entity = elems.entity
     -- corresponding FccOnPlatform
     local fop = data[entity.unit_number]
 
-    local sorteddata = presentationData(fop.ammo_warning.thresholds, inv)
-    Log.logBlock(sorteddata, function(m)log(m)end, Log.FINE)
+    local sorteddata = presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType)
+    Log.logBlock(sorteddata, function(m)log(m)end, Log.FINER)
 
     local gae = pd.guis.open
 

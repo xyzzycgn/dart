@@ -39,7 +39,7 @@ local function sort_clicked_handler(gae, event)
         sortings.active = column
     end
 
-    script.raise_event(on_dart_gui_needs_update, { player_index = event.player_index, entity = gae.entity } )
+    script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = gae.entity } )
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -133,8 +133,8 @@ function eventHandler.close(gae, event)
             -- make former gui visible again
             ropen.gui.visible = true
             guis.open = ropen
-            Log.log("raise on_dart_gui_needs_update", function(m)log(m)end, Log.FINE)
-            script.raise_event(on_dart_gui_needs_update, { player_index = event.player_index, entity = ropen.entity })
+            Log.log("raise on_dart_gui_needs_update_event", function(m)log(m)end, Log.FINE)
+            script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = ropen.entity })
         end
     else
         -- close single gui - either fcc or turret

@@ -113,7 +113,7 @@ local function change_tab(gae, event)
     local tab = event.element
     gae.activeTab = tab.selected_tab_index
     event.entity = gae.entity -- pimp the event ;-)
-    script.raise_event(on_dart_gui_needs_update, event)
+    script.raise_event(on_dart_gui_needs_update_event, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -228,14 +228,14 @@ local function gui_open(event)
             pd.guis.open.sortings = allSortings
         end
 
-        script.raise_event(on_dart_gui_needs_update, event)
+        script.raise_event(on_dart_gui_needs_update_event, event)
     elseif event.gui_type == defines.gui_type.custom then
         local pd = global_data.getPlayer_data(event.player_index)
         local entity = pd and pd.guis and pd.guis.open and pd.guis.open.entity
         Log.logBlock(entity, function(m)log(m)end, Log.FINER)
         if entity and entity.name == "dart-radar" then
             event.entity = entity -- pimp the event ;-)
-            script.raise_event(on_dart_gui_needs_update, event)
+            script.raise_event(on_dart_gui_needs_update_event, event)
         end
     end
 end
@@ -287,9 +287,9 @@ dart_gui.events = {
     -- defined in internalEvents.lua
     [on_dart_component_build_event] = update_gui,
     [on_dart_component_removed_event] = update_gui,
-    [on_dart_gui_needs_update] = update_gui,
+    [on_dart_gui_needs_update_event] = update_gui,
 
-    [on_dart_gui_close] = handle_on_dart_gui_close
+    [on_dart_gui_close_event] = handle_on_dart_gui_close
 }
 
 return dart_gui

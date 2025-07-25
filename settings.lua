@@ -1,5 +1,17 @@
 data:extend({
-  {
+  -- Startup
+	{
+		type = 'int-setting',
+		name = 'dart-update-stock-period',
+		setting_type = 'startup',
+		default_value = 10,
+		maximum_value = 60,
+		minimum_value = 5,
+		order = 'a',
+	},
+
+  -- runtime
+    {
     type = "bool-setting",
     name = "dart-show-detection-area",
     order = "a",

@@ -23,12 +23,12 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 
 --- @class AmmoWarningThreshold threshold for warning of ammo shortage of a certain ammo type
 --- @field type string ammo type
---- @field enabled boolean flag wether warning (for a certain ammo type) is active
+--- @field enabled boolean flag whether warning (for a certain ammo type) is active
 --- @field threshold uint threshold value for warning for low ammo
 
 --- @class AmmoWarningThresholdAndStock threshold for warning of ammo shortage of a certain ammo type + stock in hub
 --- @field type string ammo type
---- @field enabled boolean flag wether warning (for a certain ammo type) is active
+--- @field enabled boolean flag whether warning (for a certain ammo type) is active
 --- @field threshold uint threshold value for warning for low ammo
 --- @field stockInHub uint stock in hub for this ammo type
 
@@ -62,6 +62,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field fccsOnPlatform table<uint, FccOnPlatform> array of D.A.R.T. fcc entities located on the platform, indexed by un of fcc
 --- @field radarsOnPlatform RadarOnPlatform[] array of D.A.R.T. radar entities located on the platform
 --- @field knownAsteroids KnownAsteroid[] array of asteroids currently known and in detection range
+--- @field ammoInStockPerType table<string, uint> array with stock in hub per ammo type
 
 --- @class CnOfTurret circuit network belonging to a turret.
 --- @field turret LuaEntity turret
@@ -467,7 +468,7 @@ local function checkLowAmmo(pons, managedTurrets)
     Log.logBlock({ platform = pons.platform.name, inv=inv }, function(m)log(m)end, Log.FINEST)
 
 
-    -- TODO Log.logBlock(ammoTurretMapping.getAmmoTurretMapping, function(m)log(m)end, Log.FINE)
+    -- TODO 
 
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -634,6 +635,26 @@ local function businessLogic()
         end
     end
     Log.log("leave BL", function(m)log(m)end, Log.FINER)
+end
+-- ###############################################################
+
+local function updateAmmoInStock()
+    Log.log("enter updateAmmoInStock", function(m)log(m)end, Log.FINE)
+
+    for _, pons in pairs(global_data.getPlatforms()) do
+        local ammoInStockPerType =  {}
+        -- get inventory of hub of platform
+        local inv = Hub.getInventoryContent(pons)
+        for _, fop in pairs(pons.fccsOnPlatform) do
+            -- check each ammo type used by turrets conected to FCC
+            for type, awt in pairs(fop.ammo_warning.thresholds) do
+                ammoInStockPerType[type] = ammoInStockPerType[type] or inv[type] or 0
+            end
+        end
+        pons.ammoInStockPerType = ammoInStockPerType
+        Log.logBlock({platform=pons.platform.name, ammoInStockPerType=ammoInStockPerType}, function(m)log(m)end, Log.FINE)
+    end
+    script.raise_event(on_dart_ammo_in_stock_updated_event, {} )
 end
 -- ###############################################################
 
@@ -881,8 +902,8 @@ local function removedRadar(entity, event)
                 event.gae = opengui
                 event.player_index = player.index
                 -- close the opened gui for this dart-radar
-                Log.log("raising on_dart_gui_close", function(m)log(m)end, Log.FINE)
-                script.raise_event(on_dart_gui_close, event)
+                Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINE)
+                script.raise_event(on_dart_gui_close_event, event)
             end
         end
     end
@@ -1133,6 +1154,22 @@ local function tbdal(event)
 end
 --###############################################################
 
+--- @param event EventData
+local function ammo_in_stock_updated(event)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+
+
+    for _, player in pairs(game.players) do
+        local pd = global_data.getPlayer_data(player.index)
+        local opengui = pd.guis.open
+        if opengui and opengui.entity then
+            script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
+        end
+
+    end
+end
+--###############################################################
+
 local function alterSetting(event, which, func)
     if event.setting == which then
         local new = settings.global[which].value
@@ -1165,6 +1202,7 @@ end
 --###############################################################
 
 local dart = {}
+local dart_update_stock_period = settings.startup["dart-update-stock-period"].value * 60
 
 -- mod initialization
 dart.on_init = dart_initializer
@@ -1192,11 +1230,13 @@ dart.events = {
     [on_target_destroyed_event] = tbdd,
     [on_asteroid_detected_event] = tbdad,
     [on_asteroid_lost_event] = tbdal,
+    [on_dart_ammo_in_stock_updated_event] = ammo_in_stock_updated,
 }
 
 -- handling of business logic
 dart.on_nth_tick = {
     [60] = businessLogic,
+    [dart_update_stock_period] = updateAmmoInStock
 }
 
 return dart
