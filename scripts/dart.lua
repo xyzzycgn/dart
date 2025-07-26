@@ -642,17 +642,7 @@ local function updateAmmoInStock()
     Log.log("enter updateAmmoInStock", function(m)log(m)end, Log.FINE)
 
     for _, pons in pairs(global_data.getPlatforms()) do
-        local ammoInStockPerType =  {}
-        -- get inventory of hub of platform
-        local inv = Hub.getInventoryContent(pons)
-        for _, fop in pairs(pons.fccsOnPlatform) do
-            -- check each ammo type used by turrets conected to FCC
-            for type, awt in pairs(fop.ammo_warning.thresholds) do
-                ammoInStockPerType[type] = ammoInStockPerType[type] or inv[type] or 0
-            end
-        end
-        pons.ammoInStockPerType = ammoInStockPerType
-        Log.logBlock({platform=pons.platform.name, ammoInStockPerType=ammoInStockPerType}, function(m)log(m)end, Log.FINE)
+        Hub.updateAmmoInStock(pons)
     end
     script.raise_event(on_dart_ammo_in_stock_updated_event, {} )
 end

@@ -38,4 +38,20 @@ function Hub.getInventoryContent(pons)
     end
 end
 
+--- update ammo stock for a platform
+--- @param pons Pons
+function Hub.updateAmmoInStock(pons)
+    local ammoInStockPerType =  {}
+    -- get inventory of hub of platform
+    local inv = Hub.getInventoryContent(pons)
+    for _, fop in pairs(pons.fccsOnPlatform) do
+        -- check each ammo type used by turrets conected to FCC
+        for type, awt in pairs(fop.ammo_warning.thresholds) do
+            ammoInStockPerType[type] = ammoInStockPerType[type] or inv[type] or 0
+        end
+    end
+    pons.ammoInStockPerType = ammoInStockPerType
+    Log.logBlock({platform=pons.platform.name, ammoInStockPerType=ammoInStockPerType}, function(m)log(m)end, Log.FINE)
+end
+
 return Hub
