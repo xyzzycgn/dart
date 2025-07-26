@@ -1,6 +1,7 @@
 ---
 --- Created by xyzzycgn.
 ---
+local Log = require("__log4factorio__.Log")
 
 local Hub = {}
 

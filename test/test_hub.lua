@@ -30,6 +30,7 @@ local function mockedGet_contents()
         { count = 1, name = "crusher", quality = "normal" },
         { count = 1, name = "carbonic-asteroid-chunk", quality = "normal" },
         { count = 700, name = "firearm-magazine", quality = "normal" },
+        { count = 100, name = "uranium-rounds-magazine", quality = "normal" },
         { count = 1, name = "dart-radar", quality = "normal" }
     }
 end
@@ -78,8 +79,69 @@ function TestHub:test_getInventoryOfHub()
 
     lu.assertNotNil(erg)
 
-    lu.assertEquals(tablelength(erg), 16)
+    lu.assertEquals(tablelength(erg), 17)
     lu.assertEquals(erg["metallurgic-science-pack"], 497)
+end
+-- ###############################################################
+
+function TestHub:test_updateAmmoInStockFccWithoutTurrets()
+    -- mock a pons
+    local pons = {
+        platform = {
+            hub = {
+                get_inventory = mockedGet_inventory
+            },
+            name = "test platform",
+        },
+        fccsOnPlatform = {}
+    }
+    Hub.updateAmmoInStock(pons)
+
+    local erg = pons.ammoInStockPerType
+    lu.assertNotNil(erg)
+
+    lu.assertEquals(tablelength(erg), 0)
+end
+-- ###############################################################
+
+function TestHub:test_updateAmmoInStockFccWithTurret()
+    -- mock a pons
+    local pons = {
+        platform = {
+            hub = {
+                get_inventory = mockedGet_inventory
+            },
+            name = "test platform",
+        },
+        fccsOnPlatform = {
+            [4711] = {
+                fcc_un = 4711,
+                ammo_warning = {
+                    thresholds = {
+                        ["firearm-magazine"] = {
+                            type = "firearm-magazine",
+                            enabled = true,
+                            threshold = 400,
+                        },
+                        ["piercing-rounds-magazine"] = {
+                            type = "piercing-rounds-magazine",
+                            enabled = true,
+                            threshold = 400,
+                        }
+                   }
+                }
+            }
+        }
+    }
+    Hub.updateAmmoInStock(pons)
+
+    local erg = pons.ammoInStockPerType
+
+    -- firearm-magazine and piercing-rounds-magazine should be included but not uranium-rounds-magazine, although its in hub
+    -- simulates fitting ammo in stock (firearm-magazine), not in stock (piercing-rounds-magazine) and nonfitting ammo
+    -- in stock (uranium-rounds-magazine)
+    lu.assertEquals(erg, { ["firearm-magazine"] = 700,
+                           ["piercing-rounds-magazine"] = 0})
 end
 -- ###############################################################
 
