@@ -643,6 +643,22 @@ local function updateAmmoInStock()
 
     for _, pons in pairs(global_data.getPlatforms()) do
         Hub.updateAmmoInStock(pons)
+        local low = Hub.checkLowAmmoInStock(pons)
+        local force = pons.platform.force
+        local hub = pons.platform.hub
+        for ammo_type, stock in pairs(low) do
+            -- create alert
+            for _, player in pairs(force.players) do
+                Log.logLine({platform=pons.platform.name, ammo=ammo_type, stock=stock}, function(m)log(m)end, Log.FINE)
+
+                player.add_custom_alert(hub,
+                                        { type = 'item', name = ammo_type, },
+                                        { "alerts.dart-low-ammo", "[item="..ammo_type.."]", platform2richText(pons) },
+                                        true)
+                -- alerts are automatically dropped by system after a while (10 secs) unless renewed, so there's no
+                -- need for further handling
+            end
+        end
     end
     script.raise_event(on_dart_ammo_in_stock_updated_event, {} )
 end
@@ -655,12 +671,12 @@ end
 
 --- @param event EventData
 local function playerChangedSurface(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
     local pd = global_data.getPlayer_data(event.player_index)
     local guis = pd and pd.guis
 
     if guis and guis.open then
-        Log.log("close gui", function(m)log(m)end, Log.FINE)
+        Log.log("close gui", function(m)log(m)end, Log.FINER)
         if guis.open.gui and guis.open.gui.valid then
             guis.open.gui.destroy()
             guis.open = {}

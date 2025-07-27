@@ -46,7 +46,7 @@ local function getMapAmmos()
             end
         end
         -- mapAmmos now conatins the mapping between turret and ammo (grouped by ammo-type)
-        Log.logBlock(mapAmmos, function(m)log(m)end, Log.FINE)
+        Log.logBlock(mapAmmos, function(m)log(m)end, Log.FINER)
 
         needs_initialization = false
     end

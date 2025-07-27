@@ -38,6 +38,7 @@ function Hub.getInventoryContent(pons)
         return {}
     end
 end
+-- ###############################################################
 
 --- update ammo stock for a platform
 --- @param pons Pons
@@ -52,7 +53,25 @@ function Hub.updateAmmoInStock(pons)
         end
     end
     pons.ammoInStockPerType = ammoInStockPerType
-    Log.logBlock({platform=pons.platform.name, ammoInStockPerType=ammoInStockPerType}, function(m)log(m)end, Log.FINE)
+    Log.logBlock({platform=pons.platform.name, ammoInStockPerType=ammoInStockPerType}, function(m)log(m)end, Log.FINER)
+end
+-- ###############################################################
+
+--- check ammo stock for a platform
+--- @param pons Pons
+function Hub.checkLowAmmoInStock(pons)
+
+    local lowAmmoInStock = { }
+    local stocks = pons.ammoInStockPerType
+    for _, fcc in pairs(pons.fccsOnPlatform) do
+        for ammo_type, awt in pairs(fcc.ammo_warning.thresholds) do
+            if awt.enabled and (stocks[ammo_type] < awt.threshold) then
+                lowAmmoInStock[ammo_type] = stocks[ammo_type]
+            end
+        end
+    end
+
+    return lowAmmoInStock
 end
 
 return Hub
