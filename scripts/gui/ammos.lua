@@ -37,17 +37,12 @@ local function getTableAndTab(elems)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @class AmmoWarningThresholdWithAmount threshold for warning of ammo shortage of a certain ammo type
---- @field type string ammo type
---- @field enabled boolean flag whether warning (for a certain ammo type) is active
---- @field threshold uint threshold value for warning for low ammo
---- @field stockInHub uint stock in hub
---- @param v AmmoWarningThresholdWithAmount
+--- @param v AmmoWarningThresholdAndStock
 local function dataOfRow(v)
-    local ammo = v.type
+    local ammo = v.threshold.type
     local stock = v.stockInHub or 0
-    local enabled = v.enabled
-    local th_val = v.threshold
+    local enabled = v.threshold.enabled
+    local th_val = v.threshold.threshold
 
     return ammo, stock, enabled, th_val
 end
@@ -65,7 +60,7 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param table LuaGuiElement table for update of row
---- @param v AmmoWarningThreshold
+--- @param v AmmoWarningThresholdAndStock
 --- @param at_row number of row
 local function updateTableRow(table, v, at_row)
     Log.logBlock(table, function(m)log(m)end, Log.FINER)
@@ -141,29 +136,29 @@ function ammos.sortings()
 end
 -- ###############################################################
 
---- @param data1 AmmoWarningThresholdWithAmount
---- @param data2 AmmoWarningThresholdWithAmount
+--- @param data1 AmmoWarningThresholdAndStock
+--- @param data2 AmmoWarningThresholdAndStock
 --- @return true if data1.stockInHub < data2.stockInHub
 local function cmpType(data1, data2)
     return data1.stockInHub < data2.stockInHub
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param data1 AmmoWarningThresholdWithAmount
---- @param data2 AmmoWarningThresholdWithAmount
---- @return true if data1.enabled < data2.enabled (false considered < true)
+--- @param data1 AmmoWarningThresholdAndStock
+--- @param data2 AmmoWarningThresholdAndStock
+--- @return true if data1.threshold.enabled < data2.threshold.enabled (false considered < true)
 local function cmpEnableWarn(data1, data2)
-    local d1 = data1.enabled and 1 or 0
-    local d2 = data2.enabled and 1 or 0
+    local d1 = data1.threshold.enabled and 1 or 0
+    local d2 = data2.threshold.enabled and 1 or 0
     return d1 < d2
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- @param data1 AmmoWarningThresholdWithAmount
---- @param data2 AmmoWarningThresholdWithAmount
---- @return true if data1.threshold < data2.threshold
+--- @param data1 AmmoWarningThresholdAndStock
+--- @param data2 AmmoWarningThresholdAndStock
+--- @return true if data1.threshold.threshold < data2.threshold.threshold
 local function cmpThreshold(data1, data2)
-    return data1.threshold < data2.threshold
+    return data1.threshold.threshold < data2.threshold.threshold
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -176,9 +171,7 @@ local function presentationData(thresholds, inv)
     local pdata = {}
     for ammo, threshold in pairs(thresholds) do
         local ad = {
-            enabled = threshold.enabled,
-            threshold = threshold.threshold,
-            type = threshold.type,
+            threshold = threshold,
             stockInHub = inv and inv[ammo] or 0,
         }
         pdata[#pdata + 1] = ad
@@ -300,7 +293,7 @@ local function save_clicked(gae, event)
         local _, _, switch, threshold = names(ndx)
         local onOff = components.switchStateAsBoolean(gae.elems["ammos_table"][switch].switch_state)
 
-        local awt = thresholds[v.type]
+        local awt = thresholds[v.threshold.type]
         if onOff then
             local newthreshold = gae.elems["ammos_table"][threshold].text
             Log.logLine({ threshold = threshold, onOff = onOff, newthreshold = newthreshold }, function(m)log(m)end, Log.FINE)

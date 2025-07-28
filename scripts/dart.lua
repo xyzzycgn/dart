@@ -27,9 +27,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field threshold uint threshold value for warning for low ammo
 
 --- @class AmmoWarningThresholdAndStock threshold for warning of ammo shortage of a certain ammo type + stock in hub
---- @field type string ammo type
---- @field enabled boolean flag whether warning (for a certain ammo type) is active
---- @field threshold uint threshold value for warning for low ammo
+--- @field threshold AmmoWarningThreshold
 --- @field stockInHub uint stock in hub for this ammo type
 
 --- @class AmmoWarning settings for warning of ammo shortage for a fcc
