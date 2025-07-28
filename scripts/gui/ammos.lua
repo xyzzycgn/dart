@@ -6,7 +6,7 @@ local flib_gui = require("__flib__.gui")
 local Log = require("__log4factorio__.Log")
 local dump = require("scripts.dump")
 local utils = require("scripts/utils")
-local Hub = require("scripts.Hub")
+local global_data = require("scripts.global_data")
 local components = require("scripts/gui/components")
 local eventHandler = require("scripts/gui/eventHandler")
 
@@ -259,14 +259,14 @@ function ammos.build()
             },
             {
                 type = "frame",
-                --style = "entity_button_frame",
+                -- TODO style = "entity_button_frame",
                 {
                     type="flow",
                     direction="horizontal",
-                    --style="ugg_controls_flow"
+                    -- TODO style="ugg_controls_flow"
                     {
                         type = "button",
-                        --style = "wide_entity_button",
+                        -- TODO style = "wide_entity_button",
                         caption = { "gui.dart-ammo-save" },
                         name = "ammos_save",
                         handler = { [defines.events.on_gui_click] = handlers.save_clicked, }
@@ -278,8 +278,39 @@ function ammos.build()
 end
 -- ###############################################################
 
+--- @param gae GuiAndElements
+--- @param event EventData
 local function save_clicked(gae, event)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
+    local pd = global_data.getPlayer_data(event.player_index)
+    local platform = gae.entity.surface.platform
+    local pons = pd.pons[platform.index]
+    --
+    local fop = pons.fccsOnPlatform[gae.entity.unit_number]
+    -- old values (may need update)
+    local thresholds = fop.ammo_warning.thresholds
+
+    local sorteddata = presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType)
+
+    Log.logBlock(gae.elems, function(m)log(m)end, Log.FINE)
+    Log.logBlock(thresholds, function(m)log(m)end, Log.FINE)
+    Log.logBlock(sorteddata, function(m)log(m)end, Log.FINE)
+
+    for ndx, v in pairs(sorteddata) do
+        local _, _, switch, threshold = names(ndx)
+        local onOff = components.switchStateAsBoolean(gae.elems["ammos_table"][switch].switch_state)
+
+        local awt = thresholds[v.type]
+        if onOff then
+            local newthreshold = gae.elems["ammos_table"][threshold].text
+            Log.logLine({ threshold = threshold, onOff = onOff, newthreshold = newthreshold }, function(m)log(m)end, Log.FINE)
+            awt.threshold = tonumber(newthreshold)
+            awt.enabled = true
+        else
+            Log.logLine(onOff, function(m)log(m)end, Log.FINE)
+            awt.enabled = false
+        end
+    end
     -- TODO
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -298,14 +329,14 @@ local function switch_changed(gae, event)
     local thres = gae.elems["ammos_table"][thres_name]
 
     Log.logBlock({ name = name, onOff = onOff, thres_name = thres_name, thres = dump.dumpLuaGuiElement(thres) },
-                 function(m)log(m)end, Log.FINER)
+                 function(m)log(m)end, Log.FINE)
     thres.enabled = components.switchStateAsBoolean(onOff)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function threshold_changed(gae, event)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
-    -- TODO
+    -- TODO ???
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
