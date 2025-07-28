@@ -179,7 +179,7 @@ local function presentationData(thresholds, inv)
             enabled = threshold.enabled,
             threshold = threshold.threshold,
             type = threshold.type,
-            stockInHub = inv[ammo] or 0,
+            stockInHub = inv and inv[ammo] or 0,
         }
         pdata[#pdata + 1] = ad
     end
