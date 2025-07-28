@@ -637,25 +637,27 @@ end
 -- ###############################################################
 
 local function updateAmmoInStock()
-    Log.log("enter updateAmmoInStock", function(m)log(m)end, Log.FINE)
-
     for _, pons in pairs(global_data.getPlatforms()) do
         Hub.updateAmmoInStock(pons)
         local low = Hub.checkLowAmmoInStock(pons)
         local force = pons.platform.force
         local hub = pons.platform.hub
-        for ammo_type, stock in pairs(low) do
-            -- create alert
-            for _, player in pairs(force.players) do
-                Log.logLine({platform=pons.platform.name, ammo=ammo_type, stock=stock}, function(m)log(m)end, Log.FINE)
 
-                player.add_custom_alert(hub,
-                                        { type = 'item', name = ammo_type, },
-                                        { "alerts.dart-low-ammo", "[item="..ammo_type.."]", platform2richText(pons) },
-                                        true)
-                -- alerts are automatically dropped by system after a while (10 secs) unless renewed, so there's no
-                -- need for further handling
+        local append = false
+        local items
+
+        for ammo_type, stock in pairs(low) do
+            if append then
+                items = items .. ", [img=item."..ammo_type.."]"
+            else
+                append = true
+                items = "[img=item."..ammo_type.."]"
             end
+        end
+
+        -- if append == true then at least one item has low stock
+        if append then
+            messaging.printmsg({ "alerts.dart-low-ammo", items, platform2richText(pons) }, messaging.level.WARNING, pons.platform.force)
         end
     end
     script.raise_event(on_dart_ammo_in_stock_updated_event, {} )
@@ -1160,8 +1162,7 @@ end
 
 --- @param event EventData
 local function ammo_in_stock_updated(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
-
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
 
     for _, player in pairs(game.players) do
         local pd = global_data.getPlayer_data(player.index)
