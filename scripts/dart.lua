@@ -657,7 +657,7 @@ local function updateAmmoInStock()
 
         -- if append == true then at least one item has low stock
         if append then
-            messaging.printmsg({ "alerts.dart-low-ammo", items, platform2richText(pons) }, messaging.level.WARNING, pons.platform.force)
+            messaging.printmsg({ "dart-message.dart-low-ammo", items, platform2richText(pons) }, messaging.level.WARNING, pons.platform.force, "warning-white")
         end
     end
     script.raise_event(on_dart_ammo_in_stock_updated_event, {} )
