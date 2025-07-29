@@ -424,8 +424,8 @@ function turrets.dataForPresentation(elems, pons)
         end
     end
 
-    Log.logLine(nwOfFcc, function(m)log(m)end, Log.FINE)
-    Log.logLine(otherFccsNetworks, function(m)log(m)end, Log.FINE)
+    Log.logLine(nwOfFcc, function(m)log(m)end, Log.FINER)
+    Log.logLine(otherFccsNetworks, function(m)log(m)end, Log.FINER)
 
     return extractDataForPresentation(data, nwOfFcc, otherFccsNetworks)
 end

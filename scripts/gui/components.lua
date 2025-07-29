@@ -170,8 +170,6 @@ function components.addSprites2Slots(slot_table, data, func)
     Log.logBlock(data, function(m)log(m)end, Log.FINER)
     local children = slot_table.children
 
-    Log.logLine(data, function(m)log(m)end, Log.FINE)
-
     local i = 0
     for k, v in pairs(data) do
         local sprite
@@ -283,7 +281,7 @@ end
 --- @param gui LuaGuiElement | LuaEntity new gui to open
 --- @return PlayerData
 function components.openNewGui(player_index, gui, elems, entity)
-    Log.logBlock({player_index = player_index, gui = gui, elems = elems, entity = entity}, function(m)log(m)end, Log.FINE)
+    Log.logBlock({player_index = player_index, gui = gui, elems = elems, entity = entity}, function(m)log(m)end, Log.FINER)
 
     local pd = global_data.getPlayer_data(player_index)
     local player = game.get_player(player_index)
