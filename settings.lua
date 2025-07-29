@@ -16,7 +16,6 @@ data:extend({
     name = "dart-show-detection-area",
     order = "a",
     setting_type = "runtime-global",
-    localised_description = { "mod-setting-description.dart-show-detection-area" },
     default_value = false,
   },
   {
@@ -24,7 +23,6 @@ data:extend({
     name = "dart-show-defended-area",
     order = "b",
     setting_type = "runtime-global",
-    localised_description = { "mod-setting-description.dart-show-defended-area" },
     default_value = false,
   },
   {
@@ -32,7 +30,6 @@ data:extend({
     name = "dart-mark-targets",
     order = "c",
     setting_type = "runtime-global",
-    localised_description = { "mod-setting-description.dart-mark-targets" },
     default_value = false,
   },
   {
@@ -40,7 +37,6 @@ data:extend({
     name = "dart-msgLevel",
     order = "m",
     setting_type = "runtime-global",
-    localised_description = { "mod-setting-description.dart-msgLevel" },
     default_value = "ALL",
     allowed_values = {
       "NONE",
@@ -54,7 +50,6 @@ data:extend({
     name = "dart-low-ammo-warning",
     order = "m-a",
     setting_type = "runtime-global",
-    localised_description = { "mod-setting-description.dart-low-ammo-warning" },
     default_value = true,
   },
   {
@@ -62,7 +57,6 @@ data:extend({
     name = "dart-low-ammo-warning-threshold-default",
     order = "m-aa",
     setting_type = "runtime-global",
-    localised_description = { "mod-setting-description.dart-low-ammo-warning-threshold-default" },
     default_value = 200,
     minimum_value = 10,
   },
@@ -71,7 +65,6 @@ data:extend({
     name = "dart-logLevel",
     order = "z",
     setting_type = "runtime-global",
-    localised_description = { "mod-setting-description.dart-logLevel" },
     default_value = "FINE",
     allowed_values = {
       "FATAL",
