@@ -21,7 +21,7 @@ messaging.level = {
 }
 
 local icons = {
-    [messaging.level.INFO] = "[img=utility/warning_icon]",
+    [messaging.level.INFO] = "[img=utility/check_mark_green]",
     [messaging.level.WARNING] = "[img=utility/warning_icon]",
     [messaging.level.ALERT] = "[img=utility/danger_icon]",
 }
@@ -46,9 +46,11 @@ local settings = {
 function messaging.printmsg(msg, lvl, force, useicon)
     if utils.bitoper(lvl, messaging.getLevel(), utils.bitOps.AND) > 0 then
         local icon
-        if useicon and useicon ~= "" then
-            -- use a custom icon
-            icon = "[img=" .. useicon .. "]"
+        if useicon then
+            if useicon ~= "" then
+                -- use a custom icon
+                icon = "[img=" .. useicon .. "]"
+            end
         else
             -- lvl determines the icon
             icon = icons[lvl]

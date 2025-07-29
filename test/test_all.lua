@@ -15,6 +15,7 @@ require('test.test_dart')
 require('test.test_utils')
 require('test.test_asyncHandler')
 require('test.test_hub')
+require('test.test_messaging')
 
 BaseTest.hooked = false
 BaseTest:hookTests()
