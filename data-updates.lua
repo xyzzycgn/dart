@@ -21,10 +21,10 @@ circuit_connector_definitions["dart-turret"] = circuit_connector_definitions.cre
     --createVariation(2,  37,  -8),
     --createVariation(1,  30,  16)
 
-    createVariation(0,   5,  20),
-    createVariation(3, -20,   5),
-    createVariation(2,  -5,  -20),
-    createVariation(1,  20,  -5),
+    createVariation(0,   0,  20),
+    createVariation(6, -20,   0),
+    createVariation(4,   0, -20),
+    createVariation(2,  20,   0),
 })
 
 Log.logBlock(circuit_connector_definitions["dart-turret"], function(m)log(m)end, Log.CONFIG)
