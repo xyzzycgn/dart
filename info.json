@@ -10,7 +10,8 @@
     "space-age >= 2.0.41",
     "flib >= 0.16.2",
     "log4factorio >= 0.1.0",
-    "? vtk-cannon-turret >= 2.3.2"
+    "? vtk-cannon-turret >= 2.3.2",
+    "? RampantArsenalFork >= 1.0.3"
   ],
   "space_travel_required": true
 }
