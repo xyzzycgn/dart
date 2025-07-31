@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.15
+Date: 2025-08-01
+  Features:
+    - introduced specially adaptation for foreign mods which add new ammo-turrets without offering the connectity to the
+      circuit network. These mods are currently supported:
+        Cannon Turret
+        Rampant Arsenal (only a subset of turrets is affected - those making sense for asteroid defense 😉)
+---------------------------------------------------------------------------------------------------
 Version: 1.0.14
 Date: 2025-07-26
   Ease of use:
