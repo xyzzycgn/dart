@@ -64,10 +64,11 @@ ammo-turret prototype and/or new ammunition for these turrets.
 some additional (specifically adapted for each mod) support by this mod (introduced in v 1.0.15).
 
 Currently these mods are known to work fine with it:
+- [Cannon Turret](https://mods.factorio.com/mod/vtk-cannon-turret) [^2]
 - [Cupric Asteroids](https://mods.factorio.com/mod/cupric-asteroids) [^1] 
 - [Modular Turrets](https://mods.factorio.com/mod/scattergun_turret) [^1]
-- [Cannon Turret](https://mods.factorio.com/mod/vtk-cannon-turret) [^2]
 - [Rampant Arsenal (Fork)](https://mods.factorio.com/mod/RampantArsenalFork) [^2]
+- [Schall Ammo Turrets](https://mods.factorio.com/mod/SchallAmmoTurrets) [^1][^3]
 
 If you have experience with other mods working too, please let me know. If you're missing another mod without an own 
 connectivity to the circuit network and want to use it together with D.A.R.T., let me know too - I will have a look at it.
@@ -98,3 +99,6 @@ connectivity to the circuit network and want to use it together with D.A.R.T., l
 [^1]: runs out of the box
 
 [^2]: needs support by D.A.R.T. for adding the connectivity to the circuit network
+
+[^3]: due to an incompatibility of Schall Ammo Turrets with versions of factorio > 2.0.32 you also need 
+[Schall Suite Patches](https://mods.factorio.com/mod/schall-suite-fix)
