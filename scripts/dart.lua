@@ -1075,6 +1075,36 @@ local function initLogging()
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- check whether formerly used ammo-types have been removed (i.e. the defining mod has been removed)
+local function checkRemovedAmmoTypes()
+    local allpons = global_data.getPlatforms()
+    local items = prototypes.item
+    local removed = {}
+    local keys = {}
+    for _, pons in pairs(allpons) do
+        for _, fcc in pairs(pons.fccsOnPlatform) do
+            local thresholds = fcc.ammo_warning.thresholds
+            for ammo, _ in pairs(thresholds) do
+                local p = items[ammo]
+                if not p then
+                    -- no more present - remove it
+                    thresholds[ammo] = nil
+                    if not removed[ammo] then
+                        -- 1st cleanup
+                        removed[ammo] = true
+                        keys[#keys + 1] = ammo
+                    end
+                end
+            end
+        end
+    end
+
+    if table_size(keys) > 0 then
+        Log.log("cleaned ammo types after removal = " .. serpent.line(keys), function(m)log(m)end, Log.INFO)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 -- complete initialization of D.A.R.T for new map/save-file
 local function dart_initializer()
     initLogging()
@@ -1104,6 +1134,7 @@ local function dart_config_changed()
     dumpPrototypes(Log.FINEST)
 
     global_data.init();
+    checkRemovedAmmoTypes()
 end
 --###############################################################
 
