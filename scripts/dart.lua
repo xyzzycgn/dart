@@ -1049,6 +1049,25 @@ local function changeSettings(e)
         or alterSetting(e, "dart-msgLevel")
 end
 
+local function toggleMapEditor(event)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
+    local pd = global_data.getPlayer_data(event.player_index)
+    if pd then
+        local editorMode = pd.editorMode
+        if editorMode then
+            editorMode = false
+            -- TODO (re)scan all platforms to look for changed DART components
+            -- searchDartInfrastructure() resets all former data - not suitable
+        else
+            editorMode = true
+        end
+
+        pd.editorMode = editorMode
+        Log.logLine({ player_index = event.player_index , editorMode = editorMode }, function(m)log(m)end, Log.INFO)
+
+    end
+
+end
 --###############################################################
 
 local dart = {}
@@ -1070,6 +1089,7 @@ dart.events = {
     [defines.events.on_player_removed] = tbd,
     [defines.events.on_player_changed_surface]       = playerChangedSurface,
     [defines.events.on_runtime_mod_setting_changed]  = changeSettings,
+    [defines.events.on_player_toggled_map_editor]    = toggleMapEditor,
 
     [defines.events.on_tick] = asyncHandler.dequeue,
 
