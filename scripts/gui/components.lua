@@ -199,7 +199,7 @@ function components.addSprites2Slots(slot_table, data, func)
                 func(button, v, k)
             end
         else
-            Log.log("sprite-path not valid: '" .. sprite .. "'", function(m)log(m)end, Log.WARN)
+            Log.logMsg(function(m)log(m)end, Log.WARN, "sprite-path not valid: '%s'", sprite)
         end
     end
     -- remove obsolete former entries
@@ -241,7 +241,7 @@ function components.updateVisualizedData(gae, data,
     local rows = gae.rowsShownLastInTab or {}
     local old_number = rows[gae.activeTab] or 0
 
-    Log.log("oldn = " .. old_number .. ", newn=" .. new_number, function(m)log(m)end, Log.FINER)
+    Log.logMsg(function(m)log(m)end, Log.FINER, "oldn = %d, newn = %d", old_number, new_number)
 
     -- update tab-label with new count
     tab.badge_text = flib_format.number(new_number)
@@ -250,7 +250,7 @@ function components.updateVisualizedData(gae, data,
     for _, v in pairs(data) do
         if (ndx <= new_number) and (ndx <= old_number) then
             -- update existing rows with new data
-            Log.log("update entry@" .. ndx, function(m)log(m)end, Log.FINER)
+            Log.logMsg(function(m)log(m)end, Log.FINER, "update entry@%d", ndx)
             updateTableRow(table, v, ndx)
         else
             -- more active => add new entries at the end of table
@@ -264,7 +264,7 @@ function components.updateVisualizedData(gae, data,
         -- less active => remove entries at the end of table
         local firstRow2remove = ndx
         while (ndx <= old_number) do
-            Log.log("remove old entry@" .. ndx, function(m)log(m)end, Log.FINER)
+            Log.logMsg(function(m)log(m)end, Log.FINER, "remove old entry@%d", ndx)
             funcRemoveTableRow(table, firstRow2remove)
             ndx = ndx + 1
         end

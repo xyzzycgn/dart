@@ -207,8 +207,8 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
             script.raise_event(on_target_assigned_event, { tun = turret.unit_number, target = prios[1], reason="assign"} )
 
             -- enable turret using circuit network
-            Log.log("setting shooting_target=" .. (prios[1] or "<NIL>") ..
-                    " for turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINER)
+            Log.logMsg(function(m)log(m)end, Log.FINER, "setting shooting_target=%s for turret=%s",
+                       prios[1] or "<NIL>", turret.unit_number or "<NIL>")
             local asteroid = knownAsteroids[prios[1]].entity
             Log.logBlock(asteroid, function(m)log(m)end, Log.FINER)
             turret.shooting_target = asteroid
@@ -233,11 +233,11 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
                 filter_setting_by_un[#filter_setting_by_un + 1] = filter
                 filter_settings[un] = filter_setting_by_un
             else
-                Log.log("ignored turret with invalid CircuitCondition=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.WARN)
+                Log.logMsg(function(m)log(m)end, Log.WARN, "ignored turret with invalid CircuitCondition=%s", turret.unit_number or "<NIL>")
             end
         else
             -- set no filter => disable turret using circuit network
-            Log.log("try to disable turret=" .. (turret.unit_number or "<NIL>"), function(m)log(m)end, Log.FINER)
+            Log.logMsg(function(m)log(m)end, Log.FINER, "try to disable turret=%s", turret.unit_number or "<NIL>")
             turret.shooting_target = nil
             script.raise_event(on_target_unassigned_event, { tun = turret.unit_number, reason="unassign" } )
        end
@@ -484,7 +484,7 @@ local function updateTurretTypes(pons, managedTurrets)
             if not fop.ammo_warning then
                 -- this fcc is uninitialized (for ammo warnings)
 
-                Log.log("initializing fcc for ammo warning fcc=" .. fcc.unit_number, function(m)log(m)end, Log.FINE)
+                Log.logMsg(function(m)log(m)end, Log.FINE, "initializing fcc for ammo warning fcc=%d", fcc.unit_number)
                 fop.ammo_warning = {
                     autoValues = true,
                     turret_types = {},
@@ -519,7 +519,7 @@ local function updateTurretTypes(pons, managedTurrets)
                             if not threshold then
                                 -- yet unknown ammo type for this fcc
                                 local first = table_size(awa.thresholds) == 0 -- check if it's the first one
-                                Log.log("setting initial values for ammo warning fcc=" .. fop.fcc.unit_number .. " ammo=" .. ammo, function(m)log(m)end, Log.FINE)
+                                Log.logMsg(function(m)log(m)end, Log.FINE, "setting initial values for ammo warning fcc=%d ammo=%s", fop.fcc.unit_number, ammo)
                                 awa.thresholds[ammo] = {
                                     type = ammo,
                                     enabled = first, -- for the first new ammo warning is enabled
@@ -529,7 +529,7 @@ local function updateTurretTypes(pons, managedTurrets)
                         end
                     end
                 else
-                    Log.log("unmapped turret_type=" .. tt, function(m)log(m)end, Log.WARN)
+                    Log.logMsg(function(m)log(m)end, Log.WARN, "unmapped turret_type=%s", tt)
                 end
             end
         end
@@ -740,7 +740,7 @@ local function asteroid_died(entity)
         -- assign remaining asteroids to turrets
         assignTargets(pons, knownAsteroids, managedTurrets)
     else
-        Log.log("asteroid_died - unknown pons for surface=" .. entity.surface.index, function(m)log(m)end, Log.WARN)
+        Log.logMsg(function(m)log(m)end, Log.WARN, "asteroid_died - unknown pons for surface=%d", entity.surface.index)
     end
 end
 
@@ -749,7 +749,7 @@ local function hub_died(entity)
     local sid = entity.surface.index
     local pons = global_data.getPlatforms()[sid]
     if pons then
-        Log.log("removing all D.A.R.T. installations on platform=" .. pons.platform.name, function(m)log(m)end, Log.INFO)
+        Log.logMsg(function(m)log(m)end, Log.INFO, "removing all D.A.R.T. installations on platform=%s", pons.platform.name)
         global_data.getPlatforms()[sid] = nil
         -- remove references to platform in player_data
         local platform = pons.platform
@@ -759,10 +759,10 @@ local function hub_died(entity)
                 pd.pons[platform.index] = nil
             end
         else
-            Log.log("platform already invalid - surfaceid = " .. event.surface_index, function(m)log(m)end, Log.WARN)
+            Log.logMsg(function(m)log(m)end, Log.WARN, "platform already invalid - surfaceid = %d", event.surface_index)
         end
     else
-        Log.log("hub_died - unknown pons for surface=" .. sid, function(m)log(m)end, Log.WARN)
+        Log.logMsg(function(m)log(m)end, Log.WARN, "hub_died - unknown pons for surface=%d", sid)
     end
 end
 
@@ -969,7 +969,7 @@ end
 --- @param surface LuaSurface holding the new platform
 --- @return Pons created from surface
 local function newSurface(surface)
-    Log.log("detected new surface with platform - index=" .. surface.index, function(m)log(m)end, Log.INFO)
+    Log.logMsg(function(m)log(m)end, Log.INFO, "detected new surface with platform - index=%d", surface.index)
     return { surface = surface, platform = surface.platform, turretsOnPlatform = {},
              fccsOnPlatform = {}, radarsOnPlatform = {}, knownAsteroids = {} }
 end
@@ -983,7 +983,7 @@ local function createPonsAndAddToGDAndPD(surface)
 
     if platform then
         local sid = surface.index
-        Log.log("add new platform on surface index=" .. sid, function(m)log(m)end, Log.INFO)
+        Log.logMsg(function(m)log(m)end, Log.INFO, "add new platform on surface index=%d", sid)
 
         local pons = newSurface(surface)
         global_data.getPlatforms()[sid] = pons
@@ -1100,7 +1100,7 @@ local function checkRemovedAmmoTypes()
     end
 
     if table_size(keys) > 0 then
-        Log.log("cleaned ammo types after removal = " .. serpent.line(keys), function(m)log(m)end, Log.INFO)
+        Log.logMsg(function(m)log(m)end, Log.INFO, "cleaned ammo types after removal = %s", serpent.line(keys))
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1215,7 +1215,7 @@ local function alterSetting(event, which, func)
         elseif type(new) == "boolean" then
             new = new and "true" or "false"
         end
-        Log.log('setting ' .. which .. ' changed to ' .. new, function(m)log(m)end, Log.CONFIG)
+        Log.logMsg(function(m)log(m)end, Log.CONFIG, 'setting %s changed to %s', which, new)
         if func then
             func(new)
         end
