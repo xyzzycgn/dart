@@ -71,10 +71,10 @@ local function update_main(pd, opengui, event)
         if (func) then
             func(opengui, ponsOfEntity, pd)
         else
-            Log.logMsg(function(m)log(m)end, Log.WARN, "no func for ndx=%d", opengui.activeTab)
+            Log.logMsg(function(m)log(m)end, Log.WARN, "no func for ndx=%s", opengui.activeTab)
         end
     else
-        Log.logMsg(function(m)log(m)end, Log.WARN, "no valid pons for entity=%d", entity.unit_number)
+        Log.logMsg(function(m)log(m)end, Log.WARN, "no valid pons for entity=%s", entity.unit_number)
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

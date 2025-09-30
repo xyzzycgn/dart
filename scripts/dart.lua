@@ -484,7 +484,7 @@ local function updateTurretTypes(pons, managedTurrets)
             if not fop.ammo_warning then
                 -- this fcc is uninitialized (for ammo warnings)
 
-                Log.logMsg(function(m)log(m)end, Log.FINE, "initializing fcc for ammo warning fcc=%d", fcc.unit_number)
+                Log.logMsg(function(m)log(m)end, Log.FINE, "initializing fcc for ammo warning fcc=%s", fcc.unit_number)
                 fop.ammo_warning = {
                     autoValues = true,
                     turret_types = {},
@@ -519,7 +519,7 @@ local function updateTurretTypes(pons, managedTurrets)
                             if not threshold then
                                 -- yet unknown ammo type for this fcc
                                 local first = table_size(awa.thresholds) == 0 -- check if it's the first one
-                                Log.logMsg(function(m)log(m)end, Log.FINE, "setting initial values for ammo warning fcc=%d ammo=%s", fop.fcc.unit_number, ammo)
+                                Log.logMsg(function(m)log(m)end, Log.FINE, "setting initial values for ammo warning fcc=%s ammo=%s", fop.fcc.unit_number, ammo)
                                 awa.thresholds[ammo] = {
                                     type = ammo,
                                     enabled = first, -- for the first new ammo warning is enabled
@@ -740,7 +740,7 @@ local function asteroid_died(entity)
         -- assign remaining asteroids to turrets
         assignTargets(pons, knownAsteroids, managedTurrets)
     else
-        Log.logMsg(function(m)log(m)end, Log.WARN, "asteroid_died - unknown pons for surface=%d", entity.surface.index)
+        Log.logMsg(function(m)log(m)end, Log.WARN, "asteroid_died - unknown pons for surface=%s", entity.surface.index)
     end
 end
 
@@ -759,10 +759,10 @@ local function hub_died(entity)
                 pd.pons[platform.index] = nil
             end
         else
-            Log.logMsg(function(m)log(m)end, Log.WARN, "platform already invalid - surfaceid = %d", event.surface_index)
+            Log.logMsg(function(m)log(m)end, Log.WARN, "platform already invalid - surfaceid = %s", event.surface_index)
         end
     else
-        Log.logMsg(function(m)log(m)end, Log.WARN, "hub_died - unknown pons for surface=%d", sid)
+        Log.logMsg(function(m)log(m)end, Log.WARN, "hub_died - unknown pons for surface=%s", sid)
     end
 end
 
@@ -969,7 +969,7 @@ end
 --- @param surface LuaSurface holding the new platform
 --- @return Pons created from surface
 local function newSurface(surface)
-    Log.logMsg(function(m)log(m)end, Log.INFO, "detected new surface with platform - index=%d", surface.index)
+    Log.logMsg(function(m)log(m)end, Log.INFO, "detected new surface with platform - index=%s", surface.index)
     return { surface = surface, platform = surface.platform, turretsOnPlatform = {},
              fccsOnPlatform = {}, radarsOnPlatform = {}, knownAsteroids = {} }
 end
@@ -983,7 +983,7 @@ local function createPonsAndAddToGDAndPD(surface)
 
     if platform then
         local sid = surface.index
-        Log.logMsg(function(m)log(m)end, Log.INFO, "add new platform on surface index=%d", sid)
+        Log.logMsg(function(m)log(m)end, Log.INFO, "add new platform on surface index=%s", sid)
 
         local pons = newSurface(surface)
         global_data.getPlatforms()[sid] = pons
