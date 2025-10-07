@@ -281,12 +281,15 @@ function ammos.build()
                 type = "frame",
                 style = "dart_bottom_button_frame",
                 {
-                    type = "button",
-                    style = "dart_bottom_button",
-                    caption = { "gui.dart-ammo-save" },
-                    name = "ammos_save",
-                    handler = { [defines.events.on_gui_click] = handlers.save_clicked, }
-                },
+                    type = "flow",
+                    style = "dart_bottom_button_flow",
+                    {
+                        type = "button",
+                        caption = { "gui.dart-ammo-save" },
+                        name = "ammos_save",
+                        handler = { [defines.events.on_gui_click] = handlers.save_clicked, }
+                    },
+                }
             }
         }
     }

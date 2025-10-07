@@ -47,10 +47,13 @@ styles.dart_bottom_button_frame = {
     parent = "inside_shallow_frame_with_padding",
     vertically_stretchable = "off",
     horizontally_stretchable = "on",
+    horizontal_align = "center",
 }
 
-styles.dart_bottom_button = {
-    type = "button_style",
+styles.dart_bottom_button_flow = {
+    type = "horizontal_flow_style",
+    vertically_stretchable = "off",
+    horizontally_stretchable = "on",
     horizontal_align = "center",
 }
 
