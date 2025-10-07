@@ -195,7 +195,7 @@ local function build(player, entity)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function gui_open(event)
+local function gui_opened(event)
     local entity = event.entity
     Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
     if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-fcc" then
@@ -246,7 +246,7 @@ local function gui_open(event)
 end
 -- ###############################################################
 
-local function standard_gui_closed(event) -- TODO better name for function
+local function gui_closed(event)
     Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINEST)
     local pd = global_data.getPlayer_data(event.player_index)
     --- @type LuaEntity
@@ -286,8 +286,8 @@ end
 local dart_gui = {}
 
 dart_gui.events = {
-    [defines.events.on_gui_opened] = gui_open,
-    [defines.events.on_gui_closed] = standard_gui_closed,
+    [defines.events.on_gui_opened] = gui_opened,
+    [defines.events.on_gui_closed] = gui_closed,
 
     -- defined in internalEvents.lua
     [on_dart_component_build_event] = update_gui,
