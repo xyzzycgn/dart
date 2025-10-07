@@ -1179,7 +1179,7 @@ local function ammo_in_stock_updated(event)
 
     for _, player in pairs(game.players) do
         local pd = global_data.getPlayer_data(player.index)
-        local opengui = pd.guis.open
+        local opengui = pd and pd.gui and pd.gui.open
         if opengui and opengui.entity then
             script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
         end
