@@ -15,6 +15,7 @@
 --- @field rowsShownLastInTab int[] (optional) number of rows shown in table on tab n the last time
 --- @field sortings Sortings[] (optional) sorting parameters for all columns in table on tab n
 --- @field highlight LuaEntity (optional) highlight-box used for marking hovered entity in main gui
+--- @field fields_initialized boolean LuaEntity (optional) flag if input fields have been initialized
 
 --- @class GuiData any
 --- @field recentlyopen GuiAndElements[] previously opened guis (hidden after opening a new one)

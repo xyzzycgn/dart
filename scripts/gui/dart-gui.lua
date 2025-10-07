@@ -73,6 +73,8 @@ local function update_main(pd, opengui, event)
         else
             Log.logMsg(function(m)log(m)end, Log.WARN, "no func for ndx=%s", opengui.activeTab)
         end
+        -- prevent input fields from being overiden on next update
+        opengui.fields_initialized = true
     else
         Log.logMsg(function(m)log(m)end, Log.WARN, "no valid pons for entity=%s", entity.unit_number)
     end
@@ -112,6 +114,7 @@ end
 local function change_tab(gae, event)
     local tab = event.element
     gae.activeTab = tab.selected_tab_index
+    gae.fields_initialized = false  -- force all fields to be initialized
     event.entity = gae.entity -- pimp the event ;-)
     script.raise_event(on_dart_gui_needs_update_event, event)
 end
@@ -217,15 +220,17 @@ local function gui_open(event)
 
             local pd = components.openNewGui(event.player_index, gui, elems, entity)
             elems.fcc_view.entity = entity
-            pd.guis.open.activeTab = 1
-            pd.guis.open.dart_gui_type = components.dart_guis.main_gui
+            local gae = pd.guis.open
+            gae.activeTab = 1
+            gae.dart_gui_type = components.dart_guis.main_gui
+            gae.fields_initialized = false   -- force all fields to be initialized
 
             -- prepare sorting
-            local allSortings = pd.guis.open.sortings or {}
+            local allSortings = gae.sortings or {}
             allSortings[1] = allSortings[1] or radars.sortings()
             allSortings[2] = allSortings[2] or turrets.sortings()
             allSortings[3] = allSortings[3] or ammos.sortings()
-            pd.guis.open.sortings = allSortings
+            gae.sortings = allSortings
         end
 
         script.raise_event(on_dart_gui_needs_update_event, event)

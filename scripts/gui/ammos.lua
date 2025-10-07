@@ -59,10 +59,12 @@ local function setStock(button, v, k)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- perform needed updates of fields
+--- @param updateAllFields boolean if false only set non input fields (prevent inputs made by user from being overridden)
 --- @param table LuaGuiElement table for update of row
 --- @param v AmmoWarningThresholdAndStock
 --- @param at_row number of row
-local function updateTableRow(table, v, at_row)
+local function allUpdateOfTableRow(updateAllFields, table, v, at_row)
     Log.logBlock(table, function(m)log(m)end, Log.FINER)
     Log.logBlock(table.children_names, function(m)log(m)end, Log.FINEST)
 
@@ -73,14 +75,34 @@ local function updateTableRow(table, v, at_row)
     local ammo, stock, enabled, th_val = dataOfRow(v)
     local offset = at_row * 3 + 1
 
-    table[switch].switch_state = components.switchState(enabled)
-    --- @type LuaGuiElement
-    local tfield = table[threshold]
-    tfield.enabled = enabled
-    tfield.text = "" .. th_val
+    if updateAllFields then
+        table[switch].switch_state = components.switchState(enabled)
+        --- @type LuaGuiElement
+        local tfield = table[threshold]
+        tfield.enabled = enabled
+        tfield.text = "" .. th_val
+    end
 
     local item = "item=" .. ammo
     components.updateSpritesInSlots(table.children[offset], { [item] = stock }, setStock)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- perform only updates of non input fields
+--- @param table LuaGuiElement table for update of row
+--- @param v AmmoWarningThresholdAndStock
+--- @param at_row number of row
+local function updateTableRow(table, v, at_row)
+    allUpdateOfTableRow(false, table, v, at_row)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- perform updates of all fields
+--- @param table LuaGuiElement table for update of row
+--- @param v AmmoWarningThresholdAndStock
+--- @param at_row number of row
+local function updateFullTableRow(table, v, at_row)
+    allUpdateOfTableRow(true, table, v, at_row)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -202,6 +224,7 @@ local comparators = {
 --- @param pons Pons
 --- @param pd PlayerData
 function ammos.update(elems, pons, pd)
+    Log.log("ammos.update", function(m)log(m)end, Log.FINE)
     --- @type FccOnPlatform[]
     local data = pons.fccsOnPlatform
 
@@ -215,13 +238,17 @@ function ammos.update(elems, pons, pd)
 
     local gae = pd.guis.open
 
+    Log.logLine(gae, function(m)log(m)end, Log.FINE)
+
     local sortings = gae.sortings[gae.activeTab] -- ammos are on 3rd tab
     local active = sortings.active
     if (active ~= "") then
         sorteddata = utils.sort(sorteddata, sortings.sorting[active], comparators[active])
     end
 
-    components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow, updateTableRow)
+    Log.logLine(gae.fields_initialized, function(m)log(m)end, Log.FINE)
+    components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow,
+                     gae.fields_initialized and updateTableRow or updateFullTableRow)
 end
 -- ###############################################################
 
@@ -252,18 +279,13 @@ function ammos.build()
             },
             {
                 type = "frame",
-                -- TODO style = "entity_button_frame",
+                style = "dart_bottom_button_frame",
                 {
-                    type="flow",
-                    direction="horizontal",
-                    -- TODO style="ugg_controls_flow"
-                    {
-                        type = "button",
-                        -- TODO style = "wide_entity_button",
-                        caption = { "gui.dart-ammo-save" },
-                        name = "ammos_save",
-                        handler = { [defines.events.on_gui_click] = handlers.save_clicked, }
-                    },
+                    type = "button",
+                    style = "dart_bottom_button",
+                    caption = { "gui.dart-ammo-save" },
+                    name = "ammos_save",
+                    handler = { [defines.events.on_gui_click] = handlers.save_clicked, }
                 },
             }
         }
@@ -274,6 +296,7 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 local function save_clicked(gae, event)
+    Log.logBlock(gae.elems, function(m)log(m)end, Log.FINEST)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
     local pd = global_data.getPlayer_data(event.player_index)
     local platform = gae.entity.surface.platform
@@ -284,10 +307,7 @@ local function save_clicked(gae, event)
     local thresholds = fop.ammo_warning.thresholds
 
     local sorteddata = presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType)
-
-    Log.logBlock(gae.elems, function(m)log(m)end, Log.FINE)
-    Log.logBlock(thresholds, function(m)log(m)end, Log.FINE)
-    Log.logBlock(sorteddata, function(m)log(m)end, Log.FINE)
+    Log.logBlock( sorteddata, function(m)log(m)end, Log.FINE)
 
     for ndx, v in pairs(sorteddata) do
         local _, _, switch, threshold = names(ndx)
@@ -296,15 +316,14 @@ local function save_clicked(gae, event)
         local awt = thresholds[v.threshold.type]
         if onOff then
             local newthreshold = gae.elems["ammos_table"][threshold].text
-            Log.logLine({ threshold = threshold, onOff = onOff, newthreshold = newthreshold }, function(m)log(m)end, Log.FINE)
-            awt.threshold = tonumber(newthreshold)
+            awt.threshold = tonumber(newthreshold) or 0
             awt.enabled = true
+            Log.logLine({ onOff = onOff, newthreshold = awt.threshold }, function(m)log(m)end, Log.CONFIG)
         else
-            Log.logLine(onOff, function(m)log(m)end, Log.FINE)
+            Log.logLine(onOff, function(m)log(m)end, Log.CONFIG)
             awt.enabled = false
         end
     end
-    -- TODO
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -327,17 +346,10 @@ local function switch_changed(gae, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function threshold_changed(gae, event)
-    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
-    -- TODO ???
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 
 handlers = {
     save_clicked = save_clicked,
     switch_changed = switch_changed,
-    threshold_changed = threshold_changed,
 }
 
 -- register local handlers in flib
