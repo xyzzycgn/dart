@@ -442,32 +442,17 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param ls LocalisedString
---- @param filter MessageFilter
+--- @param lvl MessageLevel
 --- @param pons Pons
 --- @param num number|nil number of asteroids hitting or grazing or ...
-local function messageConcerningAsteroids(ls, filter, pons, num)
+local function messageConcerningAsteroids(ls, lvl, pons, num)
     if pons.platform.valid then
         if not num then
-            messaging.printmsg({ ls, platform2richText(pons) }, filter, pons.platform.force)
+            messaging.printmsg({ ls, platform2richText(pons) }, lvl, pons.platform.force)
         elseif (num > 0) then
-            messaging.printmsg({ ls, num, platform2richText(pons) }, filter, pons.platform.force)
+            messaging.printmsg({ ls, num, platform2richText(pons) }, lvl, pons.platform.force)
         end
     end
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
---- @param pons Pons
---- @param managedTurrets ManagedTurret[]
-local function checkLowAmmo(pons, managedTurrets)
-    Log.log("check low ammo", function(m)log(m)end, Log.FINER)
-
-    local inv = Hub.getInventoryContent(pons)
-
-    Log.logBlock({ platform = pons.platform.name, inv=inv }, function(m)log(m)end, Log.FINEST)
-
-
-    -- TODO 
-
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -627,10 +612,6 @@ local function businessLogic()
             Log.log("skipped invalid platform during processing", function(m)log(m)end, Log.WARN)
         end
 
-        -- check low ammo if enabled, hub present and protected by D.A.R.T. (FCC built)
-        if warnLowAmmo and platform.hub and pons.fccsOnPlatform and table_size(pons.fccsOnPlatform) > 0 then
-            checkLowAmmo(pons, managedTurrets)
-        end
     end
     Log.log("leave BL", function(m)log(m)end, Log.FINER)
 end
