@@ -55,6 +55,15 @@ To use D.A.R.T., it must be configured (per platform). This has to be done in th
 **Hint**
 D.A.R.T. controls a turret by setting its circuit network condition to 0 resp. 1.
 
+## Monitoring the ammunition stock (new in 1.1)
+
+D.A.R.T. has the ability to monitor the ammunition stock of a platform (located in the hub) and issues warnings as soon 
+as it falls below a configurable threshold. The thresholds are configurable per platform and ammo-type possibly used by 
+the turrets connected to the FCC. If you don't use a particular ammo-type you can disable the warnings for this type.
+
+![configure thresholds](https://github.com/xyzzycgn/dart/blob/main/doc/dart-configure-main-ammos.png?raw=true)
+
+
 ## Compatibility
 This mod is compatible to vanilla game (= space age) and other mods introducing new turrets derived from 
 ammo-turret prototype and/or new ammunition for these turrets.
