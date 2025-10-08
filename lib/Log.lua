@@ -82,4 +82,15 @@ function Log.logLine(msgOrFunction, func, sev)
     end
 end
 
+---Logs a message using string.format to build the logmessage
+---@param func function Function to use for logging (e.g., game.print)
+---@param sev number Severity level
+---@param format string formating string used for string.format to build the logmessage
+---@param ...? varargs with the optional parameters used for string.format
+function Log.logMsg(func, sev, format, ...)
+    if (sev >= severity) then
+        func(MSG[sev] .. string.format(format, ...))
+    end
+end
+
 return Log
