@@ -1,6 +1,6 @@
 ---
 --- Slim logging facility with the ability to change the amount of logged statements at runtime.
---- copied from log4factorio V 0.1.0
+--- copied from log4factorio V 0.1.1
 
 
 --- defines the log levels
@@ -79,6 +79,17 @@ function Log.logLine(msgOrFunction, func, sev)
     if (sev >= severity) then
         local msg = (type(msgOrFunction) == "function") and msgOrFunction() or msgOrFunction
         func(MSG[sev] .. serpent.line(msg))
+    end
+end
+
+---Logs a message using string.format to build the logmessage
+---@param func function Function to use for logging (e.g., game.print)
+---@param sev number Severity level
+---@param format string formating string used for string.format to build the logmessage
+---@param ...? varargs with the optional parameters used for string.format
+function Log.logMsg(func, sev, format, ...)
+    if (sev >= severity) then
+        func(MSG[sev] .. string.format(format, ...))
     end
 end
 

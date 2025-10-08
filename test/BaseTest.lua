@@ -67,11 +67,8 @@ end
 
 -- mock function table_size (normally provided by the game runtime)
 function table_size(table)
-    print("################ BUUUUUUU")
     if (table) then
-        print("################ BUUUUUUU 2")
         if (type(table) == "table") then
-            print("################ BUUUUUUU 3")
             local count = 0
             for _ in pairs(table) do
                 count = count + 1
