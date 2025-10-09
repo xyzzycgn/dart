@@ -8,6 +8,7 @@ local dump = require("scripts.dump")
 local components = require("scripts/gui/components")
 local utils = require("scripts/utils")
 local eventHandler = require("scripts/gui/eventHandler")
+local configureTurrets = require("scripts/ConfigureTurrets")
 
 local turrets = {}
 local handlers -- forward declaration
@@ -154,40 +155,57 @@ local ccInvalidCapsAndStyles = {
 local function networkCondition(tc)
     local lblcaption, lblstyle, cc
 
-    if tc.num_connections == 0 then
+    local state = configureTurrets.checkNetworkCondition(tc);
+
+    -- emulate case switch - lua is so ...
+    local actions = {
         -- not connected
-        lblcaption = { "gui.dart-turret-offline" }
-        lblstyle = "bold_red_label"
-    elseif tc.num_connections == 2 then
+        [configureTurrets.states.notConnected] = function()
+            lblcaption = { "gui.dart-turret-offline" }
+            lblstyle = "bold_red_label"
+        end,
         -- connected twice
-        lblcaption = { "gui.dart-turret-connected-twice" }
-        lblstyle = "bold_orange_label"
-    elseif table_size(tc.managedBy) > 1 then
+        [configureTurrets.states.connectedTwice] = function()
+            lblcaption = { "gui.dart-turret-connected-twice" }
+            lblstyle = "bold_orange_label"
+        end,
         -- connected to multiple fccs
-        lblcaption = { "gui.dart-turret-connected-to-multiple-fccs" }
-        lblstyle = "bold_orange_label"
-    elseif not tc.circuit_enable_disable then
+        [configureTurrets.states.connectedToMultipleFccs] = function()
+            lblcaption = { "gui.dart-turret-connected-to-multiple-fccs" }
+            lblstyle = "bold_orange_label"
+        end,
         -- circuit network disabled in turret
-        lblcaption = { "gui.dart-turret-not-controlled" }
-        lblstyle = "bold_orange_label"
-        -- see ticket #53
-        tc.mayBeAutoConfigured = true
-    else
-        -- connected once
-        local valid, details = utils.checkCircuitCondition(tc.cc)
-        if valid then
-            -- the CircuitCondition is valid for use in D.A.R.T.
+        [configureTurrets.states.circuitNetworkDisabledInTurret] = function()
+            lblcaption = { "gui.dart-turret-not-controlled" }
+            lblstyle = "bold_orange_label"
+            -- see ticket #53
+            tc.mayBeAutoConfigured = true
+            tc.stateConfiguration = state
+        end,
+        -- the CircuitCondition is valid for use in D.A.R.T.
+        [configureTurrets.states.ok] = function()
             lblcaption = tc.network_id
             lblstyle = col_style[tc.connector]
             cc = tc.cc
-        else
-            local capStyle = ccInvalidCapsAndStyles[details] or ccInvalidCapsAndStyles[utils.CircuitConditionChecks.unknown]
+        end,
+    }
+
+    local meta = { __index = function(t, key)
+        return function()
+            Log.logLine({ t=t, key= key}, function(m)log(m)end, Log.FINE)
+            local capStyle = ccInvalidCapsAndStyles[key] or ccInvalidCapsAndStyles[utils.CircuitConditionChecks.unknown]
             lblcaption =  capStyle[1]
             lblstyle = capStyle[2]
             -- single connection, but not well configured (see ticket #53)
             tc.mayBeAutoConfigured = true
-        end
-    end
+            tc.stateConfiguration = state
+        end -- default for case/switch
+    end }
+
+    setmetatable(actions, meta)
+
+    Log.logLine(state, function(m)log(m)end, Log.FINE)
+    actions[state]()
 
     return lblcaption, lblstyle, cc
 end
@@ -319,6 +337,7 @@ end
 --- @field managedBy uint[] IDs of the circuit networks (of fccs) connected to this turret
 --- @field mayBeAutoConfigured boolean? (optional) indicates a not well configured connection to a turret, which may be
 ---        automatically configured (see ticket #53)
+--- @field stateConfiguration number? indicates the misconfiguration
 ---
 --- @param data TurretOnPlatform[]
 --- @param nwOfFcc uint[] IDs of the circuit networks of fcc shown in gui
@@ -521,6 +540,8 @@ end
 local function autoconfigure(gae, event)
     Log.logBlock(gae.elems, function(m)log(m)end, Log.FINEST)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
+
+    configureTurrets.autoConfigure(gae.mayBeAutoConfigured)
 end
 -- ###############################################################
 
