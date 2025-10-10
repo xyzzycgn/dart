@@ -192,7 +192,7 @@ local function networkCondition(tc)
 
     local meta = { __index = function(t, key)
         return function()
-            Log.logLine({ t=t, key= key}, function(m)log(m)end, Log.FINE)
+            Log.logLine(key, function(m)log(m)end, Log.FINE)
             local capStyle = ccInvalidCapsAndStyles[key] or ccInvalidCapsAndStyles[utils.CircuitConditionChecks.unknown]
             lblcaption =  capStyle[1]
             lblstyle = capStyle[2]
@@ -542,6 +542,8 @@ local function autoconfigure(gae, event)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
 
     configureTurrets.autoConfigure(gae.mayBeAutoConfigured)
+
+    script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = gae.entity })
 end
 -- ###############################################################
 
