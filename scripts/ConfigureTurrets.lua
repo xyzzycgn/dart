@@ -31,15 +31,14 @@ local states = copy(utils.CircuitConditionChecks, {
 -- ###############################################################
 
 ---@field tc TurretConnection @ mis-/unconfigured but connected turret
-local function circuitNetworkDisabledInTurret(tc)
-    Log.logBlock(tc, function(m)log(m)end, Log.FINE)
-    --- @type LuaEntity
+--- @return LuaTurretControlBehavior
+local function getControlBehavior(tc)
+     --- @type LuaEntity
     local turret = tc.turret
     if turret.valid then
         local cb = turret.get_control_behavior()
         if cb.valid then
-            cb.circuit_enable_disable = true
-            return
+            return cb
         end
     end
     Log.log("entity or control behaviour not valid", function(m)log(m)end, Log.WARN)
@@ -47,37 +46,34 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 ---@field tc TurretConnection @ mis-/unconfigured but connected turret
+local function circuitNetworkDisabledInTurret(tc)
+    Log.logBlock(tc, function(m)log(m)end, Log.FINE)
+    local cb = getControlBehavior(tc)
+    if cb then
+        cb.circuit_enable_disable = true
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+---@field tc TurretConnection @ mis-/unconfigured but connected turret
 local function firstSignalEmpty(tc)
     Log.logBlock(tc, function(m)log(m)end, Log.FINE)
-
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
----@field tc TurretConnection @ mis-/unconfigured but connected turret
-local function secondSignalNotSupported(tc)
+local function repairCircuitCondition(tc)
     Log.logBlock(tc, function(m)log(m)end, Log.FINE)
+    local cb = getControlBehavior(tc)
+    Log.logBlock(cb, function(m)log(m)end, Log.FINE)
+    if cb then
+        --- @type CircuitCondition
+        local cc = cb.circuit_condition
+        Log.logBlock(cc, function(m)log(m)end, Log.FINE)
+        cc.comparator = '>'
+        cc.constant = 0
 
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
----@field tc TurretConnection @ mis-/unconfigured but connected turret
-local function invalidComparator(tc)
-    Log.logBlock(tc, function(m)log(m)end, Log.FINE)
-
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
----@field tc TurretConnection @ mis-/unconfigured but connected turret
-local function noFalse(tc)
-    Log.logBlock(tc, function(m)log(m)end, Log.FINE)
-
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
----@field tc TurretConnection @ mis-/unconfigured but connected turret
-local function noTrue(tc)
-    Log.logBlock(tc, function(m)log(m)end, Log.FINE)
-
+        cb.circuit_condition = cc
+    end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -85,10 +81,10 @@ end
 local switch4autoConfigure = {
     [states.circuitNetworkDisabledInTurret] = circuitNetworkDisabledInTurret,
     [states.firstSignalEmpty] = firstSignalEmpty,
-    [states.secondSignalNotSupported] = secondSignalNotSupported,
-    [states.invalidComparator] = invalidComparator,
-    [states.noFalse] = noFalse,
-    [states.noTrue] = noTrue,
+    [states.secondSignalNotSupported] = repairCircuitCondition,
+    [states.invalidComparator] = repairCircuitCondition,
+    [states.noFalse] = repairCircuitCondition,
+    [states.noTrue] = repairCircuitCondition,
 }
 
 local meta = { __index = function(t, key)
@@ -131,7 +127,7 @@ local function checkNetworkCondition(tc)
         local valid, details = utils.checkCircuitCondition(tc.cc)
         ret = valid and states.ok or details or states.unknown
     end
-    Log.logLine({ ret = ret }, function(m)log(m)end, Log.FINE)
+    Log.logLine({ ret = ret }, function(m)log(m)end, Log.FINER)
 
     return ret
 end
