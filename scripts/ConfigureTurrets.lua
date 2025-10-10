@@ -20,6 +20,7 @@ local function copy(base, expand)
     return copy
 end
 
+--- possible fault conditions for a mis-/unconfigured but connected turret
 local states = copy(utils.CircuitConditionChecks, {
     notConnected = 11,
     connectedTwice = 12,
@@ -55,13 +56,7 @@ local function circuitNetworkDisabledInTurret(tc)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
----@field tc TurretConnection @ mis-/unconfigured but connected turret
-local function firstSignalEmpty(tc)
-    Log.logBlock(tc, function(m)log(m)end, Log.FINE)
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-local function repairCircuitCondition(tc)
+local function repairCircuitCondition(tc, first)
     Log.logBlock(tc, function(m)log(m)end, Log.FINE)
     local cb = getControlBehavior(tc)
     Log.logBlock(cb, function(m)log(m)end, Log.FINE)
@@ -69,6 +64,10 @@ local function repairCircuitCondition(tc)
         --- @type CircuitCondition
         local cc = cb.circuit_condition
         Log.logBlock(cc, function(m)log(m)end, Log.FINE)
+        if first then
+            cc.first_signal = { type = "virtual", name = first }
+        end
+
         cc.comparator = '>'
         cc.constant = 0
 
@@ -77,7 +76,42 @@ local function repairCircuitCondition(tc)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
--- emulate case switch - lua is so ...
+---@field tc TurretConnection @ mis-/unconfigured but connected turret
+local function firstSignalEmpty(tc, pons)
+    Log.logBlock(tc, function(m)log(m)end, Log.FINE)
+
+    local turrets = pons.turretsOnPlatform
+    local usedSignals = {}
+    for tid, top in pairs(turrets) do
+        local cb = top.control_behavior
+        local network = cb.valid and cb.get_circuit_network(tc.connector)
+        if network and network.network_id == tc.network_id and tc.turret.unit_number ~= tid then
+            -- other turret in same network
+            local cc = cb.circuit_condition
+            local fs = cc.first_signal
+            if fs ~= "" then
+                usedSignals[fs.name] = true
+            end
+        end
+    end
+
+    Log.logBlock(usedSignals, function(m)log(m)end, Log.FINE)
+
+    local prototypes = prototypes.virtual_signal
+    for k, v in pairs(prototypes) do
+        -- ignore special signals (each, everything, ...) or such not valid
+        if v.valid and not v.special then
+            -- check if not already in use
+            if not usedSignals[v] then
+                repairCircuitCondition(tc, v.name)
+                return
+            end
+        end
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+-- emulate case switch - lua is so sh...
 local switch4autoConfigure = {
     [states.circuitNetworkDisabledInTurret] = circuitNetworkDisabledInTurret,
     [states.firstSignalEmpty] = firstSignalEmpty,
@@ -86,21 +120,20 @@ local switch4autoConfigure = {
     [states.noFalse] = repairCircuitCondition,
     [states.noTrue] = repairCircuitCondition,
 }
-
+-- default for case/switch
 local meta = { __index = function(t, key)
     return function()
         Log.logMsg(function(m)log(m)end, Log.WARN, "Unsupported case %d - IGNORED", key)
-    end -- default for case/switch
+    end
 end }
-
 setmetatable(switch4autoConfigure, meta)
 
 ---@field tcs TurretConnection[] @ mis-/unconfigured but connected turrets
-local function autoConfigure(tcs)
+local function autoConfigure(tcs, pons)
     for _, tc in pairs(tcs) do
         Log.logBlock(tc, function(m)log(m)end, Log.FINE)
 
-        switch4autoConfigure[tc.stateConfiguration](tc)
+        switch4autoConfigure[tc.stateConfiguration](tc, pons)
     end
 
 end
@@ -132,7 +165,7 @@ local function checkNetworkCondition(tc)
     return ret
 end
 
-
+-- exposed functions, constants, ...
 local configureTurrets = {
     autoConfigure = autoConfigure,
     checkNetworkCondition = checkNetworkCondition,

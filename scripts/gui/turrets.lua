@@ -5,6 +5,7 @@
 local flib_gui = require("__flib__.gui")
 local Log = require("__log4factorio__.Log")
 local dump = require("scripts.dump")
+local global_data = require("scripts.global_data")
 local components = require("scripts/gui/components")
 local utils = require("scripts/utils")
 local eventHandler = require("scripts/gui/eventHandler")
@@ -204,7 +205,7 @@ local function networkCondition(tc)
 
     setmetatable(actions, meta)
 
-    Log.logLine(state, function(m)log(m)end, Log.FINE)
+    Log.logLine(state, function(m)log(m)end, Log.FINER)
     actions[state]()
 
     return lblcaption, lblstyle, cc
@@ -541,7 +542,12 @@ local function autoconfigure(gae, event)
     Log.logBlock(gae.elems, function(m)log(m)end, Log.FINEST)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
 
-    configureTurrets.autoConfigure(gae.mayBeAutoConfigured)
+    local pd = global_data.getPlayer_data(event.player_index)
+    local platform = gae.entity.surface.platform
+    local pons = pd.pons[platform.index]
+
+
+    configureTurrets.autoConfigure(gae.mayBeAutoConfigured, pons)
 
     script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = gae.entity })
 end
