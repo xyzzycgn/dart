@@ -106,7 +106,8 @@ local function repairCircuitCondition(tc, first)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
----@field tc TurretConnection @ mis-/unconfigured but connected turret
+--- @field tc TurretConnection @ mis-/unconfigured but connected turret
+--- @field pons Pons
 local function firstSignalEmpty(tc, pons)
     Log.logBlock(tc, function(m)log(m)end, Log.FINE)
 
@@ -130,7 +131,7 @@ local function firstSignalEmpty(tc, pons)
     Log.logBlock(usedSignals, function(m)log(m)end, Log.FINE)
 
     local prototypes = prototypes.virtual_signal
-    for k, v in pairs(prototypes) do
+    for _, v in pairs(prototypes) do
         -- ignore special signals (each, everything, ...) or such not valid
         if v.valid and not v.special then
             -- check if not already in use
@@ -146,7 +147,7 @@ end
 ---@field tc TurretConnection @ possibly mis-/unconfigured but connected turret
 local function updateTurretConnection(tc)
     local cb = getControlBehavior(tc)
-    if cb.valid then
+    if cb and cb.valid then
         tc.cc = cb.circuit_condition
     else
         Log.logMsg(function(m)log(m)end, Log.WARN, "ControlBehavior not valid %d - IGNORED", tc.turret.unit_number)
@@ -167,7 +168,7 @@ local switch4autoConfigure = {
     [states.noTrue] = repairCircuitCondition,
 }
 -- default for case/switch
-local meta = { __index = function(t, key)
+local meta = { __index = function(_, key)
     return function()
         Log.logMsg(function(m)log(m)end, Log.WARN, "Unsupported case %d - IGNORED", key)
     end
