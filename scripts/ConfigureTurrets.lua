@@ -31,6 +31,33 @@ local states = copy(utils.CircuitConditionChecks, {
 })
 -- ###############################################################
 
+---@field tc TurretConnection[] @ mis-/unconfigured but connected turrets
+local function checkNetworkCondition(tc)
+    local ret
+
+    if tc.num_connections == 0 then
+        -- not connected
+        ret = states.notConnected
+    elseif tc.num_connections == 2 then
+        -- connected twice
+        ret = states.connectedTwice
+    elseif table_size(tc.managedBy) > 1 then
+        -- connected to multiple fccs
+        ret = states.connectedToMultipleFccs
+    elseif not tc.circuit_enable_disable then
+        -- circuit network disabled in turret
+        ret = states.circuitNetworkDisabledInTurret
+    else
+        -- connected once
+        local valid, details = utils.checkCircuitCondition(tc.cc)
+        ret = valid and states.ok or details or states.unknown
+    end
+    Log.logLine({ ret = ret }, function(m)log(m)end, Log.FINER)
+
+    return ret
+end
+-- ###############################################################
+
 ---@field tc TurretConnection @ mis-/unconfigured but connected turret
 --- @return LuaTurretControlBehavior
 local function getControlBehavior(tc)
@@ -52,6 +79,7 @@ local function circuitNetworkDisabledInTurret(tc)
     local cb = getControlBehavior(tc)
     if cb then
         cb.circuit_enable_disable = true
+        tc.circuit_enable_disable = true -- mark as fixed
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -89,7 +117,7 @@ local function firstSignalEmpty(tc, pons)
             -- other turret in same network
             local cc = cb.circuit_condition
             local fs = cc.first_signal
-            if fs ~= "" then
+            if fs and fs ~= "" then
                 usedSignals[fs.name] = true
             end
         end
@@ -109,6 +137,20 @@ local function firstSignalEmpty(tc, pons)
         end
     end
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+---@field tc TurretConnection @ possibly mis-/unconfigured but connected turret
+local function updateTurretConnection(tc)
+    local cb = getControlBehavior(tc)
+    if cb.valid then
+        tc.cc = cb.circuit_condition
+    else
+        Log.logMsg(function(m)log(m)end, Log.WARN, "ControlBehavior not valid %d - IGNORED", tc.turret.unit_number)
+    end
+
+    return checkNetworkCondition(tc) -- check if succeeded
+end
+
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 -- emulate case switch - lua is so sh...
@@ -134,36 +176,34 @@ local function autoConfigure(tcs, pons)
         Log.logBlock(tc, function(m)log(m)end, Log.FINE)
 
         switch4autoConfigure[tc.stateConfiguration](tc, pons)
-    end
+        local fixed = {}
 
+
+        local act = updateTurretConnection(tc) -- check if succeeded
+        Log.logLine(act, function(m)log(m)end, Log.FINE)
+        while (act ~= states.ok) do
+            -- still an error in configuration
+            -- (may happen for freshly added turret, that hasn't been configured at all yet)
+            fixed[tc.stateConfiguration] = true -- remember last fix
+            Log.logLine(fixed, function(m)log(m)end, Log.FINE)
+            if fixed[act] then
+                -- same error again - shouldn't happen, but who knows ;-)
+                local function f()
+                    return "aborted auto config - same erroneous condition(s): " .. serpent.line(fixed)
+                end
+                Log.logBlock(f, function(m)log(m)end, Log.WARN)
+                act = states.ok -- leave while loop
+            else
+                tc.stateConfiguration = act -- try to fix next one
+                switch4autoConfigure[tc.stateConfiguration](tc, pons)
+                act = updateTurretConnection(tc)
+            end
+
+            Log.logLine(act, function(m)log(m)end, Log.FINE)
+        end
+    end
 end
 -- ###############################################################
-
----@field tc TurretConnection[] @ mis-/unconfigured but connected turrets
-local function checkNetworkCondition(tc)
-    local ret
-    
-    if tc.num_connections == 0 then
-        -- not connected
-        ret = states.notConnected
-    elseif tc.num_connections == 2 then
-        -- connected twice
-        ret = states.connectedTwice
-    elseif table_size(tc.managedBy) > 1 then
-        -- connected to multiple fccs
-        ret = states.connectedToMultipleFccs
-    elseif not tc.circuit_enable_disable then
-        -- circuit network disabled in turret
-        ret = states.circuitNetworkDisabledInTurret
-    else
-        -- connected once
-        local valid, details = utils.checkCircuitCondition(tc.cc)
-        ret = valid and states.ok or details or states.unknown
-    end
-    Log.logLine({ ret = ret }, function(m)log(m)end, Log.FINER)
-
-    return ret
-end
 
 -- exposed functions, constants, ...
 local configureTurrets = {
