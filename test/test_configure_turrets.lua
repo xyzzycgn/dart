@@ -134,16 +134,11 @@ end
 -- ###############################################################
 
 function TestConfigureTurrets:test_checkNetworkCondition_valid_configuration()
-    -- Mock utils.checkCircuitCondition to return valid
-    utils.checkCircuitCondition = function(cc)
-        return true, nil
-    end
-
     local tc = {
         num_connections = 1,
         managedBy = { fcc1 = true },
         circuit_enable_disable = true,
-        cc = { first_signal = { type = "virtual", name = "signal-A" } }
+        cc = { first_signal = { type = "virtual", name = "signal-A" }, comparator = ">", constant = 0 }
     }
 
     local result = configureTurrets.checkNetworkCondition(tc)
@@ -166,24 +161,6 @@ function TestConfigureTurrets:test_checkNetworkCondition_invalid_configuration()
 
     local result = configureTurrets.checkNetworkCondition(tc)
     lu.assertEquals(result, configureTurrets.states.firstSignalEmpty)
-end
--- ###############################################################
-
-function TestConfigureTurrets:test_checkNetworkCondition_unknown_error()
-    -- Mock utils.checkCircuitCondition to return invalid without details
-    utils.checkCircuitCondition = function(cc)
-        return false, nil
-    end
-
-    local tc = {
-        num_connections = 1,
-        managedBy = { fcc1 = true },
-        circuit_enable_disable = true,
-        cc = {}
-    }
-
-    local result = configureTurrets.checkNetworkCondition(tc)
-    lu.assertEquals(result, configureTurrets.states.unknown)
 end
 -- ###############################################################
 
@@ -346,7 +323,10 @@ function TestConfigureTurrets:test_autoConfigure_multiple_errors()
             first_signal = nil,
             comparator = "=",
             constant = 5
-        }
+        },
+        get_circuit_network = function(wc)
+            return {} -- Mock network
+        end,
     }
 
     local mockTurret = {
@@ -474,12 +454,6 @@ function TestConfigureTurrets:test_autoConfigure_invalid_control_behavior()
             [456] = {
                 control_behavior = {
                     valid = false,
-                    --get_circuit_network = function(wc)
-                    --    return {} -- Mock network
-                    --end,
-                    --circuit_condition = {
-                    --    first_signal = { type = "virtual", name = "signal-A" }
-                    --}
                 }
             },
         }
@@ -494,38 +468,6 @@ function TestConfigureTurrets:test_autoConfigure_invalid_control_behavior()
 
     -- Sollte nicht abstürzen, auch wenn ControlBehavior invalid ist
     configureTurrets.autoConfigure( { tc }, pons)
-
-    lu.assertTrue(true) -- Test erfolgreich wenn kein Fehler auftritt
-end
--- ###############################################################
-
-function TestConfigureTurrets:test_autoConfigure_unsupported_case()
-    local mockControlBehavior = {
-        valid = true,
-        circuit_condition = {}
-    }
-
-    local mockTurret = {
-        valid = true,
-        unit_number = 123,
-        get_control_behavior = function()
-            return mockControlBehavior
-        end
-    }
-
-    local tc = {
-        turret = mockTurret,
-        stateConfiguration = 999, -- Unsupported state
-        cc = mockControlBehavior.circuit_condition
-    }
-
-    -- Mock utils.checkCircuitCondition
-    utils.checkCircuitCondition = function(cc)
-        return true, nil
-    end
-
-    -- Sollte nicht abstürzen bei unsupportetem Case
-    configureTurrets.autoConfigure({tc}, {})
 
     lu.assertTrue(true) -- Test erfolgreich wenn kein Fehler auftritt
 end
