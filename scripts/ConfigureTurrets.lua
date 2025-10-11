@@ -84,22 +84,24 @@ local function circuitNetworkDisabledInTurret(tc)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- @param tc TurretConnection @ mis-/unconfigured but connected turret
+--- @param first? (optional) name of signal prototype to be set as 1st signal
 local function repairCircuitCondition(tc, first)
     Log.logBlock(tc, function(m)log(m)end, Log.FINE)
     local cb = getControlBehavior(tc)
-    Log.logBlock(cb, function(m)log(m)end, Log.FINE)
-    if cb then
+    if cb and cb.valid then
         --- @type CircuitCondition
         local cc = cb.circuit_condition
         Log.logBlock(cc, function(m)log(m)end, Log.FINE)
         if first then
             cc.first_signal = { type = "virtual", name = first }
         end
-
         cc.comparator = '>'
         cc.constant = 0
 
         cb.circuit_condition = cc
+    else
+        Log.logMsg(function(m)log(m)end, Log.WARN, "No / invalid control behaviour - turret = %d", tc.turret.unit_number)
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -112,13 +114,15 @@ local function firstSignalEmpty(tc, pons)
     local usedSignals = {}
     for tid, top in pairs(turrets) do
         local cb = top.control_behavior
-        local network = cb.valid and cb.get_circuit_network(tc.connector)
-        if network and network.network_id == tc.network_id and tc.turret.unit_number ~= tid then
-            -- other turret in same network
-            local cc = cb.circuit_condition
-            local fs = cc.first_signal
-            if fs and fs ~= "" then
-                usedSignals[fs.name] = true
+        for _, wc in pairs({ defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }) do
+            local network = cb.valid and cb.get_circuit_network(wc)
+            if network and tc.turret.unit_number ~= tid then
+                -- other turret connected to a circuit network
+                local cc = cb.circuit_condition
+                local fs = cc.first_signal
+                if fs and fs ~= "" then
+                    usedSignals[fs.name] = true
+                end
             end
         end
     end
@@ -130,7 +134,7 @@ local function firstSignalEmpty(tc, pons)
         -- ignore special signals (each, everything, ...) or such not valid
         if v.valid and not v.special then
             -- check if not already in use
-            if not usedSignals[v] then
+            if not usedSignals[v.name] then
                 repairCircuitCondition(tc, v.name)
                 return
             end
