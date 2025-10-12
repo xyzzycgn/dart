@@ -16,6 +16,7 @@
 --- @field sortings Sortings[] (optional) sorting parameters for all columns in table on tab n
 --- @field highlight LuaEntity (optional) highlight-box used for marking hovered entity in main gui
 --- @field fields_initialized boolean LuaEntity (optional) flag if input fields have been initialized
+--- @field mayBeAutoConfigured TurretConnection?
 
 --- @class GuiData any
 --- @field recentlyopen GuiAndElements[] previously opened guis (hidden after opening a new one)

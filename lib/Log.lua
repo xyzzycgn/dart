@@ -1,6 +1,6 @@
 ---
 --- Slim logging facility with the ability to change the amount of logged statements at runtime.
---- copied from log4factorio V 0.1.0
+--- copied from log4factorio V 0.1.1
 
 
 --- defines the log levels

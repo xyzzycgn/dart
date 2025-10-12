@@ -7,8 +7,6 @@ local lu = require('lib.luaunit')
 
 require('factorio_def')
 local dart = require('scripts.dart')
-local serpent = require('lib.serpent')
-
 
 TestDart = {}
 local on_event_called = 0

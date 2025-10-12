@@ -4,11 +4,15 @@
 ---
 local flib_gui = require("__flib__.gui")
 local Log = require("__log4factorio__.Log")
+local dump = require("scripts.dump")
+local global_data = require("scripts.global_data")
 local components = require("scripts/gui/components")
 local utils = require("scripts/utils")
 local eventHandler = require("scripts/gui/eventHandler")
+local configureTurrets = require("scripts/ConfigureTurrets")
 
 local turrets = {}
+local handlers -- forward declaration
 local redAndGreenWC = { defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green }
 
 local sortFields = {
@@ -152,36 +156,57 @@ local ccInvalidCapsAndStyles = {
 local function networkCondition(tc)
     local lblcaption, lblstyle, cc
 
-    if tc.num_connections == 0 then
+    local state = configureTurrets.checkNetworkCondition(tc);
+
+    -- emulate case switch - lua is so ...
+    local actions = {
         -- not connected
-        lblcaption = { "gui.dart-turret-offline" }
-        lblstyle = "bold_red_label"
-    elseif tc.num_connections == 2 then
+        [configureTurrets.states.notConnected] = function()
+            lblcaption = { "gui.dart-turret-offline" }
+            lblstyle = "bold_red_label"
+        end,
         -- connected twice
-        lblcaption = { "gui.dart-turret-connected-twice" }
-        lblstyle = "bold_orange_label"
-    elseif table_size(tc.managedBy) > 1 then
+        [configureTurrets.states.connectedTwice] = function()
+            lblcaption = { "gui.dart-turret-connected-twice" }
+            lblstyle = "bold_orange_label"
+        end,
         -- connected to multiple fccs
-        lblcaption = { "gui.dart-turret-connected-to-multiple-fccs" }
-        lblstyle = "bold_orange_label"
-    elseif not tc.circuit_enable_disable then
-        -- connected twice
-        lblcaption = { "gui.dart-turret-not-controlled" }
-        lblstyle = "bold_orange_label"
-    else
-        -- connected once
-        local valid, details = utils.checkCircuitCondition(tc.cc)
-        if valid then
-            -- the CircuitCondition is valid for use in D.A.R.T.
+        [configureTurrets.states.connectedToMultipleFccs] = function()
+            lblcaption = { "gui.dart-turret-connected-to-multiple-fccs" }
+            lblstyle = "bold_orange_label"
+        end,
+        -- circuit network disabled in turret
+        [configureTurrets.states.circuitNetworkDisabledInTurret] = function()
+            lblcaption = { "gui.dart-turret-not-controlled" }
+            lblstyle = "bold_orange_label"
+            -- see ticket #53
+            tc.mayBeAutoConfigured = true
+            tc.stateConfiguration = state
+        end,
+        -- the CircuitCondition is valid for use in D.A.R.T.
+        [configureTurrets.states.ok] = function()
             lblcaption = tc.network_id
             lblstyle = col_style[tc.connector]
             cc = tc.cc
-        else
-            local capStyle = ccInvalidCapsAndStyles[details] or ccInvalidCapsAndStyles[utils.CircuitConditionChecks.unknown]
+        end,
+    }
+
+    local meta = { __index = function(t, key)
+        return function()
+            Log.logLine(key, function(m)log(m)end, Log.FINE)
+            local capStyle = ccInvalidCapsAndStyles[key] or ccInvalidCapsAndStyles[utils.CircuitConditionChecks.unknown]
             lblcaption =  capStyle[1]
             lblstyle = capStyle[2]
-        end
-    end
+            -- single connection, but not well configured (see ticket #53)
+            tc.mayBeAutoConfigured = true
+            tc.stateConfiguration = state
+        end -- default for case/switch
+    end }
+
+    setmetatable(actions, meta)
+
+    Log.logLine(state, function(m)log(m)end, Log.FINER)
+    actions[state]()
 
     return lblcaption, lblstyle, cc
 end
@@ -311,6 +336,9 @@ end
 --- @field connector uint defines.wire_connector_id.circuit_red or defines.wire_connector_id.circuit_green
 --- @field circuit_enable_disable boolean true if the turret enable/disable state is controlled by circuit condition
 --- @field managedBy uint[] IDs of the circuit networks (of fccs) connected to this turret
+--- @field mayBeAutoConfigured boolean? (optional) indicates a not well configured connection to a turret, which may be
+---        automatically configured (see ticket #53)
+--- @field stateConfiguration number? indicates the misconfiguration
 ---
 --- @param data TurretOnPlatform[]
 --- @param nwOfFcc uint[] IDs of the circuit networks of fcc shown in gui
@@ -431,22 +459,34 @@ function turrets.dataForPresentation(elems, pons)
 end
 -- ###############################################################
 
---- @param elems GuiAndElements
+--- @param gae GuiAndElements
 --- @param pons Pons
 --- @param pd PlayerData
-function turrets.update(elems, pons, pd)
-    local pdata = turrets.dataForPresentation(elems, pons)
+function turrets.update(gae, pons, pd)
+    local pdata = turrets.dataForPresentation(gae, pons)
     -- sort data
     local sorteddata = pdata
-    local gae = pd.guis.open
-
     local sortings = gae.sortings[gae.activeTab] -- turrets are on 2nd tab
     local active = sortings.active
     if (active ~= "") then
         sorteddata = utils.sort(pdata, sortings.sorting[active], comparators[active])
     end
 
-    components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow, updateTableRow)
+    components.updateVisualizedData(gae, sorteddata, getTableAndTab, appendTableRow, updateTableRow)
+    -- sorteddata now also contains the result of checking the need/possibility for autoConfigure turrets
+    local mayBeAutoConfigured = {}
+
+    for k, v in pairs(sorteddata) do
+        if v.mayBeAutoConfigured then
+            mayBeAutoConfigured[#mayBeAutoConfigured + 1] = v
+        end
+    end
+
+    Log.logBlock(mayBeAutoConfigured, function(m)log(m)end, Log.FINE)
+    -- show button if needed and autoConfigure is possible
+    gae.elems.turrets_bottom_button_frame.visible = table_size(mayBeAutoConfigured) > 0
+    gae.mayBeAutoConfigured = mayBeAutoConfigured -- remember misconfigured
+    Log.logBlock(gae, function(m)log(m)end, Log.FINE)
 end
 -- ###############################################################
 
@@ -475,9 +515,49 @@ function turrets.build()
                   sort_checkbox(sortFields.cond),
                 }
             },
+            {
+                type = "frame",
+                style = "dart_bottom_button_frame",
+                visible = false,
+                name = "turrets_bottom_button_frame",
+                {
+                    type = "flow",
+                    style = "dart_bottom_button_flow",
+                    {
+                        type = "button",
+                        caption = { "gui.dart-turret-autoconfigure" },
+                        name = "turrets_autoconfigure",
+                        handler = { [defines.events.on_gui_click] = handlers.autoconfigure, }
+                    },
+                }
+            }
         }
     }
 end
 -- ###############################################################
+
+--- @param gae GuiAndElements
+--- @param event EventData
+local function autoconfigure(gae, event)
+    Log.logBlock(gae.elems, function(m)log(m)end, Log.FINEST)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
+
+    local pd = global_data.getPlayer_data(event.player_index)
+    local platform = gae.entity.surface.platform
+    local pons = pd.pons[platform.index]
+
+
+    configureTurrets.autoConfigure(gae.mayBeAutoConfigured, pons)
+
+    script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = gae.entity })
+end
+-- ###############################################################
+
+handlers = {
+    autoconfigure = autoconfigure,
+}
+
+-- register local handlers in flib
+components.add_handler(handlers)
 
 return turrets

@@ -6,8 +6,6 @@ require('test.BaseTest')
 local lu = require('lib.luaunit')
 local Hub = require('scripts.Hub')
 
-local serpent = require("lib.serpent")
-
 -- needed by Log.log() which is called by init()
 function log()
 end
