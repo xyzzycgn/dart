@@ -28,6 +28,7 @@ To control ammo turrets with D.A.R.T., you have to connect them with red or gree
 ![D.A.R.T. on a platform](https://github.com/xyzzycgn/dart/blob/main/doc/dart-on-platform.png?raw=true)
 
 ## Configuration
+### Manually
 Configuration can be done by simply opening the FCC 
 
 ![configure FCC](https://github.com/xyzzycgn/dart/blob/main/doc/dart-configure-main.png?raw=true)
@@ -54,6 +55,18 @@ To use D.A.R.T., it must be configured (per platform). This has to be done in th
 
 **Hint**
 D.A.R.T. controls a turret by setting its circuit network condition to 0 resp. 1.
+
+### Automatically
+
+Version 1.1 introduces an automatic configuration of the turrets, that should make this process much easier. Turrets 
+connected to a FCC which are unconfigured or not properly configured and show according warnings can be made operable
+by simply pressing the "automatic turret configuration" button.
+
+![show turrets](https://github.com/xyzzycgn/dart/blob/main/doc/dart-configure-main-turrets-automatically.png?raw=true)
+
+**Hint**
+Warnings triggered by an erroneous wiring - for example wiring the same turret with both green and red wire to a FCC -
+are not covered and must be solved by correcting the wiring.
 
 ## Monitoring the ammunition stock (new in 1.1)
 
