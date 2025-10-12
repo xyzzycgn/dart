@@ -7,8 +7,6 @@ local lu = require('lib.luaunit')
 local gd = require('scripts.global_data')
 local PlayerData = require('scripts.player_data')
 
-local serpent = require("lib.serpent")
-
 -- needed by Log.log() which is called by init()
 function log()
 end

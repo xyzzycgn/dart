@@ -6,10 +6,8 @@
 require('test.BaseTest')
 local lu = require('lib.luaunit')
 
-require('factorio_def')
 local configureTurrets = require('scripts.ConfigureTurrets')
 local utils = require('scripts.utils')
-local serpent = require('lib.serpent')
 
 TestConfigureTurrets = {}
 
