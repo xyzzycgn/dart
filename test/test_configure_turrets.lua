@@ -5,6 +5,7 @@
 ---
 require('test.BaseTest')
 local lu = require('lib.luaunit')
+require('factorio_def')
 
 local configureTurrets = require('scripts.ConfigureTurrets')
 local utils = require('scripts.utils')
@@ -26,14 +27,7 @@ function TestConfigureTurrets:setUp()
     -- Mock log function
     log = function(msg) end
 
-    -- Mock defines
-    defines = {
-        wire_connector_id = {
-            circuit_red = "red",
-            circuit_green = "green"
-        }
-    }
-
+    --
     -- Mock prototypes
     prototypes = {
         virtual_signal = {
@@ -53,6 +47,22 @@ function TestConfigureTurrets:setUp()
         end
         return count
     end
+end
+-- ###############################################################
+
+local originalFunction
+
+function TestConfigureTurrets:tearDown()
+    -- Restore utils original function
+    if originalFunction then
+        utils.checkCircuitCondition = originalFunction
+        originalFunction = nil
+    end
+end
+
+local function mockCheckCircuitCondition(func)
+    originalFunction = utils.checkCircuitCondition
+    utils.checkCircuitCondition = func
 end
 
 -- ###############################################################
@@ -146,9 +156,9 @@ end
 
 function TestConfigureTurrets:test_checkNetworkCondition_invalid_configuration()
     -- Mock utils.checkCircuitCondition to return invalid
-    utils.checkCircuitCondition = function(cc)
+    mockCheckCircuitCondition(function(cc)
         return false, configureTurrets.states.firstSignalEmpty
-    end
+    end)
 
     local tc = {
         num_connections = 1,
@@ -193,10 +203,10 @@ function TestConfigureTurrets:test_autoConfigure_circuitNetworkDisabledInTurret(
         stateConfiguration = configureTurrets.states.circuitNetworkDisabledInTurret
     }
 
-    -- Mock utils.checkCircuitCondition für nach der Reparatur
-    utils.checkCircuitCondition = function(cc)
+    -- Mock utils.checkCircuitCondition
+    mockCheckCircuitCondition(function(cc)
         return true, nil
-    end
+    end)
 
     configureTurrets.autoConfigure({tc}, {})
 
@@ -258,10 +268,10 @@ function TestConfigureTurrets:test_autoConfigure_firstSignalEmpty()
         }
     }
 
-    -- Mock utils.checkCircuitCondition für nach der Reparatur
-    utils.checkCircuitCondition = function(cc)
+    -- Mock utils.checkCircuitCondition
+    mockCheckCircuitCondition(function(cc)
         return true, nil
-    end
+    end)
 
     configureTurrets.autoConfigure({tc}, pons)
 
@@ -300,10 +310,10 @@ function TestConfigureTurrets:test_autoConfigure_repairCircuitCondition_invalidC
         cc = mockControlBehavior.circuit_condition
     }
 
-    -- Mock utils.checkCircuitCondition für nach der Reparatur
-    utils.checkCircuitCondition = function(cc)
+    -- Mock utils.checkCircuitCondition
+    mockCheckCircuitCondition(function(cc)
         return true, nil
-    end
+    end)
 
     configureTurrets.autoConfigure({tc}, {})
 
@@ -353,8 +363,8 @@ function TestConfigureTurrets:test_autoConfigure_multiple_errors()
     }
 
     local checkCount = 0
-    -- Mock utils.checkCircuitCondition um mehrere Fehler zu simulieren
-    utils.checkCircuitCondition = function(cc)
+    -- Mock utils.checkCircuitCondition to simulate multiple errors
+    mockCheckCircuitCondition(function(cc)
         checkCount = checkCount + 1
         if checkCount == 1 then
             -- Nach erstem Fix: noch firstSignalEmpty
@@ -363,7 +373,7 @@ function TestConfigureTurrets:test_autoConfigure_multiple_errors()
             -- Nach zweitem Fix: ok
             return true, nil
         end
-    end
+    end)
 
     configureTurrets.autoConfigure({tc}, pons)
 
@@ -402,9 +412,9 @@ function TestConfigureTurrets:test_autoConfigure_infinite_loop_protection()
     }
 
     -- Mock utils.checkCircuitCondition um immer den gleichen Fehler zurückzugeben
-    utils.checkCircuitCondition = function(cc)
+    mockCheckCircuitCondition(function(cc)
         return false, configureTurrets.states.firstSignalEmpty
-    end
+    end)
 
     -- Das sollte nicht in einer Endlosschleife enden
     configureTurrets.autoConfigure({tc}, { turretsOnPlatform = {} })
