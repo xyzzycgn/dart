@@ -1064,7 +1064,7 @@ local function checkRemovedAmmoTypes()
     local keys = {}
     for _, pons in pairs(allpons) do
         for _, fcc in pairs(pons.fccsOnPlatform) do
-            local thresholds = fcc.ammo_warning.thresholds
+            local thresholds = fcc.ammo_warning and fcc.ammo_warning.thresholds or {}
             for ammo, _ in pairs(thresholds) do
                 local p = items[ammo]
                 if not p then
