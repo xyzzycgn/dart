@@ -82,7 +82,7 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function update_gui(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINE)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
 
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
