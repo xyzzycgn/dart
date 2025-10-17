@@ -981,6 +981,14 @@ local function createPonsAndAddToGDAndPD(surface)
 end
 -- ###############################################################
 
+--- @param event EventData
+--- @return boolean returns true if player has entered editor mode
+local function isInEditormode(event)
+    local pd = global_data.getPlayer_data(event.player_index)
+    return pd and pd.editorMode
+end
+-- ###############################################################
+
 --- event handler for on_surface_created
 --- @param event EventData
 local function surfaceCreated(event)
@@ -988,6 +996,62 @@ local function surfaceCreated(event)
     local surface = game.surfaces[event.surface_index]
 
     createPonsAndAddToGDAndPD(surface)
+end
+-- ###############################################################
+
+--- event handler for on_surface_cleared
+--- @param event EventData
+local function onSurfaceCleared(event)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
+    local surface = game.surfaces[event.surface_index]
+    --
+    --createPonsAndAddToGDAndPD(surface)
+end
+-- ###############################################################
+
+--- event handler for on_surface_deleted
+--- @param event EventData
+local function onSurfaceDeleted(event)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
+    local surface = game.surfaces[event.surface_index]
+    --
+    --createPonsAndAddToGDAndPD(surface)
+end
+-- ###############################################################
+
+--- event handler for on_surface_imported
+--- @param event EventData
+local function onSurfaceImported(event)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
+    local surface = game.surfaces[event.surface_index]
+end
+-- ###############################################################
+
+--- event handler for on_built_entity
+--- @param event EventData
+local function onBuiltEntity(event)
+    if isInEditormode(event) then
+        Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
+        local surface = game.surfaces[event.surface_index]
+    end
+end
+-- ###############################################################
+
+--- event handler for on_entity_cloned
+--- @param event EventData
+local function onEntityCloned(event)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
+    local surface = game.surfaces[event.surface_index]
+end
+-- ###############################################################
+
+--- event handler for on_player_mined_entity
+--- @param event EventData
+local function onPlayerMinedEntity(event)
+    if isInEditormode(event) then
+        Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
+        local surface = game.surfaces[event.surface_index]
+    end
 end
 -- ###############################################################
 
@@ -1183,8 +1247,129 @@ local function ammo_in_stock_updated(event)
         if opengui and opengui.entity then
             script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
         end
-
     end
+end
+--###############################################################
+
+-- build (in entity mode)
+-- *1  {consumed_items = "[LuaInventory: temp]", entity = "[LuaEntity: solar-panel at [gps=2.5,5.5,platform-1]]", name = "on_built_entity", player_index = 1, tick = 1754}
+--   or (in None mode)
+--     {name = "on_player_main_inventory_changed", player_index = 1, tick = 1754}
+--     {name = "on_player_cursor_stack_changed", player_index = 1, tick = 1754}
+--     {build_mode = 0, created_by_moving = false, direction = 0, flip_horizontal = false, flip_vertical = false, mirror = false, name = "on_pre_build", player_index = 1, position = {x = 6, y = -4}, tick = 1754}
+-- *1  {consumed_items = "[LuaInventory: temp]", entity = "[LuaEntity: gun-turret at [gps=6.0,-4.0,platform-1]]", name = "on_built_entity", player_index = 1, tick = 1754}
+--     {name = "on_player_cursor_stack_changed", player_index = 1, tick = 1754}
+--
+-- ctrl-C (only in None mode)
+--     {name = "on_player_cursor_stack_changed", player_index = 1, tick = 1754}
+--     {alt = true, area = {left_top = {x = 3.5703125, y = 5.625}, right_bottom = {x = 3.5703125, y = 5.625}}, item = "blueprint", mapping = "[LuaLazyLoadedValue]", name = "on_player_setup_blueprint", player_index = 1, quality = "normal", stack = "[LuaItemStack: 1x {blueprint, normal}]", surface = "[LuaSurface: platform-1]", tick = 1754}
+--     {name = "on_player_cursor_stack_changed", player_index = 1, tick = 1754}
+--
+-- paste (only in None mode)
+--     {build_mode = 0, created_by_moving = false, direction = 0, flip_horizontal = false, flip_vertical = false, mirror = false, name = "on_pre_build", player_index = 1, position = {x = 5.5390625, y = -0.1875}, tick = 1754}
+-- *1  {consumed_items = "[LuaInventory: temp]", entity = "[LuaEntity: solar-panel at [gps=5.5,-0.5,platform-1]]", name = "on_built_entity", player_index = 1, tick = 1754}
+--
+-- moving an entity (ctrl-X, ctrl-V)  (only in None mode)
+--     {name = "on_player_cursor_stack_changed", player_index = 1, tick = 1754}
+--     {alt = true, area = {left_top = {x = 3.3203125, y = 5.3125}, right_bottom = {x = 3.3203125, y = 5.3125}}, item = "blueprint", mapping = "[LuaLazyLoadedValue]", name = "on_player_setup_blueprint", player_index = 1, quality = "normal", stack = "[LuaItemStack: 1x {blueprint, normal}]", surface = "[LuaSurface: platform-1]", tick = 1754}
+-- *2  {entity = "[LuaEntity: solar-panel at [gps=3.5,5.5,platform-1]]", name = "script_raised_destroy", tick = 1754}
+--     {name = "on_player_cursor_stack_changed", player_index = 1, tick = 1754}
+--     {build_mode = 0, created_by_moving = false, direction = 0, flip_horizontal = false, flip_vertical = false, mirror = false, name = "on_pre_build", player_index = 1, position = {x = 5.5859375, y = 0.109375}, tick = 1754}
+-- *1  {consumed_items = "[LuaInventory: temp]", entity = "[LuaEntity: solar-panel at [gps=5.5,0.5,platform-1]]", name = "on_built_entity", player_index = 1, tick = 1754}
+--     {name = "on_player_cursor_stack_changed", player_index = 1, tick = 1754}
+--
+-- undo (only in None mode)
+-- *2  {entity = "[LuaEntity: solar-panel at [gps=5.5,-0.5,platform-1]]", name = "script_raised_destroy", tick = 1754}
+-- *1  {actions = {{surface_index = 3, target = {entity_number = 0, name = "solar-panel", position = {x = 5.5, y = -0.5}}, type = "built-entity"}}, name = "on_undo_applied", player_index = 1, tick = 1754}
+--
+-- delete with right mouse key (in entity mode)
+-- *2  {entity = "[LuaEntity: gun-turret at [gps=-6.0,-6.0,platform-1]]", name = "script_raised_destroy", tick = 1754}
+--   or (in None mode)
+--     {entity = "[LuaEntity: solar-panel at [gps=2.5,5.5,platform-1]]", name = "on_pre_player_mined_item", player_index = 1, tick = 1754}
+-- *3  {buffer = "[LuaInventory: temp]", entity = "[LuaEntity: solar-panel at [gps=2.5,5.5,platform-1]]", name = "on_player_mined_entity", player_index = 1, tick = 1754}
+--     {item_stack = {count = 1, name = "solar-panel", quality = "normal"}, name = "on_player_mined_item", player_index = 1, tick = 1754}
+--     {name = "on_player_main_inventory_changed", player_index = 1, tick = 1754}
+--
+-- clearing a surface ("remove all enties") in editor mode triggers nothing!!!!!!!!!!!!!
+--
+-- import save
+--     {name = "on_pre_surface_cleared", surface_index = 3, tick = 1754}
+-- *4  {name = "on_surface_cleared", surface_index = 3, tick = 1754}
+-- *5  {name = "on_surface_imported", original_name = "platform-1", surface_index = 3, tick = 1754}
+--    but doesn't import hub!!!!!!!!!!!!!!
+--    needs manually adding a hub!!!!!!!!!!!!!!!
+-- *1  {consumed_items = "[LuaInventory: temp]", entity = "[LuaEntity: space-platform-hub at [gps=0.0,0.0,platform-1]]", name = "on_built_entity", player_index = 1, tick = 1754}
+--
+-- deleting and recreating a surface in editor mode - same surface_index !!!!!!!
+--     {name = "on_pre_surface_deleted", surface_index = 3, tick = 1754}
+--     {name = "on_player_changed_position", player_index = 1, tick = 1754}
+-- *6  {name = "on_surface_deleted", surface_index = 3, tick = 1754}
+--     {name = "on_player_changed_surface", player_index = 1, tick = 1754}
+-- *7  {name = "on_surface_created", surface_index = 3, tick = 1754}
+--
+-- creating a surface in editor mode
+-- *7  {name = "on_surface_created", surface_index = 4, tick = 1754}
+--
+-- creating a platform in editor mode
+-- *7  {name = "on_surface_created", surface_index = 2, tick = 1754}
+--     {name = "on_player_controller_changed", old_type = 4, player_index = 1, tick = 1754}
+--     {area = {left_top = {x = -32, y = -32}, right_bottom = {x = 0, y = 0}}, name = "on_chunk_generated", position = {x = -1, y = -1}, surface = "[LuaSurface: platform-1]", tick = 1754}
+--        ...
+--     {area = {left_top = {x = 64, y = 64}, right_bottom = {x = 96, y = 96}}, name = "on_chunk_generated", position = {x = 2, y = 2}, surface = "[LuaSurface: platform-1]", tick = 1754}
+--     {name = "on_space_platform_changed_state", old_state = 0, platform = "[LuaSpacePlatform: index=2]", tick = 1754}
+
+-- cloning
+--   object
+-- *8  {destination = "[LuaEntity: gun-turret at [gps=-6.0,6.0,platform-1]]", name = "on_entity_cloned", source = "[LuaEntity: gun-turret at [gps=0.0,-6.0,platform-1]]", tick = 1754}
+--   area
+-- *8  {destination = "[LuaEntity: gun-turret at [gps=0.0,-6.0,platform-1]]", name = "on_entity_cloned", source = "[LuaEntity: gun-turret at [gps=6.0,-4.0,platform-1]]", tick = 1754}
+--     {clear_destination_decoratives = false, clear_destination_entities = false, clone_decoratives = false, clone_entities = true, clone_tiles = false, destination_area = {left_top = {x = -2, y = -8}, right_bottom = {x = 1, y = -5}}, destination_surface = "[LuaSurface: platform-1]", name = "on_area_cloned", source_area = {left_top = {x = 4, y = -6}, right_bottom = {x = 7, y = -3}}, source_surface = "[LuaSurface: platform-1]", tick = 1754}
+--   brush
+-- *8  {destination = "[LuaEntity: gun-turret at [gps=-1.3,-6.3,platform-1]]", name = "on_entity_cloned", source = "[LuaEntity: gun-turret at [gps=-6.3,5.7,platform-1]]", tick = 1754}
+--     {clear_destination_decoratives = false, clear_destination_entities = false, clone_decoratives = false, clone_entities = true, clone_tiles = false, destination_offset = {x = -1, y = -7}, destination_surface = "[LuaSurface: platform-1]", name = "on_brush_cloned", source_offset = {x = -6, y = 5}, source_positions = {{x = -6, y = 5}, {x = -6, y = 6}, {x = -5, y = 5}, {x = -5, y = 6}}, source_surface = "[LuaSurface: platform-1]", tick = 1754}
+--==============================================================================
+
+-- new events *
+-- old events called in new context +
+-- *1   * on_built_entity
+-- *2   + script_raised_destroy
+-- *3   * on_player_mined_entity
+-- *4   * on_surface_cleared
+-- *5   * on_surface_imported
+-- *6   * on_surface_deleted
+-- *7   + on_surface_created
+-- *8   + on_entity_cloned
+--==============================================================================
+
+local function updateDartInfrastructureAfterEditorMode()
+    --
+    ---- first scan for deleted platforms
+    --local knownPlatforms = global_data.getPlatforms()
+    --for sid, pons in pairs(knownPlatforms) do
+    --    if not pons.surface.valid then
+    --        Log.logMsg(function(m)log(m)end, Log.INFO, "detected deleted platform %d", sid)
+    --
+    --    end
+    --end
+    --
+    ---- scan for new platforms
+    --for _, surface in pairs(game.surfaces) do
+    --    if surface.platform then
+    --        -- surface is platform
+    --        local sid = surface.index
+    --        local pons = global_data.getPlatforms()[sid]
+    --        if not pons then
+    --            -- not known before
+    --            createPonsAndAddToGDAndPD(surface)
+    --        end
+    --    end
+    --end
+    --
+    ------ iterate platforms on surfaces
+    --for _, pons in pairs(global_data.getPlatforms()) do
+    --    searchTurrets(pons)
+    --end
+    --
 end
 --###############################################################
 
@@ -1216,6 +1401,7 @@ local function changeSettings(e)
         or alterSetting(e, "dart-low-ammo-warning")
         or alterSetting(e, "dart-low-ammo-warning-threshold-default")
 end
+-- ###############################################################
 
 local function toggleMapEditor(event)
     Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
@@ -1226,6 +1412,7 @@ local function toggleMapEditor(event)
             editorMode = false
             -- TODO (re)scan all platforms to look for changed DART components
             -- searchDartInfrastructure() resets all former data - not suitable
+            updateDartInfrastructureAfterEditorMode()
         else
             editorMode = true
         end
@@ -1248,14 +1435,22 @@ dart.on_configuration_changed = dart_config_changed
 
 -- events without filters
 dart.events = {
-    [defines.events.on_entity_cloned]                = entityCreated, -- TODO delete?
+-- vvv mostly/only used in editor mode
+    [defines.events.on_entity_cloned]                = onEntityCloned,
+    [defines.events.on_built_entity]                 = onBuiltEntity,
+    [defines.events.on_player_mined_entity]          = onPlayerMinedEntity,
+    [defines.events.on_surface_deleted]              = onSurfaceDeleted,
+    [defines.events.on_surface_cleared]              = onSurfaceCleared,
+    [defines.events.on_surface_imported]             = onSurfaceImported,
+-- ^^^ mostly/only used in editor mode
+
     [defines.events.script_raised_destroy]           = entityRemoved,
     [defines.events.on_surface_created]              = surfaceCreated,
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
     [defines.events.on_player_created]               = player_joined_or_created,
     [defines.events.on_player_joined_game]           = player_joined_or_created,
-    [defines.events.on_player_left_game] = tbd,
-    [defines.events.on_player_removed] = tbd,
+    [defines.events.on_player_left_game]             = tbd,
+    [defines.events.on_player_removed]               = tbd,
     [defines.events.on_player_changed_surface]       = playerChangedSurface,
     [defines.events.on_runtime_mod_setting_changed]  = changeSettings,
     [defines.events.on_player_toggled_map_editor]    = toggleMapEditor,
