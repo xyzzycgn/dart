@@ -437,7 +437,7 @@ end
 
 --- @param pons Pons
 local function platform2richText(pons)
-    return string.format("[space-platform=%d]", pons.platform.index)
+    return messaging.platform2richText(pons.platform)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -999,13 +999,26 @@ local function surfaceCreated(event)
 end
 -- ###############################################################
 
+--- wipe out all data of a platform
+--- @param pons Pons platform to be wiped
+local function wipePons(pons)
+    pons.turretsOnPlatform = {}
+    pons.fccsOnPlatform = {}
+    pons.radarsOnPlatform = {}
+    pons.knownAsteroids = {}
+    pons.ammoInStockPerType = {}
+end
+
+
 --- event handler for on_surface_cleared
+--- triggered in editor mode when importing a save file
 --- @param event EventData
 local function onSurfaceCleared(event)
     Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
     local surface = game.surfaces[event.surface_index]
-    --
-    --createPonsAndAddToGDAndPD(surface)
+    Log.logBlock(dump.dumpSurface(surface), function(m)log(m)end, Log.INFO)
+    local pons = global_data.getPlatforms()[surface.index]
+    wipePons(pons)
 end
 -- ###############################################################
 

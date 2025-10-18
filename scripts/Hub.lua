@@ -2,6 +2,7 @@
 --- Created by xyzzycgn.
 ---
 local Log = require("__log4factorio__.Log")
+local messaging = require("scripts.messaging")
 
 local Hub = {}
 
@@ -29,6 +30,11 @@ end
 function Hub.getInventoryContent(pons)
     local platform = pons.platform
     local hub = platform.hub
+    if not hub then
+        Log.log("disfunctional platform without hub detected", function(m)log(m)end, Log.WARN)
+        messaging.printmsg({ "dart-message.dart-dysfunctional-platform", messaging.platform2richText(platform) }, messaging.level.WARNING, platform.force)
+        return {}
+    end
     --- @type LuaInventory
     local inv = hub.get_inventory(defines.inventory.hub_main)
     if inv then

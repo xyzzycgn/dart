@@ -75,5 +75,11 @@ function messaging.printmsg(msg, lvl, force, useicon)
     end
 end
 
+
+--- @param platform LuaEntity platform
+function messaging.platform2richText(platform)
+    return string.format("[space-platform=%d]", platform.index)
+end
+
 return messaging
 
