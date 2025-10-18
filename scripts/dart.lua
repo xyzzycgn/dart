@@ -1028,7 +1028,7 @@ end
 -- ###############################################################
 
 --- event handler for on_built_entity
---- triggered in editor mode for dart-fcc, dart-radar and ammo-turret entities
+--- if triggered in editor mode for dart-fcc, dart-radar and ammo-turret entities add new entity to internal data
 --- @param event EventData
 local function onBuiltEntity(event)
     if isInEditormode(event) then
@@ -1056,11 +1056,21 @@ end
 -- ###############################################################
 
 --- event handler for on_player_mined_entity
+--- if triggered in editor mode for dart-fcc, dart-radar and ammo-turret entities remove entity from internal data
 --- @param event EventData
 local function onPlayerMinedEntity(event)
     if isInEditormode(event) then
         Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
-        local surface = game.surfaces[event.surface_index]
+        -- if type == ammo-turret, check if it is on a platform
+        local entity = event.entity
+        if entity.type == "ammo-turret" then
+            local surface = entity.surface
+            if not (surface and surface.platform) then
+                return -- not on platform => do nothing
+            end
+        end
+
+        entityRemoved(event)
     end
 end
 -- ###############################################################
@@ -1117,10 +1127,11 @@ local function registerEvents()
         { filter = "type", type = "space-platform-hub" },
     }
 
-    script.on_event(defines.events.on_space_platform_built_entity, entityCreated, filters_dart_components)
-    script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved, filters_dart_components)
-    script.on_event(defines.events.on_built_entity,                onBuiltEntity, filters_dart_components)
-    script.on_event(defines.events.on_entity_died,                 entity_died,   filters_entity_died)
+    script.on_event(defines.events.on_space_platform_built_entity, entityCreated,       filters_dart_components)
+    script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved,       filters_dart_components)
+    script.on_event(defines.events.on_built_entity,                onBuiltEntity,       filters_dart_components)
+    script.on_event(defines.events.on_player_mined_entity,         onPlayerMinedEntity, filters_dart_components)
+    script.on_event(defines.events.on_entity_died,                 entity_died,         filters_entity_died)
 
     asyncFragments = asyncHandler.registerAsync(fragments)
 end
@@ -1448,7 +1459,6 @@ dart.on_configuration_changed = dart_config_changed
 dart.events = {
 -- vvv mostly/only used in editor mode
     [defines.events.on_entity_cloned]                = onEntityCloned,
-    [defines.events.on_player_mined_entity]          = onPlayerMinedEntity,
     [defines.events.on_surface_deleted]              = onSurfaceDeleted,
     [defines.events.on_surface_cleared]              = onSurfaceCleared,
     [defines.events.on_surface_imported]             = onSurfaceImported,
