@@ -529,7 +529,6 @@ local function businessLogic()
     Log.log("enter BL", function(m)log(m)end, Log.FINER)
     Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINEST)
 
-    local warnLowAmmo = settings.global["dart-low-ammo-warning"].value
     for _, pons in pairs(global_data.getPlatforms()) do
         local surface = pons.surface
         --- @type LuaSpacePlatform
@@ -621,13 +620,10 @@ local function updateAmmoInStock()
     for _, pons in pairs(global_data.getPlatforms()) do
         Hub.updateAmmoInStock(pons)
         local low = Hub.checkLowAmmoInStock(pons)
-        local force = pons.platform.force
-        local hub = pons.platform.hub
-
         local append = false
         local items
 
-        for ammo_type, stock in pairs(low) do
+        for ammo_type, _ in pairs(low) do
             if append then
                 items = items .. ", [img=item."..ammo_type.."]"
             else
@@ -959,6 +955,7 @@ end
 --- creates the administrative structure for a new platform and stores it in
 --- global_data resp. PlayerData of the owner
 --- @param surface LuaSurface
+--- @return Pons
 local function createPonsAndAddToGDAndPD(surface)
     local platform = surface.platform
 
@@ -977,7 +974,45 @@ local function createPonsAndAddToGDAndPD(surface)
             end
             pd.pons[platform.index] = pons
         end
+
+        return pons
     end
+end
+-- ###############################################################
+
+-- part of initialization
+local function searchPlatforms()
+    for _, surface in pairs(game.surfaces) do
+        createPonsAndAddToGDAndPD(surface)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param pons Pons
+local function searchTurrets(pons)
+    local turretsOnPlatform = pons.turretsOnPlatform
+
+    for _, turret in pairs(pons.surface.find_entities_filtered({ type = "ammo-turret" })) do
+        addTurretToPons(turretsOnPlatform, turret)
+    end
+    Log.logBlock(pons, function(m)log(m)end, Log.FINE)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- searches turrets on existing platforms
+--- as this is called from on_init, there can't be any dart-radar/dart-fcc enties
+--- that's why we only look for turrets on platforms
+local function searchDartInfrastructure()
+    Log.log("searchDartInfrastructure", function(m)log(m)end, Log.INFO)
+
+    searchPlatforms()
+
+    -- iterate platforms on surfaces
+    for _, pons in pairs(global_data.getPlatforms()) do
+        searchTurrets(pons)
+    end
+
+    Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINER)
 end
 -- ###############################################################
 
@@ -1033,10 +1068,33 @@ end
 -- ###############################################################
 
 --- event handler for on_surface_imported
+--- triggered by import save in editor mode
 --- @param event EventData
 local function onSurfaceImported(event)
     Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
     local surface = game.surfaces[event.surface_index]
+    local pons = createPonsAndAddToGDAndPD(surface)
+    if pons then
+        local new_entities = {}
+
+        -- add the ammo-turret, dart-fcc and dart-radar entities on platform to the internal data
+        for _, entity in pairs(surface.find_entities_filtered({ name = { "dart-fcc", "dart-radar" }})) do
+            new_entities[#new_entities + 1] = entity
+        end
+        for _, entity in pairs(surface.find_entities_filtered({ type = "ammo-turret"})) do
+            new_entities[#new_entities + 1] = entity
+        end
+        Log.logBlock(new_entities, function(m)log(m)end, Log.FINE)
+        for _, entity in pairs(new_entities) do
+            local new_entity_event = {
+                entity = entity,
+                tick = event.tick,
+                platform = pons.platform
+            }
+            -- shortcut without raising a new event
+            entityCreated(new_entity_event)
+        end
+    end
 end
 -- ###############################################################
 
@@ -1085,42 +1143,6 @@ local function onPlayerMinedEntity(event)
 
         entityRemoved(event)
     end
-end
--- ###############################################################
-
--- part of initialization
-local function searchPlatforms()
-    for _, surface in pairs(game.surfaces) do
-        createPonsAndAddToGDAndPD(surface)
-    end
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
---- @param pons Pons
-local function searchTurrets(pons)
-    local turretsOnPlatform = pons.turretsOnPlatform
-
-    for _, turret in pairs(pons.surface.find_entities_filtered({ type = "ammo-turret" })) do
-        addTurretToPons(turretsOnPlatform, turret)
-    end
-    Log.logBlock(pons, function(m)log(m)end, Log.FINER)
-end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
---- searches turrets on existing platforms
---- as this is called from on_init, there can't be any dart-radar/dart-fcc enties
---- that's why we only look for turrets on platforms
-local function searchDartInfrastructure()
-    Log.log("searchDartInfrastructure", function(m)log(m)end, Log.INFO)
-
-    searchPlatforms()
-
-    -- iterate platforms on surfaces
-    for _, pons in pairs(global_data.getPlatforms()) do
-        searchTurrets(pons)
-    end
-
-     Log.logBlock(global_data.getPlatforms, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
