@@ -210,7 +210,8 @@ function ammos.dataForPresentation(elems, pons)
     local entity = elems.entity
     local fop = pons.fccsOnPlatform[entity.unit_number]
 
-    return fop and presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType) or {}
+    return fop and fop.ammo_warning and
+           presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType) or {}
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -233,7 +234,8 @@ function ammos.update(elems, pons, pd)
     -- corresponding FccOnPlatform
     local fop = data[entity.unit_number]
 
-    local sorteddata = fop and presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType) or {}
+    local sorteddata = fop and fop.ammo_warning and
+            presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType) or {}
     Log.logBlock(sorteddata, function(m)log(m)end, Log.FINER)
 
     local gae = pd.guis.open
