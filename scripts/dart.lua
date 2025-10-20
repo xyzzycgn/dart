@@ -1089,14 +1089,13 @@ local function onSurfaceImported(event)
 end
 -- ###############################################################
 
---- event handler for on_built_entity
 --- if triggered in editor mode for dart-fcc, dart-radar and ammo-turret entities add new entity to internal data
 --- @param event EventData
-local function onBuiltEntity(event)
-    if isInEditormode(event) then
-        Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
+local function dartEntityCreatedInEditorMode(event)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
+    local entity = event.entity or event.destination
+    if entity then
         -- if type == ammo-turret, check if it is on a platform
-        local entity = event.entity
         if entity.type == "ammo-turret" then
             local surface = entity.surface
             if not (surface and surface.platform) then
@@ -1107,13 +1106,26 @@ local function onBuiltEntity(event)
         entityCreated(event)
     end
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- event handler for on_built_entity
+--- called only for dart-fcc, dart-radar and ammo-turret entities and if triggered in editor mode add the new entity to internal data
+--- @param event EventData
+local function onBuiltEntity(event)
+    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
+    if isInEditormode(event) then
+        dartEntityCreatedInEditorMode(event)
+    end
+end
 -- ###############################################################
 
 --- event handler for on_entity_cloned
+--- add the new entity to internal data
+--- called only for dart-fcc, dart-radar and ammo-turret entities
 --- @param event EventData
 local function onEntityCloned(event)
     Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.INFO)
-    local surface = game.surfaces[event.surface_index]
+    dartEntityCreatedInEditorMode(event)
 end
 -- ###############################################################
 
@@ -1157,6 +1169,7 @@ local function registerEvents()
     script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved,       filters_dart_components)
     script.on_event(defines.events.on_built_entity,                onBuiltEntity,       filters_dart_components)
     script.on_event(defines.events.on_player_mined_entity,         onPlayerMinedEntity, filters_dart_components)
+    script.on_event(defines.events.on_entity_cloned,               onEntityCloned,      filters_dart_components)
     script.on_event(defines.events.on_entity_died,                 entity_died,         filters_entity_died)
 
     asyncFragments = asyncHandler.registerAsync(fragments)
@@ -1389,35 +1402,10 @@ end
 -- *8   + on_entity_cloned
 --==============================================================================
 
+
+--- TODO scan for platforms that have been wiped
+--- workaround for missing event(s) when clearing a surface ("remove all enties") in editor mode (that triggers nothing!)
 local function updateDartInfrastructureAfterEditorMode()
-    --
-    ---- first scan for deleted platforms
-    --local knownPlatforms = global_data.getPlatforms()
-    --for sid, pons in pairs(knownPlatforms) do
-    --    if not pons.surface.valid then
-    --        Log.logMsg(function(m)log(m)end, Log.INFO, "detected deleted platform %d", sid)
-    --
-    --    end
-    --end
-    --
-    ---- scan for new platforms
-    --for _, surface in pairs(game.surfaces) do
-    --    if surface.platform then
-    --        -- surface is platform
-    --        local sid = surface.index
-    --        local pons = global_data.getPlatforms()[sid]
-    --        if not pons then
-    --            -- not known before
-    --            createPonsAndAddToGDAndPD(surface)
-    --        end
-    --    end
-    --end
-    --
-    ------ iterate platforms on surfaces
-    --for _, pons in pairs(global_data.getPlatforms()) do
-    --    searchTurrets(pons)
-    --end
-    --
 end
 --###############################################################
 
@@ -1458,8 +1446,7 @@ local function toggleMapEditor(event)
         local editorMode = pd.editorMode
         if editorMode then
             editorMode = false
-            -- TODO (re)scan all platforms to look for changed DART components
-            -- searchDartInfrastructure() resets all former data - not suitable
+            -- TODO try to fix the missing event for "remove all enties"
             updateDartInfrastructureAfterEditorMode()
         else
             editorMode = true
@@ -1484,7 +1471,6 @@ dart.on_configuration_changed = dart_config_changed
 -- events without filters
 dart.events = {
 -- vvv mostly/only used in editor mode
-    [defines.events.on_entity_cloned]                = onEntityCloned,
     [defines.events.on_surface_deleted]              = onSurfaceDeleted,
     [defines.events.on_surface_cleared]              = onSurfaceCleared,
     [defines.events.on_surface_imported]             = onSurfaceImported,
