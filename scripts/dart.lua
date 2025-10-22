@@ -4,7 +4,7 @@
 ---
 --- D.A.R.T.s business logic
 local Log = require("__log4factorio__.Log")
-local dump = require("scripts.dump")
+local dump = require("__log4factorio__.dump")
 local global_data = require("scripts.global_data")
 local player_data = require("scripts.player_data")
 local asyncHandler = require("scripts.asyncHandler")
@@ -622,7 +622,7 @@ end
 
 --- @param event EventData
 local function playerChangedSurface(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     local pd = global_data.getPlayer_data(event.player_index)
     local guis = pd and pd.guis
 
@@ -843,7 +843,7 @@ local createFuncs = {
 --- event handler called if a new dart-fcc/dart-radar or a turret is build on a platform
 --- @param event EventData
 local function entityCreated(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
 
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
@@ -926,7 +926,7 @@ local removedFuncs = {
 
 --- event handler called if a dart-fcc/dart-radar or a turret is removed from platform
 local function entityRemoved(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local entity = event.entity
     local func = removedFuncs[entity.name] or removedFuncs[entity.type]
 
@@ -937,7 +937,7 @@ end
 --- event handler called if a dart-fcc/dart-radar or a turret is destroyed
 --- (triggered by "remove all entities" in editor mode - see ticket #52)
 local function onObjectDestroyed(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local res = global_data.getRegisteredEntities()
     local re = res[event.registration_number]
     if re then
@@ -1034,7 +1034,7 @@ end
 --- event handler for on_surface_created
 --- @param event EventData
 local function surfaceCreated(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local surface = game.surfaces[event.surface_index]
 
     createPonsAndAddToGDAndPD(surface)
@@ -1045,7 +1045,7 @@ end
 --- triggered in editor mode when importing a save file
 --- @param event EventData
 local function onSurfaceCleared(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local pons = global_data.getPlatforms()[event.surface_index]
     pons.turretsOnPlatform = {}
     pons.fccsOnPlatform = {}
@@ -1059,7 +1059,7 @@ end
 --- triggered when a surface is deleted in editor mode
 --- @param event EventData
 local function onSurfaceDeleted(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     -- surface is invalid, so prevent all further calls
     global_data.getPlatforms()[event.surface_index] = nil
 end
@@ -1069,7 +1069,7 @@ end
 --- triggered by import save in editor mode
 --- @param event EventData
 local function onSurfaceImported(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local surface = game.surfaces[event.surface_index]
     local pons = createPonsAndAddToGDAndPD(surface)
     if pons then
@@ -1099,7 +1099,7 @@ end
 --- if triggered in editor mode for dart-fcc, dart-radar and ammo-turret entities add new entity to internal data
 --- @param event EventData
 local function dartEntityCreatedInEditorMode(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local entity = event.entity or event.destination
     if entity then
         -- if type == ammo-turret, check if it is on a platform
@@ -1119,7 +1119,7 @@ end
 --- called only for dart-fcc, dart-radar and ammo-turret entities and if triggered in editor mode add the new entity to internal data
 --- @param event EventData
 local function onBuiltEntity(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     if isInEditormode(event) then
         dartEntityCreatedInEditorMode(event)
     end
@@ -1131,7 +1131,7 @@ end
 --- called only for dart-fcc, dart-radar and ammo-turret entities
 --- @param event EventData
 local function onEntityCloned(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     dartEntityCreatedInEditorMode(event)
 end
 -- ###############################################################
@@ -1141,7 +1141,7 @@ end
 --- @param event EventData
 local function onPlayerMinedEntity(event)
     if isInEditormode(event) then
-        Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+        Log.logEvent(event, function(m)log(m)end, Log.FINE)
         -- if type == ammo-turret, check if it is on a platform
         local entity = event.entity
         if entity.type == "ammo-turret" then
@@ -1259,50 +1259,50 @@ end
 
 --- @param event EventData
 local function player_joined_or_created(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end)
+    Log.logEvent(event, function(m)log(m)end)
     init_player_data(event.player_index)
 end
 --###############################################################
 
 --- @param event EventData
 local function tbd(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end)
+    Log.logEvent(event, function(m)log(m)end)
 end
 --###############################################################
 
 --- @param event EventData
 local function tbda(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
 --- @param event EventData
 local function tbdu(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
 --- @param event EventData
 local function tbdd(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
 --- @param event EventData
 local function tbdad(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
 --- @param event EventData
 local function tbdal(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
 --- @param event EventData
 local function ammo_in_stock_updated(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 
     for _, player in pairs(game.players) do
         local pd = global_data.getPlayer_data(player.index)
@@ -1438,7 +1438,7 @@ end
 -- ###############################################################
 
 local function toggleMapEditor(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
         local editorMode = pd.editorMode

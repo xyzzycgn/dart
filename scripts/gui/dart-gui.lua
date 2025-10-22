@@ -5,7 +5,6 @@
 --- Build the D.A.R.T Main UI window
 
 local Log = require("__log4factorio__.Log")
-local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
 local components = require("scripts.gui.components")
 local eventHandler = require("scripts.gui.eventHandler")
@@ -82,7 +81,7 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function update_gui(event)
-    Log.logLine(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
 
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
@@ -197,7 +196,7 @@ end
 
 local function gui_opened(event)
     local entity = event.entity
-    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-fcc" then
 
         -- check whether there is an already open but hidden instance (see ticket #20)
@@ -247,7 +246,7 @@ end
 -- ###############################################################
 
 local function gui_closed(event)
-    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINEST)
+    Log.logEvent(event, function(m)log(m)end, Log.FINEST)
     local pd = global_data.getPlayer_data(event.player_index)
     --- @type LuaEntity
     local entity = event.entity
@@ -277,7 +276,7 @@ end
 
 -- delegates the on_dart_gui_close event to the standard handler
 local function handle_on_dart_gui_close(event)
-    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     eventHandler.close(event.gae, event)
 end
 

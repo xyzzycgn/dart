@@ -4,7 +4,7 @@
 ---
 local flib_gui = require("__flib__.gui")
 local Log = require("__log4factorio__.Log")
-local dump = require("scripts.dump")
+local dump = require("__log4factorio__.dump")
 local utils = require("scripts/utils")
 local global_data = require("scripts.global_data")
 local components = require("scripts/gui/components")

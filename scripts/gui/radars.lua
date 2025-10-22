@@ -8,7 +8,7 @@ local components = require("scripts/gui/components")
 local utils = require("scripts/utils")
 local eventHandler = require("scripts/gui/eventHandler")
 local global_data = require("scripts.global_data")
-local dump = require("scripts.dump")
+local dump = require("__log4factorio__.dump")
 local constants = require("scripts.constants")
 
 local radars = {}
