@@ -87,8 +87,8 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 function eventHandler.close(gae, event)
-    Log.logBlock(event, function(m)log(m)end, Log.FINE)
-    Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logBlock(gae, function(m)log(m)end, Log.FINE)
     local guis = global_data.getPlayer_data(event.player_index).guis
     local guiToBeCLosed = gae.gui
     guis.recentlyopen = guis.recentlyopen or {}
@@ -114,7 +114,7 @@ function eventHandler.close(gae, event)
     -- close or chaining gui?
     if ropen and ropen.gui then
         local rogui = ropen.gui
-        Log.logBlock(dump.dumpLuaGuiElement(rogui), function(m)log(m)end, Log.FINE)
+        Log.logLuaGuiElement(rogui, function(m)log(m)end, Log.FINE)
         -- chaining gui?
         if (rogui.valid and rogui == event.element) then
             -- chaining to turret gui
