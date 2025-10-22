@@ -77,7 +77,7 @@ end
 local function clicked(gae, event)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINEST)
     local entity = event.element.entity
-    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINEST)
+    Log.logEntity(entity, function(m)log(m)end, Log.FINEST)
 
     components.openNewGui(event.player_index, entity, nil, entity)
 end

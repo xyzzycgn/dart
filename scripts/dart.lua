@@ -352,7 +352,7 @@ end
 --- @param entity LuaEntity the new asteroid
 local function newAsteroid(knownAsteroids, entity, fromEvent)
     -- new asteroid
-    Log.logLine(dump.dumpEntity(entity), function(m)log(m)end, Log.FINEST)
+    Log.logEntity(entity, function(m)log(m)end, Log.FINEST)
     script.raise_event(on_asteroid_detected_event, {
         asteroid = entity, fromEvent = fromEvent, un = entity.unit_number, reason = "detected" })
     local target = {
@@ -648,7 +648,7 @@ local function fragments(dest_target)
         if cand.valid then
             local cun = cand.unit_number
             if (cun ~= dest_target.aun) and not knownAsteroids[cun] then
-                Log.logBlock(function()dump.dumpEntity(cand)end, function(m)log(m)end, Log.FINEST)
+                Log.logEntity(cand, function(m)log(m)end, Log.FINEST)
 
                 newAsteroid(knownAsteroids, cand, true)
             end
