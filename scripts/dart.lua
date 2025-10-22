@@ -88,33 +88,6 @@ local asyncFragments
 
 -- ###############################################################
 
--- dump utilities
-
-local function dumpOneSurface(k, v)
-    return k .. " -> " .. serpent.block(dump.dumpSurface(v))
-end
-
-local function dumpSurfaces(table, sev)
-    Log.log("surfaces", function(m)log(m)end, sev)
-
-    for k, v in pairs(table) do
-        Log.log(dumpOneSurface(k, v), function(m)log(m)end, sev)
-    end
-end
-
-local function dumpOnePrototype(k, surface)
-    return k .. " -> " .. serpent.block(dump.dumpAsteroidPropertyPrototype(surface))
-end
-
-local function dumpPrototypes(sev)
-    Log.log("###### prototypes.surface_property", function(m)log(m)end, sev)
-
-    for k, v in pairs(prototypes.asteroid_chunk) do
-        Log.log(dumpOnePrototype(k, v), function(m)log(m)end, sev)
-    end
-end
--- ###############################################################
-
 --- Calculates whether an asteroid hits, grazes or passes the defended area.
 --- Defended area is defined by a circle with radius r and centerpoint at <xc, xc>
 --- equation (x - xc)² + (y - yc)² = r²
@@ -1250,9 +1223,6 @@ local function dart_initializer()
     initLogging()
     Log.log('D.A.R.T on_init', function(m)log(m)end)
 
-    dumpSurfaces(game.surfaces, Log.FINEST)
-    dumpPrototypes(Log.FINEST)
-
     global_data.init();
     searchDartInfrastructure()
     registerEvents()
@@ -1270,8 +1240,6 @@ end
 --- init D.A.R.T on every mod update or change
 local function dart_config_changed()
     Log.log('D.A.R.T config_changed', function(m)log(m)end)
-    dumpSurfaces(game.surfaces, Log.FINEST)
-    dumpPrototypes(Log.FINEST)
 
     global_data.init();
     checkRemovedAmmoTypes()

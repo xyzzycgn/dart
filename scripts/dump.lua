@@ -7,8 +7,6 @@
 local internalEvents = require("scripts.internalEvents")
 
 
-local dump = {}
-
 local reverseTypes = {}
 
 local function fillReverseTypes(types)
@@ -33,85 +31,9 @@ local function getTypeName(types, value)
 end
 -- ###############################################################
 
---- @param surface LuaSurface
-local function dumpPlatformOfSurface(surface)
-    local platform = surface.platform
-
-    if platform then
-        local dp = {}
-
-        dp.name = platform.name
-        dp.force = platform.force
-        dp.state = platform.state
-        dp.speed = platform.speed
-        dp.space_location = platform.space_location
-        dp.last_visited_space_location = platform.last_visited_space_location
-
-        return dp
-    end
-
-    return nil
-end
--- ###############################################################
-
---- @param surface LuaSurface
-function dump.dumpSurface(surface)
-    local ds = {}
-
-    if surface then
-        ds.name = surface.name
-        ds.localised_name  = surface.localised_name
-        ds.platform = dumpPlatformOfSurface(surface)
-        ds.planet = surface.planet
-        --ds.map_gen_settings = surface.map_gen_settings
-        ds.wind_speed = surface.wind_speed
-        ds.wind_orientation = surface.wind_orientation
-        ds.wind_orientation_change = surface.wind_orientation_change
-        ds.has_global_electric_network = surface.has_global_electric_network
-    end
-
-    return ds
-end
--- ###############################################################
-
-local function dumpGroupCommon(group)
-    local dg = {
-        name = group.name,
-        type = group.type,
-        object_name = group.object_name,
-    }
-
-    return dg
-end
-
-local function dumpGroup(group)
-    local dg = dumpGroupCommon(group)
-
-    dg.subgroups = group.subgroups
-
-    return dg
-end
-
--- ###############################################################
-
-function dump.dumpAsteroidPropertyPrototype(prototype)
-    local dp = prototype and {
-        name = prototype.name,
-        object_name = prototype.object_name,
-        type = prototype.type,
-        order = prototype.order,
-        hidden = prototype.hidden,
-        localised_name = prototype.localised_name,
-        group = dumpGroup(prototype.group),
-    } or {}
-
-    return dp
-end
--- ###############################################################
-
 --- @param entity LuaEntity
 --- @param is_turret boolean
-function dump.dumpEntity(entity, is_turret)
+local function dumpEntity(entity, is_turret)
     if entity.valid then
         local de = {
             force = entity.force,
@@ -153,6 +75,7 @@ local function dumpCircuitNetwork(cn)
 
     return dcn
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function dumpCircuitNetworks(cb)
     local dcn = {}
@@ -170,7 +93,7 @@ local function dumpCircuitNetworks(cb)
 
     return dcn
 end
--- ###############################################################
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function turretOnly(cb, dcb)
     if cb and (cb.type == defines.control_behavior.type.turret) then
@@ -178,8 +101,9 @@ local function turretOnly(cb, dcb)
         dcb.disabled = cb.disabled
     end
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-function dump.dumpControlBehavior(cb)
+local function dumpControlBehavior(cb)
     local dcb = cb and {
         circuit_networks = dumpCircuitNetworks(cb),
         type = cb.type,
@@ -192,7 +116,7 @@ end
 -- ###############################################################
 
 --- @param lge LuaGuiElement
-function dump.dumpLuaGuiElement(lge)
+local function dumpLuaGuiElement(lge)
     local dlge = lge and {
         type = getTypeName("gui_type", lge.type),
         children_names = lge.children_names,
@@ -207,6 +131,7 @@ function dump.dumpLuaGuiElement(lge)
 
     return dlge
 end
+-- ###############################################################
 
 local function tableCopy(obj)
     if type(obj) ~= 'table' then return obj end
@@ -216,11 +141,10 @@ local function tableCopy(obj)
     end
     return res
 end
-
-
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param event EventData
-function dump.dumpEvent(event)
+local function dumpEvent(event)
     local function f()
         local erg = tableCopy(event)
         erg.gui_type = getTypeName("gui_type", event.gui_type)
@@ -230,5 +154,13 @@ function dump.dumpEvent(event)
 
     return event and f() or {}
 end
+-- ###############################################################
 
+local dump = {
+    dumpEvent = dumpEvent,
+    dumpLuaGuiElement = dumpLuaGuiElement,
+    dumpControlBehavior = dumpControlBehavior,
+    dumpEntity = dumpEntity,
+    dumpSurface = dumpSurface,
+}
 return dump
