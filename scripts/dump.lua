@@ -25,7 +25,7 @@ local function getTypeName(types, value)
             fillReverseTypes(types)
         end
 
-        return reverseTypes[types][value] or ((types == "events") and internalEvents.getEventName(value)) or ("unknown-" .. types)
+        return reverseTypes[types][value] or ("unknown-" .. types .. (((type(types) == "number") and ("=" .. types)) or ""))
     end
     return nil
 end
@@ -161,6 +161,5 @@ local dump = {
     dumpLuaGuiElement = dumpLuaGuiElement,
     dumpControlBehavior = dumpControlBehavior,
     dumpEntity = dumpEntity,
-    dumpSurface = dumpSurface,
 }
 return dump

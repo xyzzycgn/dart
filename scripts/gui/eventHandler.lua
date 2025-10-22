@@ -15,7 +15,7 @@ local eventHandler = {}
 local function sort_clicked_handler(gae, event)
     --- @type LuaGuiElement
     local element =  event.element
-    Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINEST)
+    Log.logBlock({ event = dump.dumpEvent(event), element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINEST)
     Log.logBlock({ active = gae.activeTab, sortings = gae.sortings}, function(m)log(m)end, Log.FINEST)
 
     local column = element.name
@@ -87,6 +87,7 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 function eventHandler.close(gae, event)
+    Log.logBlock(event, function(m)log(m)end, Log.FINE)
     Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINE)
     local guis = global_data.getPlayer_data(event.player_index).guis
     local guiToBeCLosed = gae.gui
