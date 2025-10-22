@@ -9,9 +9,14 @@ local internalEvents = require("scripts.internalEvents")
 
 local reverseTypes = {}
 
+local defines_types = {
+    gui_type = defines.gui_type,
+    events = defines.events
+}
+
 local function fillReverseTypes(types)
     local rtypes = {}
-    for k,v in pairs(defines.events) do
+    for k,v in pairs(defines_types[types] or {}) do
         rtypes[v] = k
     end
 
@@ -144,15 +149,15 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param event EventData
-local function dumpEvent(event)
-    local function f()
+function dump.dumpEvent(event)
+    if event then
         local erg = tableCopy(event)
         erg.gui_type = getTypeName("gui_type", event.gui_type)
         erg.name = getTypeName("events", event.name)
         return erg
     end
 
-    return event and f() or {}
+    return {}
 end
 -- ###############################################################
 
