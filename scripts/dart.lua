@@ -1405,11 +1405,6 @@ end
 -- *8   + on_entity_cloned
 --==============================================================================
 
-
---- TODO scan for platforms that have been wiped
---- workaround for missing event(s) when clearing a surface ("remove all enties") in editor mode (that triggers nothing!)
-local function updateDartInfrastructureAfterEditorMode()
-end
 --###############################################################
 
 local function alterSetting(event, which, func)
@@ -1449,8 +1444,6 @@ local function toggleMapEditor(event)
         local editorMode = pd.editorMode
         if editorMode then
             editorMode = false
-            -- TODO try to fix the missing event for "remove all enties"
-            updateDartInfrastructureAfterEditorMode()
         else
             editorMode = true
         end
