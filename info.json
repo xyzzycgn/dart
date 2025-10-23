@@ -4,12 +4,12 @@
   "description": "save ammunition by smarter targeting",
   "author": "xyzzycgn",
   "homepage": "https://github.com/xyzzycgn/dart.git",
-  "version": "1.0.17",
+  "version": "1.1.0",
   "factorio_version": "2.0",
   "dependencies": [
     "space-age >= 2.0.41",
     "flib >= 0.16.2",
-    "log4factorio >= 0.1.0",
+    "log4factorio >= 0.2.1",
     "? vtk-cannon-turret >= 2.3.2",
     "? RampantArsenalFork >= 1.0.3"
   ],

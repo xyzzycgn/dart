@@ -42,6 +42,21 @@ styles.dart_controls_flow = {
     horizontal_spacing = 16
 }
 
+styles.dart_bottom_button_frame = {
+    type = "frame_style",
+    parent = "inside_shallow_frame_with_padding",
+    vertically_stretchable = "off",
+    horizontally_stretchable = "on",
+    horizontal_align = "center",
+}
+
+styles.dart_bottom_button_flow = {
+    type = "horizontal_flow_style",
+    vertically_stretchable = "off",
+    horizontally_stretchable = "on",
+    horizontal_align = "center",
+}
+
 styles.dart_controls_textfield = {
     type = "textbox_style",
     width = 36

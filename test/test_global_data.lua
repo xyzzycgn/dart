@@ -7,8 +7,6 @@ local lu = require('lib.luaunit')
 local gd = require('scripts.global_data')
 local PlayerData = require('scripts.player_data')
 
-local serpent = require("lib.serpent")
-
 -- needed by Log.log() which is called by init()
 function log()
 end
@@ -58,17 +56,5 @@ function TestGlobalData:test_addPlayerGetPLayerWithRealPD()
     lu.assertEquals(fromGD, pd)
 end
 -- ###############################################################
-
-local function checkDart(dart, output, run, oun, cb)
-    run = run or 4711
-    oun = oun or 0815
-    cb = cb or "mocked CB"
-    lu.assertNotNil(dart)
-    lu.assertEquals(dart.output_un, oun)
-    lu.assertEquals(dart.radar_un, run)
-    lu.assertEquals(dart.control_behavior, cb)
-    lu.assertEquals(dart.output, output)
-end
-
 
 BaseTest:hookTests()

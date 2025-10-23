@@ -6,7 +6,6 @@
 require('test.BaseTest')
 local lu = require('lib.luaunit')
 
-require('factorio_def')
 local asyncHandler = require('scripts.asyncHandler')
 
 TestAsyncHandler = {}

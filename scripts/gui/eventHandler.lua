@@ -3,7 +3,7 @@
 ---
 local Log = require("__log4factorio__.Log")
 local flib_gui = require("__flib__.gui")
-local dump = require("scripts.dump")
+local dump = require("__log4factorio__.dump")
 local global_data = require("scripts.global_data")
 local components = require("scripts.gui.components")
 
@@ -15,7 +15,7 @@ local eventHandler = {}
 local function sort_clicked_handler(gae, event)
     --- @type LuaGuiElement
     local element =  event.element
-    Log.logBlock({ event = event, element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINEST)
+    Log.logBlock({ event = dump.dumpEvent(event), element = dump.dumpLuaGuiElement(element) }, function(m)log(m)end, Log.FINEST)
     Log.logBlock({ active = gae.activeTab, sortings = gae.sortings}, function(m)log(m)end, Log.FINEST)
 
     local column = element.name
@@ -39,7 +39,7 @@ local function sort_clicked_handler(gae, event)
         sortings.active = column
     end
 
-    script.raise_event(on_dart_gui_needs_update, { player_index = event.player_index, entity = gae.entity } )
+    script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = gae.entity } )
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -77,7 +77,7 @@ end
 local function clicked(gae, event)
     Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINEST)
     local entity = event.element.entity
-    Log.logBlock(dump.dumpEntity(entity), function(m)log(m)end, Log.FINEST)
+    Log.logEntity(entity, function(m)log(m)end, Log.FINEST)
 
     components.openNewGui(event.player_index, entity, nil, entity)
 end
@@ -87,7 +87,8 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 function eventHandler.close(gae, event)
-    Log.logBlock({ gae=gae, event=dump.dumpEvent(event)}, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logBlock(gae, function(m)log(m)end, Log.FINER)
     local guis = global_data.getPlayer_data(event.player_index).guis
     local guiToBeCLosed = gae.gui
     guis.recentlyopen = guis.recentlyopen or {}
@@ -101,7 +102,7 @@ function eventHandler.close(gae, event)
         gae.highlight = nil
     end
 
-    Log.logBlock(ropen, function(m)log(m)end, Log.FINE)
+    Log.logBlock(ropen, function(m)log(m)end, Log.FINER)
     Log.logLine((ropen and ropen.gui) == event.element, function(m)log(m)end, Log.FINER)
 
     -- 3 cases
@@ -113,7 +114,7 @@ function eventHandler.close(gae, event)
     -- close or chaining gui?
     if ropen and ropen.gui then
         local rogui = ropen.gui
-        Log.logBlock(dump.dumpLuaGuiElement(rogui), function(m)log(m)end, Log.FINE)
+        Log.logLuaGuiElement(rogui, function(m)log(m)end, Log.FINER)
         -- chaining gui?
         if (rogui.valid and rogui == event.element) then
             -- chaining to turret gui
@@ -133,18 +134,14 @@ function eventHandler.close(gae, event)
             -- make former gui visible again
             ropen.gui.visible = true
             guis.open = ropen
-            --if (not event.entity) then
-            --    event.entity = gae.entity
-            --end
-            Log.log("raise on_dart_gui_needs_update", function(m)log(m)end, Log.FINE)
-            --script.raise_event(on_dart_gui_needs_update, event)
-            script.raise_event(on_dart_gui_needs_update, { player_index = event.player_index, entity = ropen.entity })
+            Log.log("raise on_dart_gui_needs_update_event", function(m)log(m)end, Log.FINER)
+            script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = ropen.entity })
         end
     else
         -- close single gui - either fcc or turret
         if components.checkIfValidGuiElement(guiToBeCLosed) then
             -- must be fcc
-            Log.log("destroy custom gui", function(m)log(m)end, Log.FINE)
+            Log.log("destroy custom gui", function(m)log(m)end, Log.FINER)
             guiToBeCLosed.destroy()
             guis.open = nil
         end

@@ -8,7 +8,7 @@ local components = require("scripts/gui/components")
 local utils = require("scripts/utils")
 local eventHandler = require("scripts/gui/eventHandler")
 local global_data = require("scripts.global_data")
-local dump = require("scripts.dump")
+local dump = require("__log4factorio__.dump")
 local constants = require("scripts.constants")
 
 local radars = {}
@@ -128,6 +128,7 @@ function radars.buildGui(player, rop)
 
     return elems, gui
 end
+-- ###############################################################
 
 -- as vanilla radar (and thus also dart-radar) doesn't have a standard gui a special handling is required
 --- @param gae GuiAndElements
@@ -187,12 +188,7 @@ handlers = {
 }
 
 -- register local handlers in flib
-flib_gui.add_handlers(handlers, function(e, handler)
-    local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
-    if guiAndElements then
-        handler(guiAndElements, e)
-    end
-end)
+components.add_handler(handlers)
 -- ###############################################################
 
 local function names(ndx)
@@ -263,6 +259,19 @@ local function sort_checkbox(name)
 end
 -- ###############################################################
 
+---  @return Sortings defaults for the turret tab
+function radars.sortings()
+    return {
+        sorting = {
+            [sortFields.unit] = false,
+            [sortFields.detect] = false,
+            [sortFields.defense] = false,
+        },
+        active = ""
+    }
+end
+-- ###############################################################
+
 --- @param data1 RadarOnPlatform
 --- @param data2 RadarOnPlatform
 --- @return true if backer_name of data1 < backer_name of data2
@@ -320,19 +329,6 @@ function radars.update(elems, data, pd)
     end
 
     components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow, updateTableRow)
-end
--- ###############################################################
-
----  @return Sortings defaults for the turret tab
-function radars.sortings()
-    return {
-        sorting = {
-            [sortFields.unit] = false,
-            [sortFields.detect] = false,
-            [sortFields.defense] = false,
-        },
-        active = ""
-    }
 end
 -- ###############################################################
 

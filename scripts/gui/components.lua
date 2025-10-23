@@ -135,7 +135,7 @@ function components.slot_table(name, size)
     size = size or 4
     return {
         type = "frame",
-        style = "rldman_small_slot_table_frame",
+        style = "dart_small_slot_table_frame",
         {
             type = "flow",
             direction = "horizontal",
@@ -189,17 +189,17 @@ function components.addSprites2Slots(slot_table, data, func)
             if not button then
                 _, button = flib_gui.add(slot_table, {
                     type = "sprite-button",
-                    style = "rldman_small_slot_button_default",
+                    style = "dart_small_slot_button_default",
                 })
             end
 
             button.sprite = sprite
             -- set number and/or other fields (e.g. tooltip)
             if (func) then
-                func(button, v)
+                func(button, v, k)
             end
         else
-            Log.log("sprite-path not valid: '" .. sprite .. "'", function(m)log(m)end, Log.WARN)
+            Log.logMsg(function(m)log(m)end, Log.WARN, "sprite-path not valid: '%s'", sprite)
         end
     end
     -- remove obsolete former entries
@@ -241,7 +241,7 @@ function components.updateVisualizedData(gae, data,
     local rows = gae.rowsShownLastInTab or {}
     local old_number = rows[gae.activeTab] or 0
 
-    Log.log("oldn = " .. old_number .. ", newn=" .. new_number, function(m)log(m)end, Log.FINER)
+    Log.logMsg(function(m)log(m)end, Log.FINER, "oldn = %s, newn = %s", old_number, new_number)
 
     -- update tab-label with new count
     tab.badge_text = flib_format.number(new_number)
@@ -250,7 +250,7 @@ function components.updateVisualizedData(gae, data,
     for _, v in pairs(data) do
         if (ndx <= new_number) and (ndx <= old_number) then
             -- update existing rows with new data
-            Log.log("update entry@" .. ndx, function(m)log(m)end, Log.FINER)
+            Log.logMsg(function(m)log(m)end, Log.FINER, "update entry@%s", ndx)
             updateTableRow(table, v, ndx)
         else
             -- more active => add new entries at the end of table
@@ -264,7 +264,7 @@ function components.updateVisualizedData(gae, data,
         -- less active => remove entries at the end of table
         local firstRow2remove = ndx
         while (ndx <= old_number) do
-            Log.log("remove old entry@" .. ndx, function(m)log(m)end, Log.FINER)
+            Log.logMsg(function(m)log(m)end, Log.FINER, "remove old entry@%s", ndx)
             funcRemoveTableRow(table, firstRow2remove)
             ndx = ndx + 1
         end
@@ -281,7 +281,7 @@ end
 --- @param gui LuaGuiElement | LuaEntity new gui to open
 --- @return PlayerData
 function components.openNewGui(player_index, gui, elems, entity)
-    Log.logBlock({player_index = player_index, gui = gui, elems = elems, entity = entity}, function(m)log(m)end, Log.FINE)
+    Log.logBlock({player_index = player_index, gui = gui, elems = elems, entity = entity}, function(m)log(m)end, Log.FINER)
 
     local pd = global_data.getPlayer_data(player_index)
     local player = game.get_player(player_index)
@@ -317,9 +317,36 @@ function components.openNewGui(player_index, gui, elems, entity)
 
     return pd
 end
+-- ###############################################################
 
+--- @param flag boolean
+--- @return SwitchState
+function components.switchState(flag)
+    return flag and "right" or "left"
+end
+-- ###############################################################
 
+local switch = {
+    left = false,
+    right = true
+}
+--- converts a SwitchState to boolean
+--- @param state SwitchState
+--- @return boolean|nil "right" -> true, "left" -> false, "none" -> nil
+function components.switchStateAsBoolean(state)
+    return switch[state]
+end
+-- ###############################################################
 
-
+--- register local handlers in flib
+--- @param handlers any array with handler to be registered
+function components.add_handler(handlers)
+    flib_gui.add_handlers(handlers, function(e, handler)
+        local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
+        if guiAndElements then
+            handler(guiAndElements, e)
+        end
+    end)
+end
 
 return components

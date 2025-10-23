@@ -5,12 +5,12 @@
 --- Build the D.A.R.T Main UI window
 
 local Log = require("__log4factorio__.Log")
-local dump = require("scripts.dump")
 local global_data = require("scripts.global_data")
 local components = require("scripts.gui.components")
 local eventHandler = require("scripts.gui.eventHandler")
 local radars = require("scripts.gui.radars")
 local turrets = require("scripts.gui.turrets")
+local ammos = require("scripts.gui.ammos")
 
 local flib_gui = require("__flib__.gui")
 local flib_format = require("__flib__.format")
@@ -29,11 +29,22 @@ local function update_turrets(elems, pons, pd)
     turrets.update(elems, pons, pd)
 end
 
+--- @param elems GuiAndElements
+--- @param pons Pons
+--- @param pd PlayerData
+local function update_ammos(elems, pons, pd)
+    ammos.update(elems, pons, pd)
+end
+
 local switch = {
     [1] = update_radars,
     [2] = update_turrets,
+    [3] = update_ammos,
 }
 
+--- @param pd PlayerData
+--- @param opengui GuiAndElements
+--- @param event EventData
 local function update_main(pd, opengui, event)
     ---  @type LuaEntity
     local entity = event.entity
@@ -47,32 +58,36 @@ local function update_main(pd, opengui, event)
         end
     end
 
+    -- show the numbers of known radars, turrets, ammo types
     if ponsOfEntity then
-        -- show the numbers of known radars and turrets
         opengui.elems.radars_tab.badge_text = flib_format.number(table_size(ponsOfEntity.radarsOnPlatform))
         -- turrets may be controlled by other FCC => don't use simply ponsOfEntity.turretsOnPlatform
         opengui.elems.turrets_tab.badge_text = flib_format.number(table_size(turrets.dataForPresentation(opengui, ponsOfEntity)))
+        -- need to know the stock in hub
+        opengui.elems.ammos_tab.badge_text = flib_format.number(table_size(ammos.dataForPresentation(opengui, ponsOfEntity)))
 
         local func = switch[opengui.activeTab]
         if (func) then
             func(opengui, ponsOfEntity, pd)
         else
-            Log.log("no func for ndx=" .. opengui.activeTab, function(m)log(m)end, Log.WARN)
+            Log.logMsg(function(m)log(m)end, Log.WARN, "no func for ndx=%s", opengui.activeTab)
         end
+        -- prevent input fields from being overiden on next update
+        opengui.fields_initialized = true
     else
-        Log.log("no valid pons for entity=" .. entity.unit_number, function(m)log(m)end, Log.WARN)
+        Log.logMsg(function(m)log(m)end, Log.WARN, "no valid pons for entity=%s", entity.unit_number)
     end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function update_gui(event)
-    Log.logLine(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
         -- the actual opened gui
         local opengui = pd.guis.open
-        Log.logLine(opengui, function(m)log(m)end, Log.FINE)
+        Log.logLine(opengui, function(m)log(m)end, Log.FINER)
         -- fix for #28
         -- ignore events raised when no (D.A.R.T.) gui is open
         if opengui and opengui.elems then
@@ -98,8 +113,9 @@ end
 local function change_tab(gae, event)
     local tab = event.element
     gae.activeTab = tab.selected_tab_index
+    gae.fields_initialized = false  -- force all fields to be initialized
     event.entity = gae.entity -- pimp the event ;-)
-    script.raise_event(on_dart_gui_needs_update, event)
+    script.raise_event(on_dart_gui_needs_update_event, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -166,6 +182,7 @@ local function build(player, entity)
                   handler = { [defines.events.on_gui_selected_tab_changed] = handlers.change_tab },
                   radars.build(),
                   turrets.build(),
+                  ammos.build(),
               },
             }
         }
@@ -177,9 +194,9 @@ local function build(player, entity)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function gui_open(event)
+local function gui_opened(event)
     local entity = event.entity
-    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     if event.gui_type == defines.gui_type.entity and entity.type == "constant-combinator" and entity.name == "dart-fcc" then
 
         -- check whether there is an already open but hidden instance (see ticket #20)
@@ -193,7 +210,7 @@ local function gui_open(event)
         end
 
         if hiddengui then
-            Log.log("hidden gui already opened", function(m)log(m)end, Log.FINE)
+            Log.log("hidden gui already opened", function(m)log(m)end, Log.FINER)
             local player = game.get_player(event.player_index)
             player.opened = guis.open.gui
         else
@@ -202,31 +219,34 @@ local function gui_open(event)
 
             local pd = components.openNewGui(event.player_index, gui, elems, entity)
             elems.fcc_view.entity = entity
-            pd.guis.open.activeTab = 1
-            pd.guis.open.dart_gui_type = components.dart_guis.main_gui
+            local gae = pd.guis.open
+            gae.activeTab = 1
+            gae.dart_gui_type = components.dart_guis.main_gui
+            gae.fields_initialized = false   -- force all fields to be initialized
 
             -- prepare sorting
-            local allSortings = pd.guis.open.sortings or {}
+            local allSortings = gae.sortings or {}
             allSortings[1] = allSortings[1] or radars.sortings()
             allSortings[2] = allSortings[2] or turrets.sortings()
-            pd.guis.open.sortings = allSortings
+            allSortings[3] = allSortings[3] or ammos.sortings()
+            gae.sortings = allSortings
         end
 
-        script.raise_event(on_dart_gui_needs_update, event)
+        script.raise_event(on_dart_gui_needs_update_event, event)
     elseif event.gui_type == defines.gui_type.custom then
         local pd = global_data.getPlayer_data(event.player_index)
         local entity = pd and pd.guis and pd.guis.open and pd.guis.open.entity
         Log.logBlock(entity, function(m)log(m)end, Log.FINER)
         if entity and entity.name == "dart-radar" then
             event.entity = entity -- pimp the event ;-)
-            script.raise_event(on_dart_gui_needs_update, event)
+            script.raise_event(on_dart_gui_needs_update_event, event)
         end
     end
 end
 -- ###############################################################
 
-local function standard_gui_closed(event) -- TODO better name for function
-    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINEST)
+local function gui_closed(event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINEST)
     local pd = global_data.getPlayer_data(event.player_index)
     --- @type LuaEntity
     local entity = event.entity
@@ -256,7 +276,7 @@ end
 
 -- delegates the on_dart_gui_close event to the standard handler
 local function handle_on_dart_gui_close(event)
-    Log.logBlock(dump.dumpEvent(event), function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     eventHandler.close(event.gae, event)
 end
 
@@ -265,15 +285,15 @@ end
 local dart_gui = {}
 
 dart_gui.events = {
-    [defines.events.on_gui_opened] = gui_open,
-    [defines.events.on_gui_closed] = standard_gui_closed,
+    [defines.events.on_gui_opened] = gui_opened,
+    [defines.events.on_gui_closed] = gui_closed,
 
     -- defined in internalEvents.lua
     [on_dart_component_build_event] = update_gui,
     [on_dart_component_removed_event] = update_gui,
-    [on_dart_gui_needs_update] = update_gui,
+    [on_dart_gui_needs_update_event] = update_gui,
 
-    [on_dart_gui_close] = handle_on_dart_gui_close
+    [on_dart_gui_close_event] = handle_on_dart_gui_close
 }
 
 return dart_gui

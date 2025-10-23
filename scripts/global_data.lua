@@ -12,6 +12,7 @@ function global_data.init()
     storage.players = storage.players or {}
     storage.platforms = storage.platforms or {}
     storage.queued = storage.queued or {}
+    storage.registeredEntities = storage.registeredEntities or {}
 end
 -- ###############################################################
 
@@ -44,6 +45,18 @@ function global_data.getRadarOnPlatform(entity)
     if (entity.name == "dart-radar") then
         return storage.platforms[entity.surface.index].radarsOnPlatform[entity.unit_number]
     end
+end
+-- ###############################################################
+
+--- all fccs, radars and ammo-turrets (for usage in "remove all entities" in editor mode - see ticket #52)
+--- @class RegisteredEntity any
+--- @field useful_id number id of entity
+--- @field referenceOnPlatform any reference to the according structure in pons
+---
+--- @return RegisteredEntity[] indexed by registrationNumber
+function global_data.getRegisteredEntities()
+    storage.registeredEntities = storage.registeredEntities or {}
+    return storage.registeredEntities
 end
 -- ###############################################################
 

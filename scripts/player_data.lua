@@ -15,6 +15,8 @@
 --- @field rowsShownLastInTab int[] (optional) number of rows shown in table on tab n the last time
 --- @field sortings Sortings[] (optional) sorting parameters for all columns in table on tab n
 --- @field highlight LuaEntity (optional) highlight-box used for marking hovered entity in main gui
+--- @field fields_initialized boolean LuaEntity (optional) flag if input fields have been initialized
+--- @field mayBeAutoConfigured TurretConnection?
 
 --- @class GuiData any
 --- @field recentlyopen GuiAndElements[] previously opened guis (hidden after opening a new one)
@@ -24,6 +26,7 @@
 --- @field player LuaPlayer the player to whom these data belong
 --- @field guis GuiData data of the opened guis
 --- @field pons Pons[] platforms owned by the player indexed by platform.index
+--- @field editorMode boolean flag whether player has entered editor mode
 
 local playerData = {}
 

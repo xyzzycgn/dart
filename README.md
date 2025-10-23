@@ -28,6 +28,7 @@ To control ammo turrets with D.A.R.T., you have to connect them with red or gree
 ![D.A.R.T. on a platform](https://github.com/xyzzycgn/dart/blob/main/doc/dart-on-platform.png?raw=true)
 
 ## Configuration
+### Manually
 Configuration can be done by simply opening the FCC 
 
 ![configure FCC](https://github.com/xyzzycgn/dart/blob/main/doc/dart-configure-main.png?raw=true)
@@ -55,6 +56,27 @@ To use D.A.R.T., it must be configured (per platform). This has to be done in th
 **Hint**
 D.A.R.T. controls a turret by setting its circuit network condition to 0 resp. 1.
 
+### Automatically (new in 1.1)
+
+Version 1.1 introduces an automatic configuration of the turrets, that should make this process much easier. Turrets 
+connected to a FCC which are unconfigured or not properly configured and show according warnings can be made operable
+by simply pressing the "automatic turret configuration" button.
+
+![show turrets](https://github.com/xyzzycgn/dart/blob/main/doc/dart-configure-main-turrets-automatically.png?raw=true)
+
+**Hint**
+Warnings triggered by an erroneous wiring - for example wiring the same turret with both green and red wire to a FCC -
+are not covered and must be solved by correcting the wiring.
+
+## Monitoring the ammunition stock (new in 1.1)
+
+D.A.R.T. has the ability to monitor the ammunition stock of a platform (located in the hub) and issues warnings as soon 
+as it falls below a configurable threshold. The thresholds are configurable per platform and ammo-type possibly used by 
+the turrets connected to the FCC. If you don't use a particular ammo-type you can disable the warnings for this type.
+
+![configure thresholds](https://github.com/xyzzycgn/dart/blob/main/doc/dart-configure-main-ammos.png?raw=true)
+
+
 ## Compatibility
 This mod is compatible to vanilla game (= space age) and other mods introducing new turrets derived from 
 ammo-turret prototype and/or new ammunition for these turrets.
@@ -66,6 +88,7 @@ some additional (specifically adapted for each mod) support by this mod (introdu
 Currently these mods are known to work fine with it:
 - [Cannon Turret](https://mods.factorio.com/mod/vtk-cannon-turret) [^2]
 - [Cupric Asteroids](https://mods.factorio.com/mod/cupric-asteroids) [^1] 
+- [Focused gun turrets](https://mods.factorio.com/mod/snouz_long_electric_gun_turret) [^1]
 - [Modular Turrets](https://mods.factorio.com/mod/scattergun_turret) [^1]
 - [Rampant Arsenal (Fork)](https://mods.factorio.com/mod/RampantArsenalFork) [^2]
 - [Schall Ammo Turrets](https://mods.factorio.com/mod/SchallAmmoTurrets) [^1][^3]

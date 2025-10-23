@@ -19,13 +19,22 @@ end
 settings = {
     global = {
         ["dart-logLevel"] = { value = 5 }, -- == Log.INFO
+    },
+    startup = {
+        ["dart-update-stock-period"] = { value = 10 }
     }
 }
 
 storage = {}
 
+local event_num = 1700
+
 script = {
-    mod_name = "TEST_OF_MOD"
+    mod_name = "TEST_OF_MOD",
+    generate_event_name = function()
+        event_num = event_num + 1
+        return event_num
+    end
 }
 
 defines = {
@@ -43,16 +52,6 @@ defines = {
         destination_full = 9,
     }
 }
-
--- simulating internal events - normally created in internalEvents
-on_target_assigned_event = 1704
-on_target_unassigned_event = 1705
-on_target_destroyed_event = 1706
-on_asteroid_detected_event = 1707
-on_asteroid_lost_event = 1708
-
-
-
 --########################################################
 
 BaseTest = {
