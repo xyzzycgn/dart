@@ -193,7 +193,7 @@ local function networkCondition(tc)
 
     local meta = { __index = function(t, key)
         return function()
-            Log.logLine(key, function(m)log(m)end, Log.FINE)
+            Log.logLine(key, function(m)log(m)end, Log.FINER)
             local capStyle = ccInvalidCapsAndStyles[key] or ccInvalidCapsAndStyles[utils.CircuitConditionChecks.unknown]
             lblcaption =  capStyle[1]
             lblstyle = capStyle[2]
@@ -486,7 +486,7 @@ function turrets.update(gae, pons, pd)
     -- show button if needed and autoConfigure is possible
     gae.elems.turrets_bottom_button_frame.visible = table_size(mayBeAutoConfigured) > 0
     gae.mayBeAutoConfigured = mayBeAutoConfigured -- remember misconfigured
-    Log.logBlock(gae, function(m)log(m)end, Log.FINE)
+    Log.logBlock(gae, function(m)log(m)end, Log.FINER)
 end
 -- ###############################################################
 

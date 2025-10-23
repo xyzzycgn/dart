@@ -81,13 +81,13 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function update_gui(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 
     local pd = global_data.getPlayer_data(event.player_index)
     if pd then
         -- the actual opened gui
         local opengui = pd.guis.open
-        Log.logLine(opengui, function(m)log(m)end, Log.FINE)
+        Log.logLine(opengui, function(m)log(m)end, Log.FINER)
         -- fix for #28
         -- ignore events raised when no (D.A.R.T.) gui is open
         if opengui and opengui.elems then
@@ -210,7 +210,7 @@ local function gui_opened(event)
         end
 
         if hiddengui then
-            Log.log("hidden gui already opened", function(m)log(m)end, Log.FINE)
+            Log.log("hidden gui already opened", function(m)log(m)end, Log.FINER)
             local player = game.get_player(event.player_index)
             player.opened = guis.open.gui
         else

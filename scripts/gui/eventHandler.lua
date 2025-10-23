@@ -88,7 +88,7 @@ end
 --- @param event EventData
 function eventHandler.close(gae, event)
     Log.logEvent(event, function(m)log(m)end, Log.FINE)
-    Log.logBlock(gae, function(m)log(m)end, Log.FINE)
+    Log.logBlock(gae, function(m)log(m)end, Log.FINER)
     local guis = global_data.getPlayer_data(event.player_index).guis
     local guiToBeCLosed = gae.gui
     guis.recentlyopen = guis.recentlyopen or {}
@@ -102,7 +102,7 @@ function eventHandler.close(gae, event)
         gae.highlight = nil
     end
 
-    Log.logBlock(ropen, function(m)log(m)end, Log.FINE)
+    Log.logBlock(ropen, function(m)log(m)end, Log.FINER)
     Log.logLine((ropen and ropen.gui) == event.element, function(m)log(m)end, Log.FINER)
 
     -- 3 cases
@@ -114,7 +114,7 @@ function eventHandler.close(gae, event)
     -- close or chaining gui?
     if ropen and ropen.gui then
         local rogui = ropen.gui
-        Log.logLuaGuiElement(rogui, function(m)log(m)end, Log.FINE)
+        Log.logLuaGuiElement(rogui, function(m)log(m)end, Log.FINER)
         -- chaining gui?
         if (rogui.valid and rogui == event.element) then
             -- chaining to turret gui
@@ -134,14 +134,14 @@ function eventHandler.close(gae, event)
             -- make former gui visible again
             ropen.gui.visible = true
             guis.open = ropen
-            Log.log("raise on_dart_gui_needs_update_event", function(m)log(m)end, Log.FINE)
+            Log.log("raise on_dart_gui_needs_update_event", function(m)log(m)end, Log.FINER)
             script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = ropen.entity })
         end
     else
         -- close single gui - either fcc or turret
         if components.checkIfValidGuiElement(guiToBeCLosed) then
             -- must be fcc
-            Log.log("destroy custom gui", function(m)log(m)end, Log.FINE)
+            Log.log("destroy custom gui", function(m)log(m)end, Log.FINER)
             guiToBeCLosed.destroy()
             guis.open = nil
         end

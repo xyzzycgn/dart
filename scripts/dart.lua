@@ -813,7 +813,7 @@ local function newFcc(entity)
     fop[fccun] = dart
 
     registerNewEntity(entity, fop)
-    Log.logBlock(dart, function(m)log(m)end, Log.FINE)
+    Log.logBlock(dart, function(m)log(m)end, Log.FINER)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -871,14 +871,14 @@ local function removedRadar(entity, event)
         if pd and pd.guis and pd.guis.open then
             -- there is an open GUI
             local opengui = pd.guis.open -- the actual opened gui
-            Log.logBlock(opengui, function(m)log(m)end, Log.FINE)
+            Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
 
             if opengui and opengui.entity and (opengui.entity.unit_number == entity.unit_number) then
                 -- for the deleted dart-radar
                 event.gae = opengui
                 event.player_index = player.index
                 -- close the opened gui for this dart-radar
-                Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINE)
+                Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINER)
                 script.raise_event(on_dart_gui_close_event, event)
             end
         end
@@ -1011,7 +1011,7 @@ end
 --- as this is called from on_init, there can't be any dart-radar/dart-fcc enties
 --- that's why we only look for turrets on platforms
 local function searchDartInfrastructure()
-    Log.log("searchDartInfrastructure", function(m)log(m)end, Log.FINE)
+    Log.log("searchDartInfrastructure", function(m)log(m)end, Log.FINER)
 
     searchPlatforms()
 

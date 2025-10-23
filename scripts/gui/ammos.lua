@@ -240,7 +240,7 @@ function ammos.update(elems, pons, pd)
 
     local gae = pd.guis.open
 
-    Log.logLine(gae, function(m)log(m)end, Log.FINE)
+    Log.logLine(gae, function(m)log(m)end, Log.FINER)
 
     local sortings = gae.sortings[gae.activeTab] -- ammos are on 3rd tab
     local active = sortings.active
@@ -312,7 +312,7 @@ local function save_clicked(gae, event)
     local thresholds = fop.ammo_warning.thresholds
 
     local sorteddata = presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType)
-    Log.logBlock( sorteddata, function(m)log(m)end, Log.FINE)
+    Log.logBlock( sorteddata, function(m)log(m)end, Log.FINER)
 
     for ndx, v in pairs(sorteddata) do
         local _, _, switch, threshold = names(ndx)
