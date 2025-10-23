@@ -936,6 +936,7 @@ end
 
 --- event handler called if a dart-fcc/dart-radar or a turret is destroyed
 --- (triggered by "remove all entities" in editor mode - see ticket #52)
+--- or by destruction of entity (e.g. by an asteroid hit)
 local function onObjectDestroyed(event)
     Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local res = global_data.getRegisteredEntities()
@@ -943,7 +944,7 @@ local function onObjectDestroyed(event)
     if re then
         -- entities seem to be already invalid when this event is triggered
         -- so it's not feasible to use the remove* functions used by normal game play
-        re.referenceOnPlatform[re.useful_id] = nil -- remove from internal lists
+        re.referenceOnPlatform[re.useful_id] = nil -- remove from internal list, e.g. pons.turretsOnPlatform
         res[event.registration_number] = nil
     end
 end
