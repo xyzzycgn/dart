@@ -56,7 +56,7 @@ To use D.A.R.T., it must be configured (per platform). This has to be done in th
 **Hint**
 D.A.R.T. controls a turret by setting its circuit network condition to 0 resp. 1.
 
-### Automatically
+### Automatically (new in 1.1)
 
 Version 1.1 introduces an automatic configuration of the turrets, that should make this process much easier. Turrets 
 connected to a FCC which are unconfigured or not properly configured and show according warnings can be made operable
@@ -88,6 +88,7 @@ some additional (specifically adapted for each mod) support by this mod (introdu
 Currently these mods are known to work fine with it:
 - [Cannon Turret](https://mods.factorio.com/mod/vtk-cannon-turret) [^2]
 - [Cupric Asteroids](https://mods.factorio.com/mod/cupric-asteroids) [^1] 
+- [Focused gun turrets](https://mods.factorio.com/mod/snouz_long_electric_gun_turret) [^1]
 - [Modular Turrets](https://mods.factorio.com/mod/scattergun_turret) [^1]
 - [Rampant Arsenal (Fork)](https://mods.factorio.com/mod/RampantArsenalFork) [^2]
 - [Schall Ammo Turrets](https://mods.factorio.com/mod/SchallAmmoTurrets) [^1][^3]
