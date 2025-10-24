@@ -802,18 +802,23 @@ local function newFcc(entity)
     local fccun = entity.unit_number
     -- the tuple of dart-fcc and its control_behavior
     --- @type FccOnPlatform
-    local dart = {
+    local fop = {
         fcc_un = fccun,
         fcc = entity,
         control_behavior = entity.get_or_create_control_behavior(),
-        ammo_warning_threshold = settings.global["dart-low-ammo-warning-threshold-default"].value
+        ammo_warning_threshold = settings.global["dart-low-ammo-warning-threshold-default"].value,
+        -- initialize ammo_warning tables to prevent several potential nil accesses - see #55
+        ammo_warning = {
+            turret_types =  {},
+            thresholds = {}
+        }
     }
     -- save it in platform
-    local fop = global_data.getPlatforms()[entity.surface.index].fccsOnPlatform
-    fop[fccun] = dart
+    local fops = global_data.getPlatforms()[entity.surface.index].fccsOnPlatform
+    fops[fccun] = fop
 
-    registerNewEntity(entity, fop)
-    Log.logBlock(dart, function(m)log(m)end, Log.FINER)
+    registerNewEntity(entity, fops)
+    Log.logBlock(fop, function(m)log(m)end, Log.FINE)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
