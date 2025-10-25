@@ -1053,11 +1053,16 @@ end
 local function onSurfaceCleared(event)
     Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local pons = global_data.getPlatforms()[event.surface_index]
-    pons.turretsOnPlatform = {}
-    pons.fccsOnPlatform = {}
-    pons.radarsOnPlatform = {}
-    pons.knownAsteroids = {}
-    pons.ammoInStockPerType = {}
+    if pons then
+        pons.turretsOnPlatform = {}
+        pons.fccsOnPlatform = {}
+        pons.radarsOnPlatform = {}
+        pons.knownAsteroids = {}
+        pons.ammoInStockPerType = {}
+    else
+        local gs = game.surfaces[event.surface_index]
+        Log.logMsg(function(m)log(m)end, Log.WARN, "on_surface_cleared for yet unknown surface %s - surface_index = %d", gs, event.surface_index)
+    end
 end
 -- ###############################################################
 
