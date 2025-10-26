@@ -177,8 +177,8 @@ data:extend({
     dart_radar_recipe,
     dart_fcc_recipe,
     technologies.dart_tech,
-    technologies.dart_tech_L1,
-    technologies.dart_tech_L2,
-    technologies.dart_tech_L3,
+    technologies.dart_tech_radar_range1,
+    technologies.dart_tech_radar_range2,
+    technologies.dart_tech_radar_range3,
 })
 
