@@ -8,6 +8,8 @@ local data_util = require('__flib__.data-util')
 local meld = require('meld') -- from lualib
 
 require("scripts.gui.styles") -- introduces styles specific for D.A.R.T
+-- introduces the D.A.R.T. technologies - see #61
+local technologies = require("scripts.technologies")
 
 -- fields for scaling (as long as we have only 2 possibilities the neat trick in scale() works)
 local fields = {
@@ -166,33 +168,6 @@ dart_fcc_item.subgroup = dart_radar_item.subgroup
 Log.logBlock(dart_fcc_item, function(m)log(m)end, Log.FINER)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
---- create the D.A.R.T-radar technology
-local dart_tech = {
-    name = 'dart-radar',
-    type = 'technology',
-    icon = "__dart__/graphics/technology/radar.png",
-    icon_size = 256,
-    icon_mipmaps = 4,
-
-    prerequisites = { "circuit-network", "radar", "space-platform" },
-    effects = {
-        { type = 'unlock-recipe', recipe = 'dart-radar' },
-        { type = 'unlock-recipe', recipe = 'dart-fcc' },
-    },
-
-    unit = {
-        count = 100,
-        ingredients = {
-            { "automation-science-pack", 2 },
-            { "military-science-pack", 1 },
-            { "space-science-pack", 1 },
-        },
-        time = 40,
-    },
-
-    order = "c-e-b2",
-}
-
 -- make all usable
 data:extend({
     dart_radar_item,
@@ -201,5 +176,9 @@ data:extend({
     dart_fcc_entity,
     dart_radar_recipe,
     dart_fcc_recipe,
-    dart_tech,
+    technologies.dart_tech,
+    technologies.dart_tech_L1,
+    technologies.dart_tech_L2,
+    technologies.dart_tech_L3,
 })
+

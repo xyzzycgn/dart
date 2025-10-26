@@ -1276,8 +1276,14 @@ end
 --###############################################################
 
 --- @param event EventData
+local function onResearchFinished(event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+end
+--###############################################################
+
+--- @param event EventData
 local function tbd(event)
-    Log.logEvent(event, function(m)log(m)end)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
@@ -1481,7 +1487,7 @@ dart.events = {
     [defines.events.on_surface_imported]             = onSurfaceImported,
 -- ^^^ mostly/only used in editor mode
 
-    [defines.events.on_object_destroyed ]            = onObjectDestroyed ,
+    [defines.events.on_object_destroyed ]            = onObjectDestroyed,
     [defines.events.script_raised_destroy]           = entityRemoved,
     [defines.events.on_surface_created]              = surfaceCreated,
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
@@ -1492,6 +1498,7 @@ dart.events = {
     [defines.events.on_player_changed_surface]       = playerChangedSurface,
     [defines.events.on_runtime_mod_setting_changed]  = changeSettings,
     [defines.events.on_player_toggled_map_editor]    = toggleMapEditor,
+    [defines.events.on_research_finished]            = onResearchFinished,
 
     [defines.events.on_tick] = asyncHandler.dequeue,
 
