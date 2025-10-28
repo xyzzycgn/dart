@@ -11,6 +11,7 @@ local asyncHandler = require("scripts.asyncHandler")
 local constants = require("scripts.constants")
 local utils = require("scripts.utils")
 local Hub = require("scripts.Hub")
+local force = require("scripts.events.force")
 local messaging = require("scripts.messaging")
 local ammoTurretMapping = require("scripts.ammoTurretMapping")
 
@@ -1278,6 +1279,31 @@ end
 --- @param event EventData
 local function onResearchFinished(event)
     Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    --- @type LuaTechnology
+    local research = event.research
+    local name = research and research.name
+    local darttech = constants.dart_technologies
+    if name and (string.sub(name, 1, #darttech) == darttech) then
+        Log.log("new darttech", function(m)log(m)end, Log.FINE)
+        local force = research.force
+        local existing_radars_pimped = false
+        for _, player in pairs(force.players) do
+            local pd = global_data.getPlayer_data(player.index)
+            -- as spaceplatforms belong to a force iterate only for one player over the radars
+            if pd and not existing_radars_pimped then
+                for _, pons in pairs(pd.pons) do
+                    for _, rop in pairs(pons.radarsOnPlatform) do
+                        -- incr techlevel
+                        local techlevel = rop.techlevel or 0
+                        techlevel = techlevel + 1
+                        rop.techlevel = techlevel
+                        local bonus = kconstants.range_bonus[techlevel]
+                    end
+                end
+                existing_radars_pimped = true
+            end
+        end
+    end
 end
 --###############################################################
 
@@ -1499,6 +1525,10 @@ dart.events = {
     [defines.events.on_runtime_mod_setting_changed]  = changeSettings,
     [defines.events.on_player_toggled_map_editor]    = toggleMapEditor,
     [defines.events.on_research_finished]            = onResearchFinished,
+
+    [defines.events.on_force_created]                = force.onForceCreated,
+    [defines.events.on_forces_merged]                = force.onForcesMerged,
+    [defines.events.on_force_reset]                  = force.onForceReset,
 
     [defines.events.on_tick] = asyncHandler.dequeue,
 

@@ -11,10 +11,13 @@ local constants = {
     default_defenseRange = 16,
 
     range_bonus = {
-        0.4,
+        0.45,
         0.15,
         0.05
-    }
+    },
+
+    -- prefix for internal names in tech tree
+    dart_technologies = "dart-radar-range-"
 }
 
 return constants
