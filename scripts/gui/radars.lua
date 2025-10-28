@@ -10,6 +10,7 @@ local eventHandler = require("scripts/gui/eventHandler")
 local global_data = require("scripts.global_data")
 local dump = require("__log4factorio__.dump")
 local constants = require("scripts.constants")
+local entities_radar = require("scripts.entities.radars")
 
 local radars = {}
 
@@ -53,7 +54,11 @@ end
 
 --- @param rop RadarOnPlatform
 local function getMaxDetectionRange(rop)
-    return getMaxBasedOnQuality(rop, constants.max_detectionRange)
+    Log.logBlock(rop.radar.force_index, function(m)log(m)end, Log.FINE)
+    Log.logBlock(storage.forces, function(m)log(m)end, Log.FINE)
+
+    local lvl = global_data.getForce_data(rop.radar.force_index).techLevel
+    return getMaxBasedOnQuality(rop, constants.max_detectionRange) * entities_radar.calculateRangeBonus(lvl)
 end
 -- ###############################################################
 

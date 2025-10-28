@@ -10,7 +10,8 @@ local player_data = require("scripts.player_data")
 local asyncHandler = require("scripts.asyncHandler")
 local constants = require("scripts.constants")
 local utils = require("scripts.utils")
-local Hub = require("scripts.Hub")
+local Hub = require("scripts.entities.Hub")
+local radars = require("scripts.entities.radars")
 local force = require("scripts.events.force")
 local player = require("scripts.events.player")
 local messaging = require("scripts.messaging")
@@ -1254,21 +1255,30 @@ local function onResearchFinished(event)
         Log.log("new darttech", function(m)log(m)end, Log.FINE)
         local force = research.force
         local existing_radars_pimped = false
-        for _, player in pairs(force.players) do
-            local pd = global_data.getPlayer_data(player.index)
-            -- as spaceplatforms belong to a force iterate only for one player over the radars
-            if pd and not existing_radars_pimped then
-                for _, pons in pairs(pd.pons) do
-                    for _, rop in pairs(pons.radarsOnPlatform) do
-                        -- incr techlevel
-                        local techlevel = rop.techlevel or 0
-                        techlevel = techlevel + 1
-                        rop.techlevel = techlevel
-                        local bonus = kconstants.range_bonus[techlevel]
+
+        local fd = global_data.getForce_data(force.index)
+        -- incr tecLevel
+        local techLevel = fd.techLevel or 0
+        techLevel = techLevel + 1
+        fd.techLevel = techLevel
+        local bonus = radars.calculateRangeBonus(techLevel)
+
+        -- enlarge detection range, if enabled
+        if settings.global["dart-auto-increment-detection-range"].value then
+            for _, player in pairs(force.players) do
+                local pd = global_data.getPlayer_data(player.index)
+                -- as spaceplatforms belong to a force iterate only for one player over the radars
+                if pd and not existing_radars_pimped then
+                    for _, pons in pairs(pd.pons) do
+                        for _, rop in pairs(pons.radarsOnPlatform) do
+                            rop.detectionRange = constants.max_defenseRange * bonus
+                        end
                     end
+                    existing_radars_pimped = true
                 end
-                existing_radars_pimped = true
             end
+        else
+            Log.log("auto enlarge of detection range disabled", function(m)log(m)end, Log.WARN)
         end
     end
 end
@@ -1431,10 +1441,11 @@ end
 local function changeSettings(e)
     -- local var to make lua happy
     local _ =
-        alterSetting(e, "dart-logLevel", function(newval) Log.setSeverity(Log[newval]) end)
+           alterSetting(e, "dart-logLevel", function(newval) Log.setSeverity(Log[newval]) end)
         or alterSetting(e, "dart-show-detection-area")
         or alterSetting(e, "dart-show-defended-area")
         or alterSetting(e, "dart-mark-targets")
+        or alterSetting(e, "dart-auto-increment-detection-range")
         or alterSetting(e, "dart-msgLevel")
         or alterSetting(e, "dart-low-ammo-warning")
         or alterSetting(e, "dart-low-ammo-warning-threshold-default")

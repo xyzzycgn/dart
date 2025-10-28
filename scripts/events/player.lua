@@ -29,7 +29,7 @@ end
 
 --- @param event EventData
 local function playerChangedSurface(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     local pd = global_data.getPlayer_data(event.player_index)
     local guis = pd and pd.guis
 
