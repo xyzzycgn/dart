@@ -29,5 +29,6 @@ jobs:
       - name: Run a multi-line script
         run: |
           ls -l
-          ls -l lib
+          ls -l ./lib
+          echo "BUUUHH"
           lua test/test_all.lua
