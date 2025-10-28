@@ -17,6 +17,8 @@ require('test.test_asyncHandler')
 require('test.test_hub')
 require('test.test_messaging')
 require('test.test_configure_turrets')
+require('test.test_force')
+require('test.test_force_data')
 
 BaseTest.hooked = false
 BaseTest:hookTests()

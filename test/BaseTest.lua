@@ -25,6 +25,15 @@ settings = {
     }
 }
 
+defines = {
+    print_sound = {
+        use_player_settings = true
+    },
+    print_skip = {
+        if_visible = true
+    }
+}
+
 storage = {}
 
 local event_num = 1700
@@ -52,6 +61,9 @@ defines = {
         destination_full = 9,
     }
 }
+
+require("scripts.internalEvents")
+
 --########################################################
 
 BaseTest = {
