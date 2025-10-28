@@ -19,6 +19,7 @@ require('test.test_messaging')
 require('test.test_configure_turrets')
 require('test.test_force')
 require('test.test_force_data')
+require('test.test_radars')
 
 BaseTest.hooked = false
 BaseTest:hookTests()
