@@ -3,6 +3,7 @@ local force_data = require("scripts.force_data")
 
 log("migration to 1.2.0 started")
 
+storage.forces = storage.forces or {}
 local known_forces = {}
 -- determine the forces the players belong to
 for _, player in pairs(game.players) do

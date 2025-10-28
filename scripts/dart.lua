@@ -12,6 +12,7 @@ local constants = require("scripts.constants")
 local utils = require("scripts.utils")
 local Hub = require("scripts.Hub")
 local force = require("scripts.events.force")
+local player = require("scripts.events.player")
 local messaging = require("scripts.messaging")
 local ammoTurretMapping = require("scripts.ammoTurretMapping")
 
@@ -618,22 +619,6 @@ end
 
 local function space_platform_changed_state(event)
     Log.logLine({ event = dump.dumpEvent(event), speed=event.platform.speed}, function(m)log(m)end, Log.FINER)
-end
--- ###############################################################
-
---- @param event EventData
-local function playerChangedSurface(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
-    local pd = global_data.getPlayer_data(event.player_index)
-    local guis = pd and pd.guis
-
-    if guis and guis.open then
-        Log.log("close gui", function(m)log(m)end, Log.FINER)
-        if guis.open.gui and guis.open.gui.valid then
-            guis.open.gui.destroy()
-            guis.open = {}
-        end
-    end
 end
 -- ###############################################################
 
@@ -1258,24 +1243,6 @@ local function dart_config_changed()
 end
 --###############################################################
 
---- creates the PlayerData if needed and stores them in global storage
---- @param player_index uint
-local function init_player_data(player_index)
-    local pd = global_data.getPlayer_data(player_index)
-    if (pd == nil) then
-        local player = game.get_player(player_index)
-        pd = player_data.init_player_data(player)
-        global_data.addPlayer_data(player, pd)
-    end
-end
-
---- @param event EventData
-local function player_joined_or_created(event)
-    Log.logEvent(event, function(m)log(m)end)
-    init_player_data(event.player_index)
-end
---###############################################################
-
 --- @param event EventData
 local function onResearchFinished(event)
     Log.logEvent(event, function(m)log(m)end, Log.FINE)
@@ -1304,12 +1271,6 @@ local function onResearchFinished(event)
             end
         end
     end
-end
---###############################################################
-
---- @param event EventData
-local function tbd(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
@@ -1478,23 +1439,6 @@ local function changeSettings(e)
         or alterSetting(e, "dart-low-ammo-warning")
         or alterSetting(e, "dart-low-ammo-warning-threshold-default")
 end
--- ###############################################################
-
-local function toggleMapEditor(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
-    local pd = global_data.getPlayer_data(event.player_index)
-    if pd then
-        local editorMode = pd.editorMode
-        if editorMode then
-            editorMode = false
-        else
-            editorMode = true
-        end
-
-        pd.editorMode = editorMode
-        Log.logLine({ player_index = event.player_index, editorMode = editorMode }, function(m)log(m)end, Log.INFO)
-    end
-end
 --###############################################################
 
 local dart = {}
@@ -1517,13 +1461,13 @@ dart.events = {
     [defines.events.script_raised_destroy]           = entityRemoved,
     [defines.events.on_surface_created]              = surfaceCreated,
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
-    [defines.events.on_player_created]               = player_joined_or_created,
-    [defines.events.on_player_joined_game]           = player_joined_or_created,
-    [defines.events.on_player_left_game]             = tbd,
-    [defines.events.on_player_removed]               = tbd,
-    [defines.events.on_player_changed_surface]       = playerChangedSurface,
+    [defines.events.on_player_created]               = player.playerJoinedOrCreated,
+    [defines.events.on_player_joined_game]           = player.playerJoinedOrCreated,
+    [defines.events.on_player_left_game]             = player.playerLeftGame,
+    [defines.events.on_player_removed]               = player.playerRemoved,
+    [defines.events.on_player_changed_surface]       = player.playerChangedSurface,
+    [defines.events.on_player_toggled_map_editor]    = player.toggleMapEditor,
     [defines.events.on_runtime_mod_setting_changed]  = changeSettings,
-    [defines.events.on_player_toggled_map_editor]    = toggleMapEditor,
     [defines.events.on_research_finished]            = onResearchFinished,
 
     [defines.events.on_force_created]                = force.onForceCreated,
