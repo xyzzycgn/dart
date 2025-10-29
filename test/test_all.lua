@@ -2,7 +2,7 @@
 --- Created by xyzzycgn.
 --- DateTime: 28.12.24 13:54
 ---
-local lu = require('lib.luaunit')
+local lu = require('luaunit')
 require('test.BaseTest')
 
 --########################################################

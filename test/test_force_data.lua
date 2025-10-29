@@ -3,7 +3,7 @@
 --- DateTime: 27.10.25 
 ---
 require('test.BaseTest')
-local lu = require('lib.luaunit')
+local lu = require('luaunit')
 local ForceData = require('scripts.force_data')
 
 TestForceData = {}

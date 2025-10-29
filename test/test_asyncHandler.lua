@@ -4,7 +4,7 @@
 ---
 
 require('test.BaseTest')
-local lu = require('lib.luaunit')
+local lu = require('luaunit')
 
 local asyncHandler = require('scripts.asyncHandler')
 
