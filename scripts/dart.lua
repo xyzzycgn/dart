@@ -390,7 +390,8 @@ local function detection(pons)
                 surface = surface,
                 time_to_live = 55,
                 radius = rop.detectionRange,
-                width = width,
+                -- paint thicker if radius > 70 (thus increase visibility)
+                width = (rop.detectionRange <= 70) and width or (width + 1),
             })
         end
         if settings.global["dart-show-defended-area"].value or rop.edited then

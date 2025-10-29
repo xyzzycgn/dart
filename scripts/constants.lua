@@ -4,7 +4,7 @@
 ---
 
 local constants = {
-    max_detectionRange = 35,
+    max_detectionRange = 60,
     max_defenseRange = 35,
 
     default_detectionRange = 35,

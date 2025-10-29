@@ -42,7 +42,7 @@ local function getMaxBasedOnQuality(rop, base)
     Log.logBlock(quality_level, function(m)log(m)end, Log.FINER)
 
     -- yields differences of 4, 3, 2, 1 for the next higher level
-    return base + (9 - quality_level) * (quality_level) / 2
+    return base + (9 - quality_level) * (quality_level)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
