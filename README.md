@@ -17,6 +17,8 @@ technology.
 
 ![D.A.R.T. technology](https://github.com/xyzzycgn/dart/blob/main/doc/dart-technology.png?raw=true)
 
+As of V 1.2.0 you can increase the maximum detection range of your dart-radars by resarching additional technologies
+
 ## Usage
 To protect a platform with D.A.R.T., you have to build a FCC and at least one dart-radar (exact number depends on size and 
 shape of your platform to cover it complete) additionally to your turrets. Communication between FCC and dart-radars uses a top secret military 
