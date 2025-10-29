@@ -4,7 +4,7 @@
 ---
 require('test.BaseTest')
 local lu = require('luaunit')
-local Hub = require('scripts.entities.Hub')
+local Hub = require('scripts.Hub')
 
 -- needed by Log.log() which is called by init()
 function log()
