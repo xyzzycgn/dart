@@ -46,7 +46,7 @@ local dart_tech = {
 local dart_tech_radar_range1 = {
     name = techname(1),
     type = 'technology',
-    icon = "__dart__/graphics/technology/radar.png",
+    icon = "__dart__/graphics/technology/radar_range.png",
     icon_size = 256,
     icon_mipmaps = 4,
 
@@ -74,7 +74,7 @@ local dart_tech_radar_range1 = {
 local dart_tech_radar_range2 = {
     name = techname(2),
     type = 'technology',
-    icon = "__dart__/graphics/technology/radar.png",
+    icon = "__dart__/graphics/technology/radar_range.png",
     icon_size = 256,
     icon_mipmaps = 4,
 
@@ -103,7 +103,7 @@ local dart_tech_radar_range2 = {
 local dart_tech_radar_range3 = {
     name = techname(3),
     type = 'technology',
-    icon = "__dart__/graphics/technology/radar.png",
+    icon = "__dart__/graphics/technology/radar_range.png",
     icon_size = 256,
     icon_mipmaps = 4,
 
