@@ -3,7 +3,7 @@
 --- DateTime: 28.12.24 10:31
 ---
 require('test.BaseTest')
-local lu = require('lib.luaunit')
+local lu = require('luaunit')
 local gd = require('scripts.global_data')
 local PlayerData = require('scripts.player_data')
 

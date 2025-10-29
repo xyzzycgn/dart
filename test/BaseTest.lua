@@ -7,8 +7,8 @@
 local Require = require("test.require")
 require = Require.replace(require)
 
-local lu = require('lib.luaunit')
-serpent=require('lib.serpent') -- must be global
+local lu = require('luaunit')
+serpent=require('serpent') -- must be global
 
 --########################################################
 -- needed by Log.log() which is called by some tests

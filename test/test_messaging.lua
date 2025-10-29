@@ -4,7 +4,7 @@
 --- DateTime: 29.07.25 10:00
 ---
 require('test.BaseTest')
-local lu = require('lib.luaunit')
+local lu = require('luaunit')
 
 -- Mock defines (need to be done BEFORE requiring scripts.messaging
 require('factorio_def')
