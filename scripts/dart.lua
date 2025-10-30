@@ -1434,9 +1434,9 @@ local function alterSetting(event, which, func)
         if func then
             func(new)
         end
-        return true
+        return true -- signals matching setting name
     end
-    return false
+    return false -- signals no match
 end
 
 local function changeSettings(e)
@@ -1450,6 +1450,8 @@ local function changeSettings(e)
         or alterSetting(e, "dart-msgLevel")
         or alterSetting(e, "dart-low-ammo-warning")
         or alterSetting(e, "dart-low-ammo-warning-threshold-default")
+        or alterSetting(e, "dart-release-control")
+        or alterSetting(e, "dart-release-control-threshold-default")
 end
 --###############################################################
 

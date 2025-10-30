@@ -68,6 +68,21 @@ data:extend({
         minimum_value = 10,
     },
     {
+        type = "bool-setting",
+        name = "dart-release-control",
+        order = "n-a",
+        setting_type = "runtime-global",
+        default_value = false,
+    },
+    {
+        type = "int-setting",
+        name = "dart-release-control-threshold-default",
+        order = "n-aa",
+        setting_type = "runtime-global",
+        default_value = 10,
+        minimum_value = 1,
+    },
+    {
         type = "string-setting",
         name = "dart-logLevel",
         order = "z",
