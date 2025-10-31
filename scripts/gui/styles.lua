@@ -57,6 +57,21 @@ styles.dart_bottom_button_flow = {
     horizontal_align = "center",
 }
 
+styles.dart_centered_stretch_off_flow = {
+    type = "horizontal_flow_style",
+    vertically_stretchable = "off",
+    horizontally_stretchable = "off",
+    horizontal_align = "center",
+}
+
+styles.dart_centered_flow = {
+    type = "horizontal_flow_style",
+    vertically_stretchable = "off",
+    horizontally_stretchable = "on",
+    horizontal_align = "center",
+}
+
+
 styles.dart_controls_textfield = {
     type = "textbox_style",
     width = 36
@@ -203,5 +218,15 @@ styles.dart_top_frame = {
     vertically_squashable = "on",
     horizontally_squashable = "on",
     maximal_height = 600,
+    maximal_width = 1000,
+}
+
+styles.dart_top_frame_800 = {
+    type = "frame_style",
+    vertically_stretchable = "on",
+    horizontally_stretchable = "on",
+    vertically_squashable = "on",
+    horizontally_squashable = "on",
+    maximal_height = 800,
     maximal_width = 1000,
 }

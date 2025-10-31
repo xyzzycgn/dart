@@ -319,10 +319,52 @@ function components.openNewGui(player_index, gui, elems, entity)
 end
 -- ###############################################################
 
---- @param flag boolean
+
+--- Creates a switch with allowed none_state.
+--- @param name string used for name and (as base) for captions and tooltips
+--- @param state boolean|nil
+--- @param handler function eventHandler
+
+function components.triStateSwitch(name, state, handler)
+    local left = name .. "-left"
+    local middle = name .. "-middle"
+    local right = name .. "-right"
+
+    return {
+        type = "flow",
+        direction = "vertical",
+        {
+            type = "switch",
+            allow_none_state = true,
+            left_label_caption = { "gui." .. left },
+            right_label_caption = { "gui." .. right },
+            left_label_tooltip = { "tooltips." .. left },
+            right_label_tooltip = { "tooltips." .. right },
+            name = name,
+            switch_state = components.switchState(state),
+            --handler = { [defines.events.on_gui_switch_state_changed] = handlers.switch_changed, }
+        },
+        {
+            type = "flow",
+            direction = "horizontal",
+            style = "dart_centered_flow",
+            --style = "dart_centered_stretch_off_flow",
+            --style = "dart_bottom_button_flow", -- TODO own style
+            {
+                type = "label",
+                caption = { "gui." .. middle },
+                tooltip = { "tooltips." .. middle },
+            },
+        },
+    }
+
+end
+-- ###############################################################
+
+--- @param flag boolean|nil
 --- @return SwitchState
 function components.switchState(flag)
-    return flag and "right" or "left"
+    return (flag == nil) and "none" or flag and "right" or "left"
 end
 -- ###############################################################
 

@@ -133,6 +133,48 @@ flib_gui.add_handlers(handlers, function(e, handler)
 end)
 -- ###############################################################
 
+local function optionalReleaseControl()
+    return {
+        type = "flow",
+        direction = "vertical",
+        visible = settings.global["dart-release-control"].value,
+        {
+            type = "label",
+            caption = { "gui.dart-release-control" },
+            style = "squashable_label_with_left_padding",
+        },
+        {
+            type = "flow",
+            direction = "horizontal",
+            -- horizontal filler
+            {
+                type = "flow",
+                direction = "horizontal",
+                style = "dart_centered_flow",
+            },
+            components.triStateSwitch("dart-release-control", nil, nil), -- TODO state + handler richtig setzen
+            -- horizontal filler
+            {
+                type = "flow",
+                direction = "horizontal",
+                style = "dart_centered_flow",
+            },
+            -- threshold for release control
+            {
+                type = "textfield",
+                numeric = true,
+                style = "dart_controls_textfield",
+                text = 10, -- TODO aus settings/gespeichertem Wert holen
+                name = "threshold", -- TODO
+                --enabled = enabled,
+                enabled = true,
+                --handler = { [defines.events.on_gui_text_changed] = handlers.threshold_changed, }
+            },
+        },
+    }
+end
+
+
 --- creates the custom gui
 --- @param player LuaPlayer who opens the entity
 --- @param entity LuaEntity to be shown in the GUI
@@ -143,7 +185,8 @@ local function build(player, entity)
             direction = "vertical",
             visible = false,
             handler = { [defines.events.on_gui_closed] = eventHandler.handlers.close_gui },
-            style = "dart_top_frame",
+            -- outer frame higher if release control is enabled
+            style = settings.global["dart-release-control"].value and "dart_top_frame_800" or "dart_top_frame",
             {
                 type = "flow",
                 direction = "horizontal",
@@ -166,24 +209,29 @@ local function build(player, entity)
                 },
             },
             { type = "frame", name = "content_frame", direction = "vertical", style = "dart_content_frame",
-              {
-                  type = "frame",
-                  style = "entity_button_frame",
-                  {
-                      type = "entity-preview",
-                      style = "wide_entity_button",
-                      position = entity.position,
-                      name = "fcc_view",
-                  },
-              },
-              {
-                  type = "tabbed-pane",
-                  style = "dart_tabbed_pane",
-                  handler = { [defines.events.on_gui_selected_tab_changed] = handlers.change_tab },
-                  radars.build(),
-                  turrets.build(),
-                  ammos.build(),
-              },
+                {
+                    type = "frame",
+                    direction = "horizontal",
+                    {
+                        type = "frame",
+                        style = "entity_button_frame",
+                        {
+                          type = "entity-preview",
+                          style = "wide_entity_button",
+                          position = entity.position,
+                          name = "fcc_view",
+                        },
+                    },
+                    optionalReleaseControl(),
+                },
+                {
+                    type = "tabbed-pane",
+                    style = "dart_tabbed_pane",
+                    handler = { [defines.events.on_gui_selected_tab_changed] = handlers.change_tab },
+                    radars.build(),
+                    turrets.build(),
+                    ammos.build(),
+                },
             }
         }
     })
@@ -216,6 +264,7 @@ local function gui_opened(event)
         else
             local player = game.get_player(event.player_index)
             local elems, gui = build(player, entity)
+            Log.logLine(elems, function(m)log(m)end, Log.FINE)
 
             local pd = components.openNewGui(event.player_index, gui, elems, entity)
             elems.fcc_view.entity = entity
