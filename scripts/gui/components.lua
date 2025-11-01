@@ -332,6 +332,57 @@ end
 
 -- ###############################################################
 
+--- @param event EventData
+local function getCompanions(event)
+    local element = event.element
+    local name = element.tags.switch_name
+    local middle = element.tags.middle_name
+    Log.logLine({ name = name, middle = middle}, function(m)log(m)end, Log.FINE)
+
+    return name, middle
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param state SwitchState
+local function getStyle(state)
+    return (components.switchStateAsBoolean(state) == nil) and "dart_switch_label_selected" or "dart_switch_label"
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- toggles switch to "none" if label middle is clicked
+--- @param gae GuiAndElements
+--- @param event EventData
+local function middle_clicked(gae, event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+
+    local name, middle = getCompanions(event)
+    local mid_luaGuiElement = gae.elems[middle]
+    mid_luaGuiElement.style = "dart_switch_label_selected"
+    local switch = gae.elems[name]
+    switch.switch_state = components.switchState() -- set to none
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- sets style of label middle
+--- @param gae GuiAndElements
+--- @param event EventData
+local function switch_state_changed(gae, event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+
+    local name, middle = getCompanions(event)
+    local switch = gae.elems[name]
+    local mid_luaGuiElement = gae.elems[middle]
+    mid_luaGuiElement.style = getStyle(switch.switch_state)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- local handlers for internal operations
+local handlers = {
+    middle_clicked = middle_clicked,
+    switch_state_changed = switch_state_changed,
+}
+components.add_handler(handlers)
+
 --- Creates a switch with allowed none_state.
 --- @param name string used for name and (as base) for captions and tooltips
 --- @param state boolean|nil
@@ -340,37 +391,8 @@ function components.triStateSwitch(name, state, handler)
     local left = name .. "-left"
     local middle = name .. "-middle"
     local right = name .. "-right"
-
-    --- toggles switch to "none" if label middle is clicked
-    --- @param gae GuiAndElements
-    --- @param event EventData
-    local function middle_clicked(gae, event)
-        Log.logEvent(event, function(m)log(m)end, Log.FINE)
-        Log.log(name, function(m)log(m)end, Log.FINE)
-        local mid_luaGuiElement = gae.elems[middle]
-        mid_luaGuiElement.style = "dart_switch_label_selected"
-        local switch = gae.elems[name]
-        switch.switch_state = components.switchState() -- set to none
-    end
-
-    --- sets font of label middle
-    --- @param gae GuiAndElements
-    --- @param event EventData
-    local function switch_state_changed(gae, event)
-        Log.logEvent(event, function(m)log(m)end, Log.FINE)
-        Log.log(name, function(m)log(m)end, Log.FINE)
-        local switch = gae.elems[name]
-        local mid_luaGuiElement = gae.elems[middle]
-        mid_luaGuiElement.style = (components.switchStateAsBoolean(switch.switch_state) == nil)
-                and "dart_switch_label_selected"
-                or "dart_switch_label"
-    end
-    --- local handlers for internal operations (correct highlighting of middle)
-    local lhandlers = {
-        [middle] = middle_clicked,
-        [middle.."ssc"] = switch_state_changed,
-    }
-    components.add_handler(lhandlers)
+    -- save the names switch and middle label in tags
+    local tags = { middle_name = middle, switch_name = name, }
 
     return {
         type = "flow",
@@ -383,8 +405,9 @@ function components.triStateSwitch(name, state, handler)
             left_label_tooltip = { "tooltips." .. left },
             right_label_tooltip = { "tooltips." .. right },
             name = name,
+            tags = tags,
             switch_state = components.switchState(state),
-            handler = { [defines.events.on_gui_switch_state_changed] = lhandlers[middle.."ssc"], }
+            handler = { [defines.events.on_gui_switch_state_changed] = handlers.switch_state_changed, }
         },
         {
             type = "flow",
@@ -393,13 +416,14 @@ function components.triStateSwitch(name, state, handler)
             {
                 type = "label",
                 name = middle,
+                tags = tags,
+                style = getStyle(state),
                 caption = { "gui." .. middle },
                 tooltip = { "tooltips." .. middle },
-                handler = { [defines.events.on_gui_click] = lhandlers[middle] },
+                handler = { [defines.events.on_gui_click] = handlers.middle_clicked },
             },
         },
     }
-
 end
 -- ###############################################################
 
