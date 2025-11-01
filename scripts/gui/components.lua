@@ -319,16 +319,58 @@ function components.openNewGui(player_index, gui, elems, entity)
 end
 -- ###############################################################
 
+--- register handlers in flib
+--- @param handlers any array with handlers to be registered
+function components.add_handler(handlers)
+    flib_gui.add_handlers(handlers, function(e, handler)
+        local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
+        if guiAndElements then
+            handler(guiAndElements, e)
+        end
+    end)
+end
+
+-- ###############################################################
 
 --- Creates a switch with allowed none_state.
 --- @param name string used for name and (as base) for captions and tooltips
 --- @param state boolean|nil
 --- @param handler function eventHandler
-
 function components.triStateSwitch(name, state, handler)
     local left = name .. "-left"
     local middle = name .. "-middle"
     local right = name .. "-right"
+
+    --- toggles switch to "none" if label middle is clicked
+    --- @param gae GuiAndElements
+    --- @param event EventData
+    local function middle_clicked(gae, event)
+        Log.logEvent(event, function(m)log(m)end, Log.FINE)
+        Log.log(name, function(m)log(m)end, Log.FINE)
+        local mid_luaGuiElement = gae.elems[middle]
+        mid_luaGuiElement.style = "dart_switch_label_selected"
+        local switch = gae.elems[name]
+        switch.switch_state = components.switchState() -- set to none
+    end
+
+    --- sets font of label middle
+    --- @param gae GuiAndElements
+    --- @param event EventData
+    local function switch_state_changed(gae, event)
+        Log.logEvent(event, function(m)log(m)end, Log.FINE)
+        Log.log(name, function(m)log(m)end, Log.FINE)
+        local switch = gae.elems[name]
+        local mid_luaGuiElement = gae.elems[middle]
+        mid_luaGuiElement.style = (components.switchStateAsBoolean(switch.switch_state) == nil)
+                and "dart_switch_label_selected"
+                or "dart_switch_label"
+    end
+    --- local handlers for internal operations (correct highlighting of middle)
+    local lhandlers = {
+        [middle] = middle_clicked,
+        [middle.."ssc"] = switch_state_changed,
+    }
+    components.add_handler(lhandlers)
 
     return {
         type = "flow",
@@ -342,18 +384,18 @@ function components.triStateSwitch(name, state, handler)
             right_label_tooltip = { "tooltips." .. right },
             name = name,
             switch_state = components.switchState(state),
-            --handler = { [defines.events.on_gui_switch_state_changed] = handlers.switch_changed, }
+            handler = { [defines.events.on_gui_switch_state_changed] = lhandlers[middle.."ssc"], }
         },
         {
             type = "flow",
             direction = "horizontal",
             style = "dart_centered_flow",
-            --style = "dart_centered_stretch_off_flow",
-            --style = "dart_bottom_button_flow", -- TODO own style
             {
                 type = "label",
+                name = middle,
                 caption = { "gui." .. middle },
                 tooltip = { "tooltips." .. middle },
+                handler = { [defines.events.on_gui_click] = lhandlers[middle] },
             },
         },
     }
@@ -361,6 +403,7 @@ function components.triStateSwitch(name, state, handler)
 end
 -- ###############################################################
 
+--- converts a boolean or nil to SwitchState, nil is converted to "none"
 --- @param flag boolean|nil
 --- @return SwitchState
 function components.switchState(flag)
@@ -372,23 +415,12 @@ local switch = {
     left = false,
     right = true
 }
---- converts a SwitchState to boolean
+--- converts a SwitchState to boolean, "none" is converted to nil
 --- @param state SwitchState
 --- @return boolean|nil "right" -> true, "left" -> false, "none" -> nil
 function components.switchStateAsBoolean(state)
     return switch[state]
 end
 -- ###############################################################
-
---- register local handlers in flib
---- @param handlers any array with handler to be registered
-function components.add_handler(handlers)
-    flib_gui.add_handlers(handlers, function(e, handler)
-        local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
-        if guiAndElements then
-            handler(guiAndElements, e)
-        end
-    end)
-end
 
 return components

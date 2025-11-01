@@ -113,6 +113,18 @@ styles.dart_minimap_label = {
     horizontal_align = "left",
 }
 
+styles.dart_switch_label_selected = {
+    type = "label_style",
+    parent = "bold_label",
+    font_color = { 241, 190, 100 },
+}
+
+styles.dart_switch_label = {
+    type = "label_style",
+    parent = "label",
+    hovered_font_color = { 255, 231, 193 },
+}
+
 styles.dart_scrollpane_style = {
     type = "scroll_pane_style",
     parent = "flib_naked_scroll_pane_no_padding",

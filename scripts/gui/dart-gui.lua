@@ -236,6 +236,8 @@ local function build(player, entity)
         }
     })
 
+    Log.logBlock(elems["dart-release-control-middle"].tags, function(m)log(m)end, Log.FINE)
+
     elems.titlebar.drag_target = gui
 
     return elems, gui
