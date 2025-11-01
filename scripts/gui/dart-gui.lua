@@ -137,7 +137,7 @@ local function optionalReleaseControl()
     return {
         type = "flow",
         direction = "vertical",
-        visible = settings.global["dart-release-control"].value,
+        visible = settings.startup["dart-release-control"].value,
         {
             type = "label",
             caption = { "gui.dart-release-control" },
@@ -186,7 +186,7 @@ local function build(player, entity)
             visible = false,
             handler = { [defines.events.on_gui_closed] = eventHandler.handlers.close_gui },
             -- outer frame higher if release control is enabled
-            style = settings.global["dart-release-control"].value and "dart_top_frame_800" or "dart_top_frame",
+            style = settings.startup["dart-release-control"].value and "dart_top_frame_800" or "dart_top_frame",
             {
                 type = "flow",
                 direction = "horizontal",
