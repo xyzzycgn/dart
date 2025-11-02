@@ -38,11 +38,16 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field turret_types table<string> List of turret-types connected to a fcc
 --- @field thresholds table<string, AmmoWarningThreshold> thresholds for warning for low ammo (indexed by ammo type)
 
+--- @class TurretControl: any "determines how the connected turrets are controlled by the FCC
+--- @field mode SwitchState
+--- @field threshold number
+
 --- @class FccOnPlatform a dart-fcc on a platform
 --- @field fcc LuaEntity dart-fcc
 --- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
 --- @field fcc_un uint64 unit_number of dart-fcc
 --- @field ammo_warning AmmoWarning
+--- @field turretControl TurretControl? (opt.) determines how the connected turrets are controlled
 
 --- @class RadarOnPlatform a dart-radar on a platform
 --- @field radar LuaEntity dart-radar
@@ -50,7 +55,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field detectionRange uint radius of detection around a dart-radar
 --- @field defenseRange uint radius of defended area around a dart-radar
 
---- @class KnownAsteroid any describes an asteroid tracked by D.A.R.T
+--- @class KnownAsteroid: any describes an asteroid tracked by D.A.R.T
 --- @field position MapPosition
 --- @field movement table { x, y }
 --- @field size string

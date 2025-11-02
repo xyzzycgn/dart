@@ -333,18 +333,21 @@ end
 -- ###############################################################
 
 --- @param event EventData
+--- @return string, string the names of switch and the middle label
 local function getCompanions(event)
     local element = event.element
-    local name = element.tags.switch_name
-    local middle = element.tags.middle_name
-    Log.logLine({ name = name, middle = middle}, function(m)log(m)end, Log.FINE)
+    local switch_name = element.tags.switch_name
+    local middle_name = element.tags.middle_name
+    Log.logLine({ name = switch_name, middle = middle_name }, function(m)log(m)end, Log.FINE)
 
-    return name, middle
+    return switch_name, middle_name
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- returns the style for the middle label of a tristateswitch
 --- @param state SwitchState
-local function getStyle(state)
+--- @return LuaStyle
+function components.getStyle(state)
     return (components.switchStateAsBoolean(state) == nil) and "dart_switch_label_selected" or "dart_switch_label"
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -369,10 +372,10 @@ end
 local function switch_state_changed(gae, event)
     Log.logEvent(event, function(m)log(m)end, Log.FINE)
 
-    local name, middle = getCompanions(event)
-    local switch = gae.elems[name]
-    local mid_luaGuiElement = gae.elems[middle]
-    mid_luaGuiElement.style = getStyle(switch.switch_state)
+    local switch_name, middle_name = getCompanions(event)
+    local switch = gae.elems[switch_name]
+    local mid_luaGuiElement = gae.elems[middle_name]
+    mid_luaGuiElement.style = components.getStyle(switch.switch_state)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -385,9 +388,8 @@ components.add_handler(handlers)
 
 --- Creates a switch with allowed none_state.
 --- @param name string used for name and (as base) for captions and tooltips
---- @param state boolean|nil
 --- @param handler function eventHandler
-function components.triStateSwitch(name, state, handler)
+function components.triStateSwitch(name, handler)
     local left = name .. "-left"
     local middle = name .. "-middle"
     local right = name .. "-right"
@@ -406,7 +408,6 @@ function components.triStateSwitch(name, state, handler)
             right_label_tooltip = { "tooltips." .. right },
             name = name,
             tags = tags,
-            switch_state = components.switchState(state),
             handler = { [defines.events.on_gui_switch_state_changed] = handlers.switch_state_changed, }
         },
         {
@@ -417,7 +418,6 @@ function components.triStateSwitch(name, state, handler)
                 type = "label",
                 name = middle,
                 tags = tags,
-                style = getStyle(state),
                 caption = { "gui." .. middle },
                 tooltip = { "tooltips." .. middle },
                 handler = { [defines.events.on_gui_click] = handlers.middle_clicked },

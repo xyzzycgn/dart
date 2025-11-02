@@ -15,6 +15,19 @@ local ammos = require("scripts.gui.ammos")
 local flib_gui = require("__flib__.gui")
 local flib_format = require("__flib__.format")
 
+
+-- return TurretControl of a FccOnPlatform
+--- @param fop FccOnPlatform
+--- @return TurretControl
+local function determineTurretControl(fop)
+    -- if not set, assume "always" and use default threshold (although this isn't relevant with mode always)
+    return fop.turretControl or  {
+        mode = "right", -- == always
+        threshold = settings.startup["dart-release-control-threshold-default"].value
+    }
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- @param elems GuiAndElements
 --- @param pons Pons
 --- @param pd PlayerData
@@ -36,7 +49,7 @@ local function update_ammos(elems, pons, pd)
     ammos.update(elems, pons, pd)
 end
 
-local switch = {
+local update_functions = {
     [1] = update_radars,
     [2] = update_turrets,
     [3] = update_ammos,
@@ -60,13 +73,32 @@ local function update_main(pd, opengui, event)
 
     -- show the numbers of known radars, turrets, ammo types
     if ponsOfEntity then
+        if settings.startup["dart-release-control"].value then
+            -- release control is shown
+            for un, fop in pairs(ponsOfEntity.fccsOnPlatform) do
+                if un == entity.unit_number then
+                    -- this is the FCC shown
+                    local tc = determineTurretControl(fop)
+                    fop.turretControl = tc
+                    local mode = tc.mode
+                    local switch = opengui.elems["dart-release-control"]
+                    switch.switch_state = mode
+                    local middle = opengui.elems["dart-release-control-middle"]
+                    middle.style = components.getStyle(mode)
+                    local threshold = opengui.elems["dart-release-control-threshold"]
+                    threshold.text = tostring(tc.threshold)
+                    threshold.enabled = mode == "none"
+                end
+            end
+        end
+
         opengui.elems.radars_tab.badge_text = flib_format.number(table_size(ponsOfEntity.radarsOnPlatform))
         -- turrets may be controlled by other FCC => don't use simply ponsOfEntity.turretsOnPlatform
         opengui.elems.turrets_tab.badge_text = flib_format.number(table_size(turrets.dataForPresentation(opengui, ponsOfEntity)))
         -- need to know the stock in hub
         opengui.elems.ammos_tab.badge_text = flib_format.number(table_size(ammos.dataForPresentation(opengui, ponsOfEntity)))
 
-        local func = switch[opengui.activeTab]
+        local func = update_functions[opengui.activeTab]
         if (func) then
             func(opengui, ponsOfEntity, pd)
         else
@@ -78,7 +110,7 @@ local function update_main(pd, opengui, event)
         Log.logMsg(function(m)log(m)end, Log.WARN, "no valid pons for entity=%s", entity.unit_number)
     end
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 local function update_gui(event)
     Log.logEvent(event, function(m)log(m)end, Log.FINER)
@@ -152,7 +184,7 @@ local function optionalReleaseControl()
                 direction = "horizontal",
                 style = "dart_centered_flow",
             },
-            components.triStateSwitch("dart-release-control", nil, nil), -- TODO state + handler richtig setzen
+            components.triStateSwitch("dart-release-control", nil), -- TODO handler
             -- horizontal filler
             {
                 type = "flow",
@@ -164,10 +196,7 @@ local function optionalReleaseControl()
                 type = "textfield",
                 numeric = true,
                 style = "dart_controls_textfield",
-                text = 10, -- TODO aus settings/gespeichertem Wert holen
-                name = "threshold", -- TODO
-                --enabled = enabled,
-                enabled = true,
+                name = "dart-release-control-threshold",
                 --handler = { [defines.events.on_gui_text_changed] = handlers.threshold_changed, }
             },
         },
