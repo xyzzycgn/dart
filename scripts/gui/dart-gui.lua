@@ -151,9 +151,69 @@ local function change_tab(gae, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+local function getFop(gae, event)
+    local pd = global_data.getPlayer_data(event.player_index)
+    local entity = gae.entity
+    local platform = entity.surface.platform
+
+    if platform then
+        local pons = pd.pons[platform.index]
+        return pons.fccsOnPlatform[entity.unit_number]
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function updateModeOfFop(gae, event)
+    local fop = getFop(gae, event)
+    if fop then
+        local state = gae.elems["dart-release-control"].switch_state
+        fop.turretControl.mode = state
+        gae.elems["dart-release-control-threshold"].enabled = state == "none"
+        Log.logLine(fop.turretControl.mode, function(m)log(m)end, Log.FINE)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param gae GuiAndElements
+--- @param event EventData
+local function threshold_changed(gae, event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    local fop = getFop(gae, event)
+    if fop then
+        fop.turretControl.threshold = tonumber(gae.elems["dart-release-control-threshold"].text) or 0
+        Log.logLine(fop.turretControl.threshold, function(m)log(m)end, Log.FINE)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- handles GUI update of the tristate switch in case switch was clicked
+--- @param gae GuiAndElements
+--- @param event EventData
+local function switch_state_changed(gae, event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    -- it's impossible to chain event handlers, so this needs to be done manually
+    components.tristate_switch_state_changed(gae, event)
+    updateModeOfFop(gae,event)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- handles GUI update of the tristate switch in case middle label was clicked
+--- @param gae GuiAndElements
+--- @param event EventData
+local function middle_clicked(gae, event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    -- it's impossible to chain event handlers, so this needs to be done manually
+    components.middle_clicked(gae, event)
+    updateModeOfFop(gae,event)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 -- local event handlers
 local handlers = {
     change_tab = change_tab,
+    threshold_changed = threshold_changed,
+    switch_state_changed = switch_state_changed,
+    middle_clicked = middle_clicked,
 }
 
 -- register local handlers in flib
@@ -184,7 +244,9 @@ local function optionalReleaseControl()
                 direction = "horizontal",
                 style = "dart_centered_flow",
             },
-            components.triStateSwitch("dart-release-control", nil), -- TODO handler
+            components.triStateSwitch("dart-release-control",
+                                      handlers.switch_state_changed,
+                                      handlers.middle_clicked),
             -- horizontal filler
             {
                 type = "flow",
@@ -197,12 +259,12 @@ local function optionalReleaseControl()
                 numeric = true,
                 style = "dart_controls_textfield",
                 name = "dart-release-control-threshold",
-                --handler = { [defines.events.on_gui_text_changed] = handlers.threshold_changed, }
+                handler = { [defines.events.on_gui_text_changed] = handlers.threshold_changed, }
             },
         },
     }
 end
-
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- creates the custom gui
 --- @param player LuaPlayer who opens the entity
@@ -315,7 +377,7 @@ local function gui_opened(event)
         script.raise_event(on_dart_gui_needs_update_event, event)
     elseif event.gui_type == defines.gui_type.custom then
         local pd = global_data.getPlayer_data(event.player_index)
-        local entity = pd and pd.guis and pd.guis.open and pd.guis.open.entity
+        entity = pd and pd.guis and pd.guis.open and pd.guis.open.entity
         Log.logBlock(entity, function(m)log(m)end, Log.FINER)
         if entity and entity.name == "dart-radar" then
             event.entity = entity -- pimp the event ;-)
