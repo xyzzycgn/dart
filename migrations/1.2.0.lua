@@ -1,5 +1,7 @@
 local global_data = require("scripts.global_data")
 local force_data = require("scripts.force_data")
+local constants = require("scripts.constants")
+local entities_radar = require("scripts.entities.radars")
 
 log("migration to 1.2.0 started")
 
@@ -20,5 +22,13 @@ for force, _ in pairs(known_forces) do
 end
 
 log(string.format("added %d force(s) to global data", table_size(known_forces)))
+
+-- increase detection_range for all existing radars to new max
+for _, pons in pairs(global_data.getPlatforms()) do
+    for _, rop in pairs(pons.radarsOnPlatform) do
+       rop.detectionRange = entities_radar.addIncreaseBasedOnQuality(rop, constants.max_detectionRange)
+    end
+end
+log("increased detectionRange to new max for all existing dart-radars")
 
 log("migration to 1.2.0 finished")

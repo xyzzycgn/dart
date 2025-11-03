@@ -22,6 +22,30 @@ local function factor(lvl)
 end
 
 
+function TestForce:test_addIncreaseBasedOnQuality()
+    local expected = {
+        8, 14, 18, 20, 21, 22,
+        [0] = 0
+    }
+
+    -- mock RadarOnPlatform
+    local rop = {
+        radar = {
+            valid = true,
+            quality = {}
+        }
+    }
+
+    for lvl, exp in pairs(expected) do
+        rop.radar.quality.level = lvl
+
+        local calc = radars.addIncreaseBasedOnQuality(rop, 0) -- wanna see the deltas
+        lu.assertNotIsNil(calc, string.format("calc is nil for lvl=%d", lvl))
+        lu.assertEquals(calc, exp, string.format("wrong calculation for lvl=%d", lvl))
+    end
+end
+-- ###############################################################
+
 function TestForce:test_calculateRangeBonus()
     local f1 = factor(1)
     local f2 = factor(2)

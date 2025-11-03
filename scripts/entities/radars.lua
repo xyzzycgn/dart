@@ -18,8 +18,22 @@ local function calculateRangeBonus(lvl)
 end
 -- ###############################################################
 
+--- calculates increased value (based on quality)
+--- @param rop RadarOnPlatform
+--- @param base number base value
+local function addIncreaseBasedOnQuality(rop, base)
+    local entity = rop.radar
+    local quality_level = (entity.valid and entity.quality.level) or 0
+
+    -- yields differences of 8, 6, 4, 2 for the next higher level
+    -- higher level gain 1 per level
+    return base + ((quality_level < 5) and (9 - quality_level) * (quality_level) or (16 + quality_level))
+end
+-- ###############################################################
+
 local radars = {
     calculateRangeBonus = calculateRangeBonus,
+    addIncreaseBasedOnQuality = addIncreaseBasedOnQuality,
 }
 
 return radars
