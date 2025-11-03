@@ -21,7 +21,8 @@ settings = {
         ["dart-logLevel"] = { value = 5 }, -- == Log.INFO
     },
     startup = {
-        ["dart-update-stock-period"] = { value = 10 }
+        ["dart-update-stock-period"] = { value = 10 },
+        ["dart-release-control"] = { value = false },
     }
 }
 

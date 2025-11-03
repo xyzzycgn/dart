@@ -2,7 +2,6 @@
 --- Created by xyzzycgn.
 --- DateTime: 28.12.24 13:54
 ---
-local lu = require('luaunit')
 require('test.BaseTest')
 
 --########################################################
@@ -20,6 +19,7 @@ require('test.test_configure_turrets')
 require('test.test_force')
 require('test.test_force_data')
 require('test.test_radars')
+require('test.test_processing_targets')
 
 BaseTest.hooked = false
 BaseTest:hookTests()

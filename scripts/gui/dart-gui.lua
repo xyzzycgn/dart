@@ -15,6 +15,7 @@ local ammos = require("scripts.gui.ammos")
 local flib_gui = require("__flib__.gui")
 local flib_format = require("__flib__.format")
 
+local dart_release_control = settings.startup["dart-release-control"].value
 
 -- return TurretControl of a FccOnPlatform
 --- @param fop FccOnPlatform
@@ -73,7 +74,7 @@ local function update_main(pd, opengui, event)
 
     -- show the numbers of known radars, turrets, ammo types
     if ponsOfEntity then
-        if settings.startup["dart-release-control"].value then
+        if dart_release_control then
             -- release control is shown
             for un, fop in pairs(ponsOfEntity.fccsOnPlatform) do
                 if un == entity.unit_number then
@@ -229,7 +230,7 @@ local function optionalReleaseControl()
     return {
         type = "flow",
         direction = "vertical",
-        visible = settings.startup["dart-release-control"].value,
+        visible = dart_release_control,
         {
             type = "label",
             caption = { "gui.dart-release-control" },
@@ -277,7 +278,7 @@ local function build(player, entity)
             visible = false,
             handler = { [defines.events.on_gui_closed] = eventHandler.handlers.close_gui },
             -- outer frame higher if release control is enabled
-            style = settings.startup["dart-release-control"].value and "dart_top_frame_800" or "dart_top_frame",
+            style = dart_release_control and "dart_top_frame_800" or "dart_top_frame",
             {
                 type = "flow",
                 direction = "horizontal",
