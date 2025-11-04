@@ -386,7 +386,7 @@ function components.triStateSwitch(name, switch_handler, click_handler)
     local left = name .. "-left"
     local middle = name .. "-middle"
     local right = name .. "-right"
-    -- save the names switch and middle label in tags
+    -- save the names for switch and middle label in tags
     local tags = { middle_name = middle, switch_name = name, }
 
     return {
@@ -394,12 +394,13 @@ function components.triStateSwitch(name, switch_handler, click_handler)
         direction = "vertical",
         {
             type = "switch",
-            allow_none_state = true,
-            left_label_caption = { "gui." .. left },
-            right_label_caption = { "gui." .. right },
-            left_label_tooltip = { "tooltips." .. left },
-            right_label_tooltip = { "tooltips." .. right },
             name = name,
+            allow_none_state = true,
+            tooltip = { "tooltips." .. name },
+            left_label_caption = { "gui." .. left },
+            left_label_tooltip = { "tooltips." .. left },
+            right_label_caption = { "gui." .. right },
+            right_label_tooltip = { "tooltips." .. right },
             tags = tags,
             handler = { [defines.events.on_gui_switch_state_changed] = switch_handler, }
         },
