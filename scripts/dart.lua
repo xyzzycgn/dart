@@ -38,7 +38,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field turret_types table<string> List of turret-types connected to a fcc
 --- @field thresholds table<string, AmmoWarningThreshold> thresholds for warning for low ammo (indexed by ammo type)
 
---- @class TurretControl: any "determines how the connected turrets are controlled by the FCC
+--- @class TurretControl: any determines how the connected turrets are controlled by the FCC
 --- @field mode SwitchState
 --- @field threshold number
 
@@ -91,7 +91,6 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 -- end of Type definitions for this file
 -- ###############################################################
 
-local dart_release_control = settings.startup["dart-release-control"].value
 
 --- handle for asynchronous call of fragments()
 local asyncFragments
@@ -483,7 +482,9 @@ local function fragments(dest_target)
 end
 -- ###############################################################
 
+--- @param entity LuaEntity asteroid that just was destroyed
 local function asteroid_died(entity)
+    Log.logLine( { died=entity }, function(m)log(m)end, Log.FINE)
     script.raise_event(on_target_destroyed_event, { entity=entity, un=entity.unit_number, reason="destroy" } )
 
     --- @type Pons
@@ -491,6 +492,8 @@ local function asteroid_died(entity)
     if pons then
         local managedTurrets = getManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
+        Log.logLine(managedTurrets, function(m)log(m)end, Log.FINE)
+
         local aun = entity.unit_number
         local size = knownAsteroids[aun] and knownAsteroids[aun].size
 
@@ -1125,19 +1128,19 @@ end
 
 --- @param event EventData
 local function tbda(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
 end
 --###############################################################
 
 --- @param event EventData
 local function tbdu(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
 end
 --###############################################################
 
 --- @param event EventData
 local function tbdd(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
 end
 --###############################################################
 

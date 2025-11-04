@@ -6,6 +6,8 @@
 local utils = require("scripts.utils")
 local Log = require("__log4factorio__.Log")
 
+local dart_release_control = settings.startup["dart-release-control"].value
+
 local function distToTurret(target, turret)
     local dx = target.position.x - turret.position.x
     local dy = target.position.y - turret.position.y
@@ -97,12 +99,63 @@ local function calculatePrio(managedTurrets, target, D)
 end
 --###############################################################
 
+--- @param managedTurret ManagedTurret
+--- @param filter_settings any
+--- @param assigned number?
+--- @param knownAsteroids LuaEntity[]?
+local function prepareCircuitCondition(managedTurret, filter_settings, assigned, knownAsteroids)
+    local turret = managedTurret.turret
+    -- unit number of dart-fcc managing this turret
+    local un = managedTurret.fcc.unit_number
+    -- filter_settings for this dart-fcc
+    local filter_setting_by_un = filter_settings[un] or {}
+
+    local newTarget = false
+    local old = turret.shooting_target
+
+    if assigned and knownAsteroids then
+        local asteroid = knownAsteroids[assigned].entity
+        Log.logBlock(asteroid, function(m)log(m)end, Log.FINER)
+        if (not old or (old.unit_number ~= asteroid.unit_number)) then
+            -- only assign if new target
+            turret.shooting_target = asteroid
+            newTarget = true
+        end
+    else
+        turret.shooting_target = nil
+    end
+
+    -- now prepare to set the CircuitConditions
+    -- @wube why simple if it could be complicated ;-)
+    --- @type CircuitCondition
+    Log.logBlock(managedTurret.circuit_condition, function(m)log(m)end, Log.FINER)
+    local cc = managedTurret.circuit_condition
+    if utils.checkCircuitCondition(cc) then -- check if turret has a valid/useable CircuitCondition
+        local filter = {
+            value = { type = cc.first_signal.type,
+                      name = cc.first_signal.name,
+                      quality = cc.first_signal.quality or 'normal',
+            },
+            min = 1,
+        }
+        filter_setting_by_un[#filter_setting_by_un + 1] = filter
+        filter_settings[un] = filter_setting_by_un
+        if newTarget then
+            script.raise_event(on_target_assigned_event, { tun = turret.unit_number, target = assigned, reason=old and "reassign" or "assign"} )
+        end
+    else
+        Log.logMsg(function(m)log(m)end, Log.WARN, "ignored turret with invalid CircuitCondition=%s", turret.unit_number or "<NIL>")
+    end
+end
+-- ###############################################################
+
 --- assign target to turrets depending on prio (nearest asteroid first)
 --- @param pons Pons for which assignment of targets occurs
 --- @param knownAsteroids LuaEntity[]
 --- @param managedTurrets ManagedTurret[]
 --- @return any resulting filter setting (for all darts of a platform)
 local function assignTargets(pons, knownAsteroids, managedTurrets)
+    Log.log("assignTargets", function(m)log(m)end, Log.FINE)
     local filter_settings = {}
 
     -- reorganize prio
@@ -120,43 +173,67 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
             return managedTurret.targets_of_turret[i] < managedTurret.targets_of_turret[j]
         end)
 
-        -- and here occurs the miracle
-        if (#prios > 0) then
-            -- enable turret using circuit network
-            Log.logMsg(function(m)log(m)end, Log.FINER, "setting shooting_target=%s for turret=%s",
-                    prios[1] or "<NIL>", turret.unit_number or "<NIL>")
-            local asteroid = knownAsteroids[prios[1]].entity
-            Log.logBlock(asteroid, function(m)log(m)end, Log.FINER)
-            turret.shooting_target = asteroid
-            -- unit number of dart-fcc managing this turret
-            local un = managedTurret.fcc.unit_number
-            -- filter_settings for this dart-fcc
-            local filter_setting_by_un = filter_settings[un] or {}
+        -- check whether control over turret has to be released
+        local release_control = false
+        if dart_release_control then
+            local fop = pons.fccsOnPlatform[managedTurret.fcc.unit_number]
+            local tc = fop.turretControl
 
-            -- now prepare to set the CircuitConditions
-            -- @wube why simple if it could be complicated ;-)
-            --- @type CircuitCondition
-            Log.logBlock(managedTurret.circuit_condition, function(m)log(m)end, Log.FINER)
-            local cc = managedTurret.circuit_condition
-            if utils.checkCircuitCondition(cc) then -- check if turret has a valid/useable CircuitCondition
-                local filter = {
-                    value = { type = cc.first_signal.type,
-                              name = cc.first_signal.name,
-                              quality = cc.first_signal.quality or 'normal',
-                    },
-                    min = 1,
-                }
-                filter_setting_by_un[#filter_setting_by_un + 1] = filter
-                filter_settings[un] = filter_setting_by_un
-                script.raise_event(on_target_assigned_event, { tun = turret.unit_number, target = prios[1], reason="assign"} )
-            else
-                Log.logMsg(function(m)log(m)end, Log.WARN, "ignored turret with invalid CircuitCondition=%s", turret.unit_number or "<NIL>")
+            if tc then -- no turretControl means default behaviour
+                if tc.mode == "left" then
+                    -- no more control requested by setting
+                    release_control = true
+                elseif tc.mode == "none" then
+                    -- automatic release of control requested
+                    release_control = tc.threshold < #prios
+                end
+                Log.logLine({ prios = prios, rc = release_control }, function(m)log(m)end, release_control and Log.FINE or Log.FINER)
             end
+        end
+
+        -- and here occurs the miracle
+        if release_control then
+            -- no preset target
+            prepareCircuitCondition(managedTurret, filter_settings)
         else
-            -- set no filter => disable turret using circuit network
-            Log.logMsg(function(m)log(m)end, Log.FINER, "try to disable turret=%s", turret.unit_number or "<NIL>")
-            turret.shooting_target = nil
-            script.raise_event(on_target_unassigned_event, { tun = turret.unit_number, reason="unassign" } )
+            -- default behaviour == turret under control of fcc
+            if (#prios > 0) then
+                -- enable turret using circuit network
+                Log.logMsg(function(m)log(m)end, Log.FINER, "setting shooting_target=%s for turret=%s",
+                        prios[1] or "<NIL>", turret.unit_number or "<NIL>")
+               prepareCircuitCondition(managedTurret, filter_settings, prios[1], knownAsteroids)
+                ---- unit number of dart-fcc managing this turret
+                --local un = managedTurret.fcc.unit_number
+                ---- filter_settings for this dart-fcc
+                --local filter_setting_by_un = filter_settings[un] or {}
+                --
+                ---- now prepare to set the CircuitConditions
+                ---- @wube why simple if it could be complicated ;-)
+                ----- @type CircuitCondition
+                --Log.logBlock(managedTurret.circuit_condition, function(m)log(m)end, Log.FINER)
+                --local cc = managedTurret.circuit_condition
+                --if utils.checkCircuitCondition(cc) then -- check if turret has a valid/useable CircuitCondition
+                --    local filter = {
+                --        value = { type = cc.first_signal.type,
+                --                  name = cc.first_signal.name,
+                --                  quality = cc.first_signal.quality or 'normal',
+                --        },
+                --        min = 1,
+                --    }
+                --    filter_setting_by_un[#filter_setting_by_un + 1] = filter
+                --    filter_settings[un] = filter_setting_by_un
+                --    script.raise_event(on_target_assigned_event, { tun = turret.unit_number, target = prios[1], reason="assign"} )
+                --else
+                --    Log.logMsg(function(m)log(m)end, Log.WARN, "ignored turret with invalid CircuitCondition=%s", turret.unit_number or "<NIL>")
+                --end
+            else
+                -- set no filter => disable turret using circuit network
+                if (turret.shooting_target) then -- only if there is an assigned target
+                    local old = turret.shooting_target
+                    turret.shooting_target = nil
+                    script.raise_event(on_target_unassigned_event, { tun = turret.unit_number, reason="unassign", target = old.unit_number } )
+                end
+            end
         end
     end
 
@@ -168,6 +245,7 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
         --- @type LuaLogisticSection
         local lls = fop.control_behavior.get_section(1)
         lls.filters = filter_settings[ndx] or {} -- if nothing is set => reset
+        Log.logLine(lls.filters, function(m)log(m)end, (#lls.filters > 0) and Log.FINE or Log.FINER)
     end
 end
 -- ###############################################################
