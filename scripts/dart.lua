@@ -69,6 +69,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field radarsOnPlatform RadarOnPlatform[] array of D.A.R.T. radar entities located on the platform
 --- @field knownAsteroids KnownAsteroid[] array of asteroids currently known and in detection range
 --- @field ammoInStockPerType table<string, uint> array with stock in hub per ammo type
+--- @field managedTurrets ManagedTurret[] updated in businessLogic()
 
 --- @class CnOfTurret circuit network belonging to a turret.
 --- @field turret LuaEntity turret
@@ -153,9 +154,10 @@ local function circuitNetworkOfDarts(pons)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- initializes the ManagedTurret of a pons for the next cycle of BL
 --- @param pons Pons
 --- @return ManagedTurret[]
-local function getManagedTurrets(pons)
+local function initializeManagedTurrets(pons)
     --- @type FccOnPlatform[]
     local cnOfDarts = circuitNetworkOfDarts(pons)
     --- @type CnOfTurret[][]
@@ -348,7 +350,7 @@ local function businessLogic()
         local surface = pons.surface
         --- @type LuaSpacePlatform
         local platform = pons.platform
-        local managedTurrets = getManagedTurrets(pons)
+        local managedTurrets = initializeManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
 
         updateTurretTypes(pons, managedTurrets)
@@ -425,6 +427,9 @@ local function businessLogic()
         else
             Log.log("skipped invalid platform during processing", function(m)log(m)end, Log.WARN)
         end
+
+        -- save for use in asteroid_died
+        pons.managedTurrets = managedTurrets
     end
     Log.log("leave BL", function(m)log(m)end, Log.FINER)
 end
@@ -490,7 +495,7 @@ local function asteroid_died(entity)
     --- @type Pons
     local pons = global_data.getPlatforms()[entity.surface.index]
     if pons then
-        local managedTurrets = getManagedTurrets(pons)
+        local managedTurrets = pons.managedTurrets -- DON'T use initializeManagedTurrets()!!
         local knownAsteroids = pons.knownAsteroids
         Log.logLine(managedTurrets, function(m)log(m)end, Log.FINE)
 
