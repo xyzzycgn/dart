@@ -328,7 +328,7 @@ local function build(player, entity)
         }
     })
 
-    Log.logBlock(elems["dart-release-control-middle"].tags, function(m)log(m)end, Log.FINE)
+    Log.logBlock(elems["dart-release-control-middle"].tags, function(m)log(m)end, Log.FINEST)
 
     elems.titlebar.drag_target = gui
 
@@ -358,7 +358,7 @@ local function gui_opened(event)
         else
             local player = game.get_player(event.player_index)
             local elems, gui = build(player, entity)
-            Log.logLine(elems, function(m)log(m)end, Log.FINE)
+            Log.logLine(elems, function(m)log(m)end, Log.FINER)
 
             local pd = components.openNewGui(event.player_index, gui, elems, entity)
             elems.fcc_view.entity = entity
@@ -419,7 +419,7 @@ end
 
 -- delegates the on_dart_gui_close event to the standard handler
 local function handle_on_dart_gui_close(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     eventHandler.close(event.gae, event)
 end
 

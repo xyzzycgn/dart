@@ -286,7 +286,7 @@ local function updateTurretTypes(pons, managedTurrets)
             if not fop.ammo_warning then
                 -- this fcc is uninitialized (for ammo warnings)
 
-                Log.logMsg(function(m)log(m)end, Log.FINE, "initializing fcc for ammo warning fcc=%s", fcc.unit_number)
+                Log.logMsg(function(m)log(m)end, Log.FINER, "initializing fcc for ammo warning fcc=%s", fcc.unit_number)
                 fop.ammo_warning = {
                     autoValues = true,
                     turret_types = {},
@@ -321,7 +321,7 @@ local function updateTurretTypes(pons, managedTurrets)
                             if not threshold then
                                 -- yet unknown ammo type for this fcc
                                 local first = table_size(awa.thresholds) == 0 -- check if it's the first one
-                                Log.logMsg(function(m)log(m)end, Log.FINE, "setting initial values for ammo warning fcc=%s ammo=%s", fop.fcc.unit_number, ammo)
+                                Log.logMsg(function(m)log(m)end, Log.FINER, "setting initial values for ammo warning fcc=%s ammo=%s", fop.fcc.unit_number, ammo)
                                 awa.thresholds[ammo] = {
                                     type = ammo,
                                     enabled = first, -- for the first new ammo warning is enabled
@@ -682,7 +682,7 @@ local createFuncs = {
 --- event handler called if a new dart-fcc/dart-radar or a turret is build on a platform
 --- @param event EventData
 local function entityCreated(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
@@ -702,7 +702,7 @@ end
 local function removedRadar(entity, event)
     local darts = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform
     local fccun = entity.unit_number
-    Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
 
     -- check if deleted radar is just shown in a GUI -> close it (for all players of the force owning the entity)
     for _, player in pairs(entity.force.players) do
@@ -765,7 +765,7 @@ local removedFuncs = {
 
 --- event handler called if a dart-fcc/dart-radar or a turret is removed from platform
 local function entityRemoved(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     local entity = event.entity
     local func = removedFuncs[entity.name] or removedFuncs[entity.type]
 
@@ -777,7 +777,7 @@ end
 --- (triggered by "remove all entities" in editor mode - see ticket #52)
 --- or by destruction of entity (e.g. by an asteroid hit)
 local function onObjectDestroyed(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     local res = global_data.getRegisteredEntities()
     local re = res[event.registration_number]
     if re then
@@ -842,7 +842,7 @@ local function searchTurrets(pons)
     for _, turret in pairs(pons.surface.find_entities_filtered({ type = "ammo-turret" })) do
         addTurretToPons(turretsOnPlatform, turret)
     end
-    Log.logBlock(pons, function(m)log(m)end, Log.FINE)
+    Log.logBlock(pons, function(m)log(m)end, Log.FINER)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -874,7 +874,7 @@ end
 --- event handler for on_surface_created
 --- @param event EventData
 local function surfaceCreated(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     local surface = game.surfaces[event.surface_index]
 
     createPonsAndAddToGDAndPD(surface)
@@ -885,7 +885,7 @@ end
 --- triggered in editor mode when importing a save file
 --- @param event EventData
 local function onSurfaceCleared(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     local pons = global_data.getPlatforms()[event.surface_index]
     if pons then
         pons.turretsOnPlatform = {}
@@ -904,7 +904,7 @@ end
 --- triggered when a surface is deleted in editor mode
 --- @param event EventData
 local function onSurfaceDeleted(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     -- surface is invalid, so prevent all further calls
     global_data.getPlatforms()[event.surface_index] = nil
 end
@@ -1133,19 +1133,19 @@ end
 
 --- @param event EventData
 local function tbda(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
 --- @param event EventData
 local function tbdu(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 
 --- @param event EventData
 local function tbdd(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 end
 --###############################################################
 

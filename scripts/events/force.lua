@@ -9,7 +9,7 @@ local Log = require("__log4factorio__.Log")
 
 --- @param event EventData
 local function onForceCreated(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 
     global_data.addForce_data(event.force, force_data.init_force_data())
 end
@@ -17,14 +17,14 @@ end
 
 --- @param event EventData
 local function onForcesMerged(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     global_data.deleteForce_data(event.source_index)
 end
 -- ###############################################################
 
 --- @param event EventData
 local function onForceReset(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 
     local fd = global_data.getForce_data(event.force.index)
     if fd then

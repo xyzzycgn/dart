@@ -225,7 +225,7 @@ local comparators = {
 --- @param pons Pons
 --- @param pd PlayerData
 function ammos.update(elems, pons, pd)
-    Log.log("ammos.update", function(m)log(m)end, Log.FINE)
+    Log.log("ammos.update", function(m)log(m)end, Log.FINER)
     --- @type FccOnPlatform[]
     local data = pons.fccsOnPlatform
 
@@ -248,7 +248,7 @@ function ammos.update(elems, pons, pd)
         sorteddata = utils.sort(sorteddata, sortings.sorting[active], comparators[active])
     end
 
-    Log.logLine(gae.fields_initialized, function(m)log(m)end, Log.FINE)
+    Log.logLine(gae.fields_initialized, function(m)log(m)end, Log.FINER)
     components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow,
                      gae.fields_initialized and updateTableRow or updateFullTableRow)
 end
@@ -302,7 +302,7 @@ end
 --- @param event EventData
 local function save_clicked(gae, event)
     Log.logBlock(gae.elems, function(m)log(m)end, Log.FINEST)
-    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINER)
     local pd = global_data.getPlayer_data(event.player_index)
     local platform = gae.entity.surface.platform
     local pons = pd.pons[platform.index]
@@ -346,7 +346,7 @@ local function switch_changed(gae, event)
     local thres = gae.elems["ammos_table"][thres_name]
 
     Log.logBlock({ name = name, onOff = onOff, thres_name = thres_name, thres = dump.dumpLuaGuiElement(thres) },
-                 function(m)log(m)end, Log.FINE)
+                 function(m)log(m)end, Log.FINER)
     thres.enabled = components.switchStateAsBoolean(onOff)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

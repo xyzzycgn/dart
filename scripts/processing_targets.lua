@@ -155,7 +155,7 @@ end
 --- @param managedTurrets ManagedTurret[]
 --- @return any resulting filter setting (for all darts of a platform)
 local function assignTargets(pons, knownAsteroids, managedTurrets)
-    Log.log("assignTargets", function(m)log(m)end, Log.FINE)
+    Log.log("assignTargets", function(m)log(m)end, Log.FINER)
     local filter_settings = {}
 
     -- reorganize prio
