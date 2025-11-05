@@ -6,7 +6,7 @@ Date: 2025-11-06
       rises with quality level improvements
     - introduced new researchs for increasing detection range of dart-radars
   Features:
-    - added the ability to let FCCs release control over the turrets
+    - added the ability for adjusting how FCCs deal with the control over the turrets
   Bugfixes:
     - fixed a bug that erroneous disabled turrets when an asteroid was destroyed while others
       were approaching
