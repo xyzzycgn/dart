@@ -266,7 +266,7 @@ local function messageConcerningAsteroids(ls, lvl, pons, num)
     if pons.platform.valid then
         if not num then
             messaging.printmsg({ ls, platform2richText(pons) }, lvl, pons.platform.force)
-        elseif (num > 0) then
+        elseif (num >= settings.global["dart-asteroid-warning-threshold"].value) then
             messaging.printmsg({ ls, num, platform2richText(pons) }, lvl, pons.platform.force)
         end
     end
