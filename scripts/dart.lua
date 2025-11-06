@@ -1113,15 +1113,21 @@ local function onResearchFinished(event)
         -- enlarge detection range, if enabled
         if settings.global["dart-auto-increment-detection-range"].value then
             for _, player in pairs(force.players) do
+                ---@type PlayerData
                 local pd = global_data.getPlayer_data(player.index)
                 -- as spaceplatforms belong to a force iterate only for one player over the radars
                 if pd and not existing_radars_pimped then
                     for _, pons in pairs(pd.pons) do
                         for _, rop in pairs(pons.radarsOnPlatform) do
-                            rop.detectionRange = constants.max_defenseRange * bonus
+                            rop.detectionRange = radars.addIncreaseBasedOnQuality(rop, constants.max_detectionRange) * bonus
                         end
                     end
                     existing_radars_pimped = true
+                end
+                -- but if player has an open GUI => update it
+                local opengui = pd and pd.guis and pd.guis.open
+                if opengui and opengui.entity then
+                    script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
                 end
             end
         else
@@ -1167,7 +1173,7 @@ local function ammo_in_stock_updated(event)
 
     for _, player in pairs(game.players) do
         local pd = global_data.getPlayer_data(player.index)
-        local opengui = pd and pd.gui and pd.gui.open
+        local opengui = pd and pd.guis and pd.guis.open
         if opengui and opengui.entity then
             script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
         end
