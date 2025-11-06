@@ -489,7 +489,7 @@ end
 
 --- @param entity LuaEntity asteroid that just was destroyed
 local function asteroid_died(entity)
-    Log.logLine( { died=entity }, function(m)log(m)end, Log.FINE)
+    Log.logLine( { died=entity }, function(m)log(m)end, Log.FINER)
     script.raise_event(on_target_destroyed_event, { entity=entity, un=entity.unit_number, reason="destroy" } )
 
     --- @type Pons
@@ -497,7 +497,7 @@ local function asteroid_died(entity)
     if pons then
         local managedTurrets = pons.managedTurrets -- DON'T use initializeManagedTurrets()!!
         local knownAsteroids = pons.knownAsteroids
-        Log.logLine(managedTurrets, function(m)log(m)end, Log.FINE)
+        Log.logLine(managedTurrets, function(m)log(m)end, Log.FINER)
 
         local aun = entity.unit_number
         local size = knownAsteroids[aun] and knownAsteroids[aun].size

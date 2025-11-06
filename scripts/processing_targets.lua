@@ -202,31 +202,7 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
                 Log.logMsg(function(m)log(m)end, Log.FINER, "setting shooting_target=%s for turret=%s",
                         prios[1] or "<NIL>", turret.unit_number or "<NIL>")
                prepareCircuitCondition(managedTurret, filter_settings, prios[1], knownAsteroids)
-                ---- unit number of dart-fcc managing this turret
-                --local un = managedTurret.fcc.unit_number
-                ---- filter_settings for this dart-fcc
-                --local filter_setting_by_un = filter_settings[un] or {}
-                --
-                ---- now prepare to set the CircuitConditions
-                ---- @wube why simple if it could be complicated ;-)
-                ----- @type CircuitCondition
-                --Log.logBlock(managedTurret.circuit_condition, function(m)log(m)end, Log.FINER)
-                --local cc = managedTurret.circuit_condition
-                --if utils.checkCircuitCondition(cc) then -- check if turret has a valid/useable CircuitCondition
-                --    local filter = {
-                --        value = { type = cc.first_signal.type,
-                --                  name = cc.first_signal.name,
-                --                  quality = cc.first_signal.quality or 'normal',
-                --        },
-                --        min = 1,
-                --    }
-                --    filter_setting_by_un[#filter_setting_by_un + 1] = filter
-                --    filter_settings[un] = filter_setting_by_un
-                --    script.raise_event(on_target_assigned_event, { tun = turret.unit_number, target = prios[1], reason="assign"} )
-                --else
-                --    Log.logMsg(function(m)log(m)end, Log.WARN, "ignored turret with invalid CircuitCondition=%s", turret.unit_number or "<NIL>")
-                --end
-            else
+             else
                 -- set no filter => disable turret using circuit network
                 if (turret.shooting_target) then -- only if there is an assigned target
                     local old = turret.shooting_target
@@ -245,7 +221,7 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
         --- @type LuaLogisticSection
         local lls = fop.control_behavior.get_section(1)
         lls.filters = filter_settings[ndx] or {} -- if nothing is set => reset
-        Log.logLine(lls.filters, function(m)log(m)end, (#lls.filters > 0) and Log.FINE or Log.FINER)
+        Log.logLine(lls.filters, function(m)log(m)end, Log.FINER)
     end
 end
 -- ###############################################################
