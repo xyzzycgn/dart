@@ -83,6 +83,15 @@ data:extend({
         minimum_value = 10,
     },
     {
+        type = "int-setting",
+        name = "dart-asteroid-warning-threshold",
+        order = "m-b",
+        setting_type = "runtime-global",
+        default_value = 10,
+        minimum_value = 1,
+        maximum_value = 100,
+    },
+    {
         type = "string-setting",
         name = "dart-logLevel",
         order = "z",
