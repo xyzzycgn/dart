@@ -495,7 +495,10 @@ local function asteroid_died(entity)
     --- @type Pons
     local pons = global_data.getPlatforms()[entity.surface.index]
     if pons then
-        local managedTurrets = pons.managedTurrets -- DON'T use initializeManagedTurrets()!!
+        -- use initializeManagedTurrets() only if the managedTurrets are NOT filled
+        -- unconditional use of it causes unwanted unassign of turrets (and thus pauses in defense)
+        -- but not using if managedTurrets is nil - it was previously uninitialized :-( -causes #63
+        local managedTurrets = pons.managedTurrets or initializeManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
         Log.logLine(managedTurrets, function(m)log(m)end, Log.FINER)
 
@@ -893,6 +896,7 @@ local function onSurfaceCleared(event)
         pons.radarsOnPlatform = {}
         pons.knownAsteroids = {}
         pons.ammoInStockPerType = {}
+        pons.managedTurrets = {}        -- fix for #63
     else
         local gs = game.surfaces[event.surface_index]
         Log.logMsg(function(m)log(m)end, Log.WARN, "on_surface_cleared for yet unknown surface %s - surface_index = %d", gs, event.surface_index)
