@@ -87,8 +87,8 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 function eventHandler.close(gae, event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
-    Log.logBlock(gae, function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+    Log.logBlock(gae, function(m)log(m)end, Log.FINEST)
     local guis = global_data.getPlayer_data(event.player_index).guis
     local guiToBeCLosed = gae.gui
     guis.recentlyopen = guis.recentlyopen or {}

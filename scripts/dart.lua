@@ -9,9 +9,12 @@ local global_data = require("scripts.global_data")
 local player_data = require("scripts.player_data")
 local asyncHandler = require("scripts.asyncHandler")
 local constants = require("scripts.constants")
-local utils = require("scripts.utils")
-local Hub = require("scripts.Hub")
+local Hub = require("scripts.entities.Hub")
+local radars = require("scripts.entities.radars")
+local events_force = require("scripts.events.force")
+local events_player = require("scripts.events.player")
 local messaging = require("scripts.messaging")
+local processing_targets = require("scripts.processing_targets")
 local ammoTurretMapping = require("scripts.ammoTurretMapping")
 
 -- Type definitions for this file
@@ -35,11 +38,16 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field turret_types table<string> List of turret-types connected to a fcc
 --- @field thresholds table<string, AmmoWarningThreshold> thresholds for warning for low ammo (indexed by ammo type)
 
+--- @class TurretControl: any determines how the connected turrets are controlled by the FCC
+--- @field mode SwitchState
+--- @field threshold number
+
 --- @class FccOnPlatform a dart-fcc on a platform
 --- @field fcc LuaEntity dart-fcc
 --- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
 --- @field fcc_un uint64 unit_number of dart-fcc
 --- @field ammo_warning AmmoWarning
+--- @field turretControl TurretControl? (opt.) determines how the connected turrets are controlled
 
 --- @class RadarOnPlatform a dart-radar on a platform
 --- @field radar LuaEntity dart-radar
@@ -47,7 +55,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field detectionRange uint radius of detection around a dart-radar
 --- @field defenseRange uint radius of defended area around a dart-radar
 
---- @class KnownAsteroid any describes an asteroid tracked by D.A.R.T
+--- @class KnownAsteroid: any describes an asteroid tracked by D.A.R.T
 --- @field position MapPosition
 --- @field movement table { x, y }
 --- @field size string
@@ -61,6 +69,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field radarsOnPlatform RadarOnPlatform[] array of D.A.R.T. radar entities located on the platform
 --- @field knownAsteroids KnownAsteroid[] array of asteroids currently known and in detection range
 --- @field ammoInStockPerType table<string, uint> array with stock in hub per ammo type
+--- @field managedTurrets ManagedTurret[] updated in businessLogic()
 
 --- @class CnOfTurret circuit network belonging to a turret.
 --- @field turret LuaEntity turret
@@ -83,177 +92,10 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 -- end of Type definitions for this file
 -- ###############################################################
 
+
 --- handle for asynchronous call of fragments()
 local asyncFragments
 
--- ###############################################################
-
---- Calculates whether an asteroid hits, grazes or passes the defended area.
---- Defended area is defined by a circle with radius r and centerpoint at <xc, xc>
---- equation (x - xc)² + (y - yc)² = r²
----
---- The course of the asteroid is defined as half-line starting at <x0, y0> with
---- a movement vector of <dx, dy>.
---- P(t) = <x0, y0> + t * <dx, dy>
----
---- Combining the two equations for the circle and the half-line yields a quadratic equation
---- (x0 + t dx - xc)² + (y0 + t dy - yc)² = r²
---- transformed to
---- A t² + B t + C = 0
---- with
---- A = dx² + dy²
---- B = 2 ((x0 - xc) dx + (y0 - yc) * dy)
---- C = (x0 - xc)² + (y0 - yc)² - r²
---- whose discriminant is D = B² - 4 A C
---- Decisions:
---- If D < 0: the half-line does not intersect the circle - asteroid passes
---- If D = 0: the half-line touches the circle (one intersection) - asteroid grazes
---- If D > 0: the half-line intersects the circle twice - asteroid hits.
----
---- @param pons Pons the platform for that the targeting has to be done
---- @param asteroid LuaEntity asteroid to be checked
-local function targeting(pons, asteroid)
-    local platform = pons.platform
-
-    -- check defenseRange of all dart-radars
-    local D = -1
-    for _, rop in pairs(pons.radarsOnPlatform) do
-        local radar = rop.radar
-        local pos = radar.position
-
-        local x0_xc = asteroid.position.x - pos.x
-        local y0_yc = asteroid.position.y - pos.y
-
-        local dx = asteroid.movement.x
-        local dy = asteroid.movement.y + platform.speed
-
-        local A = dx * dx + dy * dy
-        local B = 2 * (x0_xc * dx + y0_yc * dy)
-        local C = x0_xc * x0_xc + y0_yc * y0_yc - rop.defenseRange * rop.defenseRange
-
-        D = B * B - 4 * A * C
-
-        if (D >= 0) then
-            -- asteroid will hit or graze
-            break
-        end
-    end
-
-    return D
-end
-
-local function distToTurret(target, turret)
-    local dx = target.position.x - turret.position.x
-    local dy = target.position.y - turret.position.y
-    return math.sqrt(dx * dx + dy * dy)
-end
---###############################################################
-
---- assign target to turrets depending on prio (nearest asteroid first)
---- @param pons Pons
---- @param knownAsteroids LuaEntity[]
---- @param managedTurrets ManagedTurret[]
---- @return any resulting filter setting (for all darts of a platform)
-local function assignTargets(pons, knownAsteroids, managedTurrets)
-    local filter_settings = {}
-
-    -- reorganize prio
-    for _, managedTurret in pairs(managedTurrets) do
-        local turret = managedTurret.turret
-
-        local prios = {}
-        -- create array with unit_numbers of targets
-        for tun, _ in pairs(managedTurret.targets_of_turret) do
-            prios[#prios + 1] = tun
-        end
-
-        -- sort it by distance (ascending)
-        table.sort(prios, function(i, j)
-            return managedTurret.targets_of_turret[i] < managedTurret.targets_of_turret[j]
-        end)
-
-        -- save new priorities
-        managedTurret.prios = prios
-
-        -- and here occurs the miracle
-        if (#prios > 0) then
-            script.raise_event(on_target_assigned_event, { tun = turret.unit_number, target = prios[1], reason="assign"} )
-
-            -- enable turret using circuit network
-            Log.logMsg(function(m)log(m)end, Log.FINER, "setting shooting_target=%s for turret=%s",
-                       prios[1] or "<NIL>", turret.unit_number or "<NIL>")
-            local asteroid = knownAsteroids[prios[1]].entity
-            Log.logBlock(asteroid, function(m)log(m)end, Log.FINER)
-            turret.shooting_target = asteroid
-            -- unit number of dart-fcc managing this turret
-            local un = managedTurret.fcc.unit_number
-            -- filter_settings for this dart-fcc
-            local filter_setting_by_un = filter_settings[un] or {}
-
-            -- now prepare to set the CircuitConditions
-            -- @wube why simple if it could be complicated ;-)
-            --- @type CircuitCondition
-            Log.logBlock(managedTurret.circuit_condition, function(m)log(m)end, Log.FINER)
-            local cc = managedTurret.circuit_condition
-            if utils.checkCircuitCondition(cc) then
-                local filter = {
-                    value = { type = cc.first_signal.type,
-                              name = cc.first_signal.name,
-                              quality = cc.first_signal.quality or 'normal',
-                    },
-                    min = 1,
-                }
-                filter_setting_by_un[#filter_setting_by_un + 1] = filter
-                filter_settings[un] = filter_setting_by_un
-            else
-                Log.logMsg(function(m)log(m)end, Log.WARN, "ignored turret with invalid CircuitCondition=%s", turret.unit_number or "<NIL>")
-            end
-        else
-            -- set no filter => disable turret using circuit network
-            Log.logMsg(function(m)log(m)end, Log.FINER, "try to disable turret=%s", turret.unit_number or "<NIL>")
-            turret.shooting_target = nil
-            script.raise_event(on_target_unassigned_event, { tun = turret.unit_number, reason="unassign" } )
-       end
-    end
-
-    Log.logBlock(filter_settings, function(m)log(m)end, Log.FINER)
-
-    -- now set the CircuitConditions from the filter_settings
-    -- @wube why simple if it could be complicated - part 2 ;-)
-    for ndx, dart in pairs(pons.fccsOnPlatform) do
-        local lls = dart.control_behavior.get_section(1)
-        lls.filters = filter_settings[ndx] or {} -- if nothing is set => reset
-    end
-end
--- ###############################################################
-
---- calculate prio (based on distance to turrets) for an asteroid if within range (and harmful)
---- @param managedTurrets ManagedTurret[]
---- @param target LuaEntity asteroid which should be targeted
---- @param D float discriminant (@see targeting())
-local function calculatePrio(managedTurrets, target, D)
-    local tun = target.unit_number
-    for _, v in pairs(managedTurrets) do
-        -- target enters or touches protected area
-        Log.logBlock(tun, function(m)log(m)end, Log.FINER)
-
-        local inRange = false
-        if D >= 0 then
-            local dist = distToTurret(target, v.turret)
-            -- remember distance for each turret to target if in range
-            if dist <= v.range then
-                Log.logBlock(target, function(m)log(m)end, Log.FINER)
-                v.targets_of_turret[tun] = dist
-                inRange = true
-            end
-        end
-        if not inRange then
-            -- no longer or not in range / not hitting
-            Log.logBlock(target, function(m)log(m)end, Log.FINER)
-            v.targets_of_turret[tun] = nil
-        end
-    end
-end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param pons Pons
@@ -312,9 +154,10 @@ local function circuitNetworkOfDarts(pons)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- initializes the ManagedTurret of a pons for the next cycle of BL
 --- @param pons Pons
 --- @return ManagedTurret[]
-local function getManagedTurrets(pons)
+local function initializeManagedTurrets(pons)
     --- @type FccOnPlatform[]
     local cnOfDarts = circuitNetworkOfDarts(pons)
     --- @type CnOfTurret[][]
@@ -387,7 +230,8 @@ local function detection(pons)
                 surface = surface,
                 time_to_live = 55,
                 radius = rop.detectionRange,
-                width = width,
+                -- paint thicker if radius > 70 (thus increase visibility)
+                width = (rop.detectionRange <= 70) and width or (width + 1),
             })
         end
         if settings.global["dart-show-defended-area"].value or rop.edited then
@@ -422,7 +266,7 @@ local function messageConcerningAsteroids(ls, lvl, pons, num)
     if pons.platform.valid then
         if not num then
             messaging.printmsg({ ls, platform2richText(pons) }, lvl, pons.platform.force)
-        elseif (num > 0) then
+        elseif (num >= settings.global["dart-asteroid-warning-threshold"].value) then
             messaging.printmsg({ ls, num, platform2richText(pons) }, lvl, pons.platform.force)
         end
     end
@@ -442,7 +286,7 @@ local function updateTurretTypes(pons, managedTurrets)
             if not fop.ammo_warning then
                 -- this fcc is uninitialized (for ammo warnings)
 
-                Log.logMsg(function(m)log(m)end, Log.FINE, "initializing fcc for ammo warning fcc=%s", fcc.unit_number)
+                Log.logMsg(function(m)log(m)end, Log.FINER, "initializing fcc for ammo warning fcc=%s", fcc.unit_number)
                 fop.ammo_warning = {
                     autoValues = true,
                     turret_types = {},
@@ -477,7 +321,7 @@ local function updateTurretTypes(pons, managedTurrets)
                             if not threshold then
                                 -- yet unknown ammo type for this fcc
                                 local first = table_size(awa.thresholds) == 0 -- check if it's the first one
-                                Log.logMsg(function(m)log(m)end, Log.FINE, "setting initial values for ammo warning fcc=%s ammo=%s", fop.fcc.unit_number, ammo)
+                                Log.logMsg(function(m)log(m)end, Log.FINER, "setting initial values for ammo warning fcc=%s ammo=%s", fop.fcc.unit_number, ammo)
                                 awa.thresholds[ammo] = {
                                     type = ammo,
                                     enabled = first, -- for the first new ammo warning is enabled
@@ -506,7 +350,7 @@ local function businessLogic()
         local surface = pons.surface
         --- @type LuaSpacePlatform
         local platform = pons.platform
-        local managedTurrets = getManagedTurrets(pons)
+        local managedTurrets = initializeManagedTurrets(pons)
         local knownAsteroids = pons.knownAsteroids
 
         updateTurretTypes(pons, managedTurrets)
@@ -526,7 +370,7 @@ local function businessLogic()
                     target.movement.y = target.position.y - asteroid.position.y
                     target.position = asteroid.position
 
-                    local D = targeting(pons, target)
+                    local D = processing_targets.targeting(pons, target)
 
                     local color
                     if (D < 0) then
@@ -549,7 +393,7 @@ local function businessLogic()
                         })
                     end
 
-                    calculatePrio(managedTurrets, asteroid, D)
+                    processing_targets.calculatePrio(managedTurrets, asteroid, D)
                 else
                     -- new asteroid
                     if table_size(knownAsteroids) == 0 then
@@ -579,11 +423,13 @@ local function businessLogic()
             end
             messageConcerningAsteroids("dart-message.dart-asteroids-left", messaging.level.INFO, pons, left)
 
-            assignTargets(pons, knownAsteroids, managedTurrets)
+            processing_targets.assignTargets(pons, knownAsteroids, managedTurrets)
         else
             Log.log("skipped invalid platform during processing", function(m)log(m)end, Log.WARN)
         end
 
+        -- save for use in asteroid_died
+        pons.managedTurrets = managedTurrets
     end
     Log.log("leave BL", function(m)log(m)end, Log.FINER)
 end
@@ -620,22 +466,6 @@ local function space_platform_changed_state(event)
 end
 -- ###############################################################
 
---- @param event EventData
-local function playerChangedSurface(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
-    local pd = global_data.getPlayer_data(event.player_index)
-    local guis = pd and pd.guis
-
-    if guis and guis.open then
-        Log.log("close gui", function(m)log(m)end, Log.FINER)
-        if guis.open.gui and guis.open.gui.valid then
-            guis.open.gui.destroy()
-            guis.open = {}
-        end
-    end
-end
--- ###############################################################
-
 --- add new asteroid fragments arising from the destroyed one (will be called asynchronusly after destruction of an asteroid)
 --- @param dest_target DestroyedTarget
 local function fragments(dest_target)
@@ -657,14 +487,18 @@ local function fragments(dest_target)
 end
 -- ###############################################################
 
+--- @param entity LuaEntity asteroid that just was destroyed
 local function asteroid_died(entity)
+    Log.logLine( { died=entity }, function(m)log(m)end, Log.FINER)
     script.raise_event(on_target_destroyed_event, { entity=entity, un=entity.unit_number, reason="destroy" } )
 
     --- @type Pons
     local pons = global_data.getPlatforms()[entity.surface.index]
     if pons then
-        local managedTurrets = getManagedTurrets(pons)
+        local managedTurrets = pons.managedTurrets -- DON'T use initializeManagedTurrets()!!
         local knownAsteroids = pons.knownAsteroids
+        Log.logLine(managedTurrets, function(m)log(m)end, Log.FINER)
+
         local aun = entity.unit_number
         local size = knownAsteroids[aun] and knownAsteroids[aun].size
 
@@ -688,7 +522,7 @@ local function asteroid_died(entity)
         end
 
         -- assign remaining asteroids to turrets
-        assignTargets(pons, knownAsteroids, managedTurrets)
+        processing_targets.assignTargets(pons, knownAsteroids, managedTurrets)
     else
         Log.logMsg(function(m)log(m)end, Log.WARN, "asteroid_died - unknown pons for surface=%s", entity.surface.index)
     end
@@ -848,7 +682,7 @@ local createFuncs = {
 --- event handler called if a new dart-fcc/dart-radar or a turret is build on a platform
 --- @param event EventData
 local function entityCreated(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
@@ -868,7 +702,7 @@ end
 local function removedRadar(entity, event)
     local darts = global_data.getPlatforms()[entity.surface.index].radarsOnPlatform
     local fccun = entity.unit_number
-    Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
 
     -- check if deleted radar is just shown in a GUI -> close it (for all players of the force owning the entity)
     for _, player in pairs(entity.force.players) do
@@ -931,7 +765,7 @@ local removedFuncs = {
 
 --- event handler called if a dart-fcc/dart-radar or a turret is removed from platform
 local function entityRemoved(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     local entity = event.entity
     local func = removedFuncs[entity.name] or removedFuncs[entity.type]
 
@@ -943,7 +777,7 @@ end
 --- (triggered by "remove all entities" in editor mode - see ticket #52)
 --- or by destruction of entity (e.g. by an asteroid hit)
 local function onObjectDestroyed(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     local res = global_data.getRegisteredEntities()
     local re = res[event.registration_number]
     if re then
@@ -1008,7 +842,7 @@ local function searchTurrets(pons)
     for _, turret in pairs(pons.surface.find_entities_filtered({ type = "ammo-turret" })) do
         addTurretToPons(turretsOnPlatform, turret)
     end
-    Log.logBlock(pons, function(m)log(m)end, Log.FINE)
+    Log.logBlock(pons, function(m)log(m)end, Log.FINER)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1040,7 +874,7 @@ end
 --- event handler for on_surface_created
 --- @param event EventData
 local function surfaceCreated(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     local surface = game.surfaces[event.surface_index]
 
     createPonsAndAddToGDAndPD(surface)
@@ -1051,7 +885,7 @@ end
 --- triggered in editor mode when importing a save file
 --- @param event EventData
 local function onSurfaceCleared(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     local pons = global_data.getPlatforms()[event.surface_index]
     if pons then
         pons.turretsOnPlatform = {}
@@ -1070,7 +904,7 @@ end
 --- triggered when a surface is deleted in editor mode
 --- @param event EventData
 local function onSurfaceDeleted(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     -- surface is invalid, so prevent all further calls
     global_data.getPlatforms()[event.surface_index] = nil
 end
@@ -1257,27 +1091,49 @@ local function dart_config_changed()
 end
 --###############################################################
 
---- creates the PlayerData if needed and stores them in global storage
---- @param player_index uint
-local function init_player_data(player_index)
-    local pd = global_data.getPlayer_data(player_index)
-    if (pd == nil) then
-        local player = game.get_player(player_index)
-        pd = player_data.init_player_data(player)
-        global_data.addPlayer_data(player, pd)
+--- @param event EventData
+local function onResearchFinished(event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    --- @type LuaTechnology
+    local research = event.research
+    local name = research and research.name
+    local darttech = constants.dart_technologies
+    if name and (string.sub(name, 1, #darttech) == darttech) then
+        Log.log("new darttech", function(m)log(m)end, Log.FINE)
+        local force = research.force
+        local existing_radars_pimped = false
+
+        local fd = global_data.getForce_data(force.index)
+        -- incr tecLevel
+        local techLevel = fd.techLevel or 0
+        techLevel = techLevel + 1
+        fd.techLevel = techLevel
+        local bonus = radars.calculateRangeBonus(techLevel)
+
+        -- enlarge detection range, if enabled
+        if settings.global["dart-auto-increment-detection-range"].value then
+            for _, player in pairs(force.players) do
+                ---@type PlayerData
+                local pd = global_data.getPlayer_data(player.index)
+                -- as spaceplatforms belong to a force iterate only for one player over the radars
+                if pd and not existing_radars_pimped then
+                    for _, pons in pairs(pd.pons) do
+                        for _, rop in pairs(pons.radarsOnPlatform) do
+                            rop.detectionRange = radars.addIncreaseBasedOnQuality(rop, constants.max_detectionRange) * bonus
+                        end
+                    end
+                    existing_radars_pimped = true
+                end
+                -- but if player has an open GUI => update it
+                local opengui = pd and pd.guis and pd.guis.open
+                if opengui and opengui.entity then
+                    script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
+                end
+            end
+        else
+            Log.log("auto enlarge of detection range disabled", function(m)log(m)end, Log.WARN)
+        end
     end
-end
-
---- @param event EventData
-local function player_joined_or_created(event)
-    Log.logEvent(event, function(m)log(m)end)
-    init_player_data(event.player_index)
-end
---###############################################################
-
---- @param event EventData
-local function tbd(event)
-    Log.logEvent(event, function(m)log(m)end)
 end
 --###############################################################
 
@@ -1317,7 +1173,7 @@ local function ammo_in_stock_updated(event)
 
     for _, player in pairs(game.players) do
         local pd = global_data.getPlayer_data(player.index)
-        local opengui = pd and pd.gui and pd.gui.open
+        local opengui = pd and pd.guis and pd.guis.open
         if opengui and opengui.entity then
             script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
         end
@@ -1430,38 +1286,24 @@ local function alterSetting(event, which, func)
         if func then
             func(new)
         end
-        return true
+        return true -- signals matching setting name
     end
-    return false
+    return false -- signals no match
 end
 
 local function changeSettings(e)
     -- local var to make lua happy
     local _ =
-        alterSetting(e, "dart-logLevel", function(newval) Log.setSeverity(Log[newval]) end)
+           alterSetting(e, "dart-logLevel", function(newval) Log.setSeverity(Log[newval]) end)
         or alterSetting(e, "dart-show-detection-area")
         or alterSetting(e, "dart-show-defended-area")
         or alterSetting(e, "dart-mark-targets")
+        or alterSetting(e, "dart-auto-increment-detection-range")
         or alterSetting(e, "dart-msgLevel")
         or alterSetting(e, "dart-low-ammo-warning")
         or alterSetting(e, "dart-low-ammo-warning-threshold-default")
-end
--- ###############################################################
-
-local function toggleMapEditor(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
-    local pd = global_data.getPlayer_data(event.player_index)
-    if pd then
-        local editorMode = pd.editorMode
-        if editorMode then
-            editorMode = false
-        else
-            editorMode = true
-        end
-
-        pd.editorMode = editorMode
-        Log.logLine({ player_index = event.player_index, editorMode = editorMode }, function(m)log(m)end, Log.INFO)
-    end
+        or alterSetting(e, "dart-release-control")
+        or alterSetting(e, "dart-release-control-threshold-default")
 end
 --###############################################################
 
@@ -1481,17 +1323,22 @@ dart.events = {
     [defines.events.on_surface_imported]             = onSurfaceImported,
 -- ^^^ mostly/only used in editor mode
 
-    [defines.events.on_object_destroyed ]            = onObjectDestroyed ,
+    [defines.events.on_object_destroyed ]            = onObjectDestroyed,
     [defines.events.script_raised_destroy]           = entityRemoved,
     [defines.events.on_surface_created]              = surfaceCreated,
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
-    [defines.events.on_player_created]               = player_joined_or_created,
-    [defines.events.on_player_joined_game]           = player_joined_or_created,
-    [defines.events.on_player_left_game]             = tbd,
-    [defines.events.on_player_removed]               = tbd,
-    [defines.events.on_player_changed_surface]       = playerChangedSurface,
+    [defines.events.on_player_created]               = events_player.playerJoinedOrCreated,
+    [defines.events.on_player_joined_game]           = events_player.playerJoinedOrCreated,
+    [defines.events.on_player_left_game]             = events_player.playerLeftGame,
+    [defines.events.on_player_removed]               = events_player.playerRemoved,
+    [defines.events.on_player_changed_surface]       = events_player.playerChangedSurface,
+    [defines.events.on_player_toggled_map_editor]    = events_player.toggleMapEditor,
     [defines.events.on_runtime_mod_setting_changed]  = changeSettings,
-    [defines.events.on_player_toggled_map_editor]    = toggleMapEditor,
+    [defines.events.on_research_finished]            = onResearchFinished,
+
+    [defines.events.on_force_created]                = events_force.onForceCreated,
+    [defines.events.on_forces_merged]                = events_force.onForcesMerged,
+    [defines.events.on_force_reset]                  = events_force.onForceReset,
 
     [defines.events.on_tick] = asyncHandler.dequeue,
 

@@ -2,7 +2,7 @@
 --- DateTime: 04.05.25 06:00
 ---
 require('test.BaseTest')
-local lu = require('lib.luaunit')
+local lu = require('luaunit')
 local utils = require('scripts.utils')
 
 TestUtils = {}

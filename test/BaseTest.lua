@@ -7,8 +7,8 @@
 local Require = require("test.require")
 require = Require.replace(require)
 
-local lu = require('lib.luaunit')
-serpent=require('lib.serpent') -- must be global
+local lu = require('luaunit')
+serpent=require('serpent') -- must be global
 
 --########################################################
 -- needed by Log.log() which is called by some tests
@@ -21,7 +21,8 @@ settings = {
         ["dart-logLevel"] = { value = 5 }, -- == Log.INFO
     },
     startup = {
-        ["dart-update-stock-period"] = { value = 10 }
+        ["dart-update-stock-period"] = { value = 10 },
+        ["dart-release-control"] = { value = false },
     }
 }
 
@@ -50,8 +51,17 @@ defines = {
         manual_control = 7,
         wait_station = 9,
         destination_full = 9,
+    },
+    print_sound = {
+        use_player_settings = true
+    },
+    print_skip = {
+        if_visible = true
     }
 }
+
+require("scripts.internalEvents")
+
 --########################################################
 
 BaseTest = {

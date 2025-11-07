@@ -3,8 +3,8 @@
 --- DateTime: 28.12.24 10:31
 ---
 require('test.BaseTest')
-local lu = require('lib.luaunit')
-local Hub = require('scripts.Hub')
+local lu = require('luaunit')
+local Hub = require('scripts.entities.Hub')
 
 -- needed by Log.log() which is called by init()
 function log()

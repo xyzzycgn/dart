@@ -1,4 +1,21 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.0
+Date: 2025-11-07
+  Balancing:
+    - better use of high range turrets by increasing base detection range of dart-radars and higher
+      rises with quality level improvements
+    - introduced new researchs for increasing detection range of dart-radars
+  Ease of use:
+    - added a threshold for triggering asteroid warnings
+  Features:
+    - added the ability for adjusting how FCCs deal with the control over the turrets
+  Bugfixes:
+    - fixed a bug that erroneous disabled turrets when an asteroid was destroyed while others
+      were approaching
+    - fixed a bug that prevented gui update when ammo in stock has changed
+  Info:
+    - Migration upgrades detectionRange to new max for all existing dart-radars
+---------------------------------------------------------------------------------------------------
 Version: 1.1.2
 Date: 2025-10-25
   Bugfixes:

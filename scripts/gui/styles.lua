@@ -57,6 +57,21 @@ styles.dart_bottom_button_flow = {
     horizontal_align = "center",
 }
 
+styles.dart_centered_stretch_off_flow = {
+    type = "horizontal_flow_style",
+    vertically_stretchable = "off",
+    horizontally_stretchable = "off",
+    horizontal_align = "center",
+}
+
+styles.dart_centered_flow = {
+    type = "horizontal_flow_style",
+    vertically_stretchable = "off",
+    horizontally_stretchable = "on",
+    horizontal_align = "center",
+}
+
+
 styles.dart_controls_textfield = {
     type = "textbox_style",
     width = 36
@@ -96,6 +111,18 @@ styles.dart_minimap_label = {
     width = 90,
     vertical_align = "bottom",
     horizontal_align = "left",
+}
+
+styles.dart_switch_label_selected = {
+    type = "label_style",
+    parent = "bold_label",
+    font_color = { 241, 190, 100 },
+}
+
+styles.dart_switch_label = {
+    type = "label_style",
+    parent = "label",
+    hovered_font_color = { 255, 231, 193 },
 }
 
 styles.dart_scrollpane_style = {
@@ -203,5 +230,15 @@ styles.dart_top_frame = {
     vertically_squashable = "on",
     horizontally_squashable = "on",
     maximal_height = 600,
+    maximal_width = 1000,
+}
+
+styles.dart_top_frame_800 = {
+    type = "frame_style",
+    vertically_stretchable = "on",
+    horizontally_stretchable = "on",
+    vertically_squashable = "on",
+    horizontally_squashable = "on",
+    maximal_height = 800,
     maximal_width = 1000,
 }

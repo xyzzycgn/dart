@@ -4,7 +4,7 @@
 --- DateTime: 11.10.25 15:30
 ---
 require('test.BaseTest')
-local lu = require('lib.luaunit')
+local lu = require('luaunit')
 require('factorio_def')
 
 local configureTurrets = require('scripts.ConfigureTurrets')

@@ -319,27 +319,8 @@ function components.openNewGui(player_index, gui, elems, entity)
 end
 -- ###############################################################
 
---- @param flag boolean
---- @return SwitchState
-function components.switchState(flag)
-    return flag and "right" or "left"
-end
--- ###############################################################
-
-local switch = {
-    left = false,
-    right = true
-}
---- converts a SwitchState to boolean
---- @param state SwitchState
---- @return boolean|nil "right" -> true, "left" -> false, "none" -> nil
-function components.switchStateAsBoolean(state)
-    return switch[state]
-end
--- ###############################################################
-
---- register local handlers in flib
---- @param handlers any array with handler to be registered
+--- register handlers in flib
+--- @param handlers any array with handlers to be registered
 function components.add_handler(handlers)
     flib_gui.add_handlers(handlers, function(e, handler)
         local guiAndElements = global_data.getPlayer_data(e.player_index).guis.open
@@ -348,5 +329,116 @@ function components.add_handler(handlers)
         end
     end)
 end
+
+-- ###############################################################
+
+--- @param event EventData
+--- @return string, string the names of switch and the middle label
+local function getCompanions(event)
+    local element = event.element
+    local switch_name = element.tags.switch_name
+    local middle_name = element.tags.middle_name
+    Log.logLine({ name = switch_name, middle = middle_name }, function(m)log(m)end, Log.FINE)
+
+    return switch_name, middle_name
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- returns the style for the middle label of a tristateswitch
+--- @param state SwitchState
+--- @return LuaStyle
+function components.getStyle(state)
+    return (components.switchStateAsBoolean(state) == nil) and "dart_switch_label_selected" or "dart_switch_label"
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- toggles switch to "none" if label middle is clicked
+--- @param gae GuiAndElements
+--- @param event EventData
+function components.middle_clicked(gae, event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+
+    local name, middle = getCompanions(event)
+    local mid_luaGuiElement = gae.elems[middle]
+    mid_luaGuiElement.style = "dart_switch_label_selected"
+    local switch = gae.elems[name]
+    switch.switch_state = "none"
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- sets style of label middle
+--- @param gae GuiAndElements
+--- @param event EventData
+function components.tristate_switch_state_changed(gae, event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+
+    local switch_name, middle_name = getCompanions(event)
+    local switch = gae.elems[switch_name]
+    local mid_luaGuiElement = gae.elems[middle_name]
+    mid_luaGuiElement.style = components.getStyle(switch.switch_state)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- Creates a switch with allowed none_state.
+--- @param name string used for name and (as base) for captions and tooltips
+--- @param switch_handler function eventHandler
+function components.triStateSwitch(name, switch_handler, click_handler)
+    local left = name .. "-left"
+    local middle = name .. "-middle"
+    local right = name .. "-right"
+    -- save the names for switch and middle label in tags
+    local tags = { middle_name = middle, switch_name = name, }
+
+    return {
+        type = "flow",
+        direction = "vertical",
+        {
+            type = "switch",
+            name = name,
+            allow_none_state = true,
+            tooltip = { "tooltips." .. name },
+            left_label_caption = { "gui." .. left },
+            left_label_tooltip = { "tooltips." .. left },
+            right_label_caption = { "gui." .. right },
+            right_label_tooltip = { "tooltips." .. right },
+            tags = tags,
+            handler = { [defines.events.on_gui_switch_state_changed] = switch_handler, }
+        },
+        {
+            type = "flow",
+            direction = "horizontal",
+            style = "dart_centered_flow",
+            {
+                type = "label",
+                name = middle,
+                tags = tags,
+                caption = { "gui." .. middle },
+                tooltip = { "tooltips." .. middle },
+                handler = { [defines.events.on_gui_click] = click_handler },
+            },
+        },
+    }
+end
+-- ###############################################################
+
+--- converts a boolean or nil to SwitchState, nil is converted to "none"
+--- @param flag boolean|nil
+--- @return SwitchState
+function components.switchState(flag)
+    return (flag == nil) and "none" or flag and "right" or "left"
+end
+-- ###############################################################
+
+local switch = {
+    left = false,
+    right = true
+}
+--- converts a SwitchState to boolean, "none" is converted to nil
+--- @param state SwitchState
+--- @return boolean|nil "right" -> true, "left" -> false, "none" -> nil
+function components.switchStateAsBoolean(state)
+    return switch[state]
+end
+-- ###############################################################
 
 return components

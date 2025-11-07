@@ -13,9 +13,37 @@ function global_data.init()
     storage.platforms = storage.platforms or {}
     storage.queued = storage.queued or {}
     storage.registeredEntities = storage.registeredEntities or {}
+    storage.forces =  storage.forces or {}
 end
 -- ###############################################################
 
+--- @param force LuaForce
+--- @param forceData ForceData
+function global_data.addForce_data(force, forceData)
+    local fi = force.index
+    if (storage.forces[fi] == nil) then
+        storage.forces[fi] = forceData
+    else
+        Log.log("force already known", function(m)log(m)end, Log.WARN)
+    end
+end
+
+--- @param forceindex number
+--- @return ForceData
+function global_data.getForce_data(forceindex)
+    return storage.forces[forceindex]
+end
+
+--- @param forceindex number
+--- @return ForceData
+function global_data.deleteForce_data(forceindex)
+    Log.logMsg(function(m)log(m)end, Log.INFO, "force deleted - index=%d", forceindex)
+    storage.forces[forceindex] = nil
+end
+-- ###############################################################
+
+--- @param player LuaPlayer
+--- @param pd PlayerData
 function global_data.addPlayer_data(player, pd)
     local pi = player.index
     if (storage.players[pi] == nil) then

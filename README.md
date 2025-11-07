@@ -17,6 +17,8 @@ technology.
 
 ![D.A.R.T. technology](https://github.com/xyzzycgn/dart/blob/main/doc/dart-technology.png?raw=true)
 
+As of V 1.2.0 you can increase the maximum detection range of your dart-radars by resarching additional technologies
+
 ## Usage
 To protect a platform with D.A.R.T., you have to build a FCC and at least one dart-radar (exact number depends on size and 
 shape of your platform to cover it complete) additionally to your turrets. Communication between FCC and dart-radars uses a top secret military 
@@ -27,7 +29,7 @@ To control ammo turrets with D.A.R.T., you have to connect them with red or gree
 
 ![D.A.R.T. on a platform](https://github.com/xyzzycgn/dart/blob/main/doc/dart-on-platform.png?raw=true)
 
-## Configuration
+## Configuration of D.A.R.T.
 ### Manually
 Configuration can be done by simply opening the FCC 
 
@@ -68,7 +70,7 @@ by simply pressing the "automatic turret configuration" button.
 Warnings triggered by an erroneous wiring - for example wiring the same turret with both green and red wire to a FCC -
 are not covered and must be solved by correcting the wiring.
 
-## Monitoring the ammunition stock (new in 1.1)
+## Monitoring the ammunition stock (since 1.1)
 
 D.A.R.T. has the ability to monitor the ammunition stock of a platform (located in the hub) and issues warnings as soon 
 as it falls below a configurable threshold. The thresholds are configurable per platform and ammo-type possibly used by 
@@ -76,6 +78,25 @@ the turrets connected to the FCC. If you don't use a particular ammo-type you ca
 
 ![configure thresholds](https://github.com/xyzzycgn/dart/blob/main/doc/dart-configure-main-ammos.png?raw=true)
 
+## Adjusting control of the turrets (new in 1.2)
+
+If you want you may enable a finer adjustment of the behavior of the FCCs in the startup settings of the mod.
+
+If enabled you have the choice between three modes how a FCC deals with the control of the turrets:
+
+![adjust mode](https://github.com/xyzzycgn/dart/blob/main/doc/dart-configure-main-adjust-mode.png?raw=true)
+
+- never
+
+  In this mode for all turrets connected to this FCC control over these turrets is released, i.e. they are permanently enabled 
+  and handle all attacks on their own (not recommended 😉)
+- automatic
+
+  In this mode the FCC releases control over a turret, if the number of asteroids that are in range of the turret and 
+  on collision course exceeds the threshold 
+- always
+
+  Normal operational mode - all turrets are under full control of the FCC (same as disabling adjustment in startup settings)
 
 ## Compatibility
 This mod is compatible to vanilla game (= space age) and other mods introducing new turrets derived from 
@@ -118,6 +139,10 @@ connectivity to the circuit network and want to use it together with D.A.R.T., l
   - українська (uk-UA)    
   - 中国人 (zh-CN)
   - 中國人 (zh-TW)
+
+Mostly translated with google or AI - may contain wrong translations or such sounding strange/funny for native speakers.
+
+Contributions adding new language localizations or corrections welcomed (please open a suitable PR)
 
 # Have fun
 

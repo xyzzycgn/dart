@@ -10,6 +10,7 @@ local eventHandler = require("scripts/gui/eventHandler")
 local global_data = require("scripts.global_data")
 local dump = require("__log4factorio__.dump")
 local constants = require("scripts.constants")
+local entities_radar = require("scripts.entities.radars")
 
 local radars = {}
 
@@ -35,25 +36,21 @@ local function dataOfRow(data)
 end
 -- ###############################################################
 
-local function getMaxBasedOnQuality(rop, base)
-    local entity = rop.radar
-    local quality_level = (entity.valid and entity.quality.level) or 0
-    Log.logBlock(quality_level, function(m)log(m)end, Log.FINER)
-
-    -- yields differences of 4, 3, 2, 1 for the next higher level
-    return base + (9 - quality_level) * (quality_level) / 2
-end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param rop RadarOnPlatform
 local function getMaxDefenseRange(rop)
-    return getMaxBasedOnQuality(rop, constants.max_defenseRange)
+    return entities_radar.addIncreaseBasedOnQuality(rop, constants.max_defenseRange)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param rop RadarOnPlatform
 local function getMaxDetectionRange(rop)
-    return getMaxBasedOnQuality(rop, constants.max_detectionRange)
+    Log.logBlock(rop.radar.force_index, function(m)log(m)end, Log.FINE)
+    Log.logBlock(storage.forces, function(m)log(m)end, Log.FINE)
+
+    local lvl = global_data.getForce_data(rop.radar.force_index).techLevel
+    return entities_radar.addIncreaseBasedOnQuality(rop, constants.max_detectionRange) * entities_radar.calculateRangeBonus(lvl)
 end
 -- ###############################################################
 

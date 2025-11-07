@@ -15,6 +15,20 @@ local ammos = require("scripts.gui.ammos")
 local flib_gui = require("__flib__.gui")
 local flib_format = require("__flib__.format")
 
+local dart_release_control = settings.startup["dart-release-control"].value
+
+-- return TurretControl of a FccOnPlatform
+--- @param fop FccOnPlatform
+--- @return TurretControl
+local function determineTurretControl(fop)
+    -- if not set, assume "always" and use default threshold (although this isn't relevant with mode always)
+    return fop.turretControl or  {
+        mode = "right", -- == always
+        threshold = settings.startup["dart-release-control-threshold-default"].value
+    }
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- @param elems GuiAndElements
 --- @param pons Pons
 --- @param pd PlayerData
@@ -36,7 +50,7 @@ local function update_ammos(elems, pons, pd)
     ammos.update(elems, pons, pd)
 end
 
-local switch = {
+local update_functions = {
     [1] = update_radars,
     [2] = update_turrets,
     [3] = update_ammos,
@@ -60,13 +74,32 @@ local function update_main(pd, opengui, event)
 
     -- show the numbers of known radars, turrets, ammo types
     if ponsOfEntity then
+        if dart_release_control then
+            -- release control is shown
+            for un, fop in pairs(ponsOfEntity.fccsOnPlatform) do
+                if un == entity.unit_number then
+                    -- this is the FCC shown
+                    local tc = determineTurretControl(fop)
+                    fop.turretControl = tc
+                    local mode = tc.mode
+                    local switch = opengui.elems["dart-release-control"]
+                    switch.switch_state = mode
+                    local middle = opengui.elems["dart-release-control-middle"]
+                    middle.style = components.getStyle(mode)
+                    local threshold = opengui.elems["dart-release-control-threshold"]
+                    threshold.text = tostring(tc.threshold)
+                    threshold.enabled = mode == "none"
+                end
+            end
+        end
+
         opengui.elems.radars_tab.badge_text = flib_format.number(table_size(ponsOfEntity.radarsOnPlatform))
         -- turrets may be controlled by other FCC => don't use simply ponsOfEntity.turretsOnPlatform
         opengui.elems.turrets_tab.badge_text = flib_format.number(table_size(turrets.dataForPresentation(opengui, ponsOfEntity)))
         -- need to know the stock in hub
         opengui.elems.ammos_tab.badge_text = flib_format.number(table_size(ammos.dataForPresentation(opengui, ponsOfEntity)))
 
-        local func = switch[opengui.activeTab]
+        local func = update_functions[opengui.activeTab]
         if (func) then
             func(opengui, ponsOfEntity, pd)
         else
@@ -78,7 +111,7 @@ local function update_main(pd, opengui, event)
         Log.logMsg(function(m)log(m)end, Log.WARN, "no valid pons for entity=%s", entity.unit_number)
     end
 end
--- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+-- ###############################################################
 
 local function update_gui(event)
     Log.logEvent(event, function(m)log(m)end, Log.FINER)
@@ -119,9 +152,69 @@ local function change_tab(gae, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+local function getFop(gae, event)
+    local pd = global_data.getPlayer_data(event.player_index)
+    local entity = gae.entity
+    local platform = entity.surface.platform
+
+    if platform then
+        local pons = pd.pons[platform.index]
+        return pons.fccsOnPlatform[entity.unit_number]
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function updateModeOfFop(gae, event)
+    local fop = getFop(gae, event)
+    if fop then
+        local state = gae.elems["dart-release-control"].switch_state
+        fop.turretControl.mode = state
+        gae.elems["dart-release-control-threshold"].enabled = state == "none"
+        Log.logLine(fop.turretControl.mode, function(m)log(m)end, Log.FINE)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- @param gae GuiAndElements
+--- @param event EventData
+local function threshold_changed(gae, event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    local fop = getFop(gae, event)
+    if fop then
+        fop.turretControl.threshold = tonumber(gae.elems["dart-release-control-threshold"].text) or 0
+        Log.logLine(fop.turretControl.threshold, function(m)log(m)end, Log.FINE)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- handles GUI update of the tristate switch in case switch was clicked
+--- @param gae GuiAndElements
+--- @param event EventData
+local function switch_state_changed(gae, event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    -- it's impossible to chain event handlers, so this needs to be done manually
+    components.tristate_switch_state_changed(gae, event)
+    updateModeOfFop(gae,event)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- handles GUI update of the tristate switch in case middle label was clicked
+--- @param gae GuiAndElements
+--- @param event EventData
+local function middle_clicked(gae, event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    -- it's impossible to chain event handlers, so this needs to be done manually
+    components.middle_clicked(gae, event)
+    updateModeOfFop(gae,event)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 -- local event handlers
 local handlers = {
     change_tab = change_tab,
+    threshold_changed = threshold_changed,
+    switch_state_changed = switch_state_changed,
+    middle_clicked = middle_clicked,
 }
 
 -- register local handlers in flib
@@ -133,6 +226,47 @@ flib_gui.add_handlers(handlers, function(e, handler)
 end)
 -- ###############################################################
 
+local function optionalReleaseControl()
+    return {
+        type = "flow",
+        direction = "vertical",
+        visible = dart_release_control,
+        {
+            type = "label",
+            caption = { "gui.dart-release-control" },
+            style = "squashable_label_with_left_padding",
+        },
+        {
+            type = "flow",
+            direction = "horizontal",
+            -- horizontal filler
+            {
+                type = "flow",
+                direction = "horizontal",
+                style = "dart_centered_flow",
+            },
+            components.triStateSwitch("dart-release-control",
+                                      handlers.switch_state_changed,
+                                      handlers.middle_clicked),
+            -- horizontal filler
+            {
+                type = "flow",
+                direction = "horizontal",
+                style = "dart_centered_flow",
+            },
+            -- threshold for release control
+            {
+                type = "textfield",
+                numeric = true,
+                style = "dart_controls_textfield",
+                name = "dart-release-control-threshold",
+                handler = { [defines.events.on_gui_text_changed] = handlers.threshold_changed, }
+            },
+        },
+    }
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- creates the custom gui
 --- @param player LuaPlayer who opens the entity
 --- @param entity LuaEntity to be shown in the GUI
@@ -143,7 +277,8 @@ local function build(player, entity)
             direction = "vertical",
             visible = false,
             handler = { [defines.events.on_gui_closed] = eventHandler.handlers.close_gui },
-            style = "dart_top_frame",
+            -- outer frame higher if release control is enabled
+            style = dart_release_control and "dart_top_frame_800" or "dart_top_frame",
             {
                 type = "flow",
                 direction = "horizontal",
@@ -166,27 +301,34 @@ local function build(player, entity)
                 },
             },
             { type = "frame", name = "content_frame", direction = "vertical", style = "dart_content_frame",
-              {
-                  type = "frame",
-                  style = "entity_button_frame",
-                  {
-                      type = "entity-preview",
-                      style = "wide_entity_button",
-                      position = entity.position,
-                      name = "fcc_view",
-                  },
-              },
-              {
-                  type = "tabbed-pane",
-                  style = "dart_tabbed_pane",
-                  handler = { [defines.events.on_gui_selected_tab_changed] = handlers.change_tab },
-                  radars.build(),
-                  turrets.build(),
-                  ammos.build(),
-              },
+                {
+                    type = "frame",
+                    direction = "horizontal",
+                    {
+                        type = "frame",
+                        style = "entity_button_frame",
+                        {
+                          type = "entity-preview",
+                          style = "wide_entity_button",
+                          position = entity.position,
+                          name = "fcc_view",
+                        },
+                    },
+                    optionalReleaseControl(),
+                },
+                {
+                    type = "tabbed-pane",
+                    style = "dart_tabbed_pane",
+                    handler = { [defines.events.on_gui_selected_tab_changed] = handlers.change_tab },
+                    radars.build(),
+                    turrets.build(),
+                    ammos.build(),
+                },
             }
         }
     })
+
+    Log.logBlock(elems["dart-release-control-middle"].tags, function(m)log(m)end, Log.FINEST)
 
     elems.titlebar.drag_target = gui
 
@@ -216,6 +358,7 @@ local function gui_opened(event)
         else
             local player = game.get_player(event.player_index)
             local elems, gui = build(player, entity)
+            Log.logLine(elems, function(m)log(m)end, Log.FINER)
 
             local pd = components.openNewGui(event.player_index, gui, elems, entity)
             elems.fcc_view.entity = entity
@@ -235,7 +378,7 @@ local function gui_opened(event)
         script.raise_event(on_dart_gui_needs_update_event, event)
     elseif event.gui_type == defines.gui_type.custom then
         local pd = global_data.getPlayer_data(event.player_index)
-        local entity = pd and pd.guis and pd.guis.open and pd.guis.open.entity
+        entity = pd and pd.guis and pd.guis.open and pd.guis.open.entity
         Log.logBlock(entity, function(m)log(m)end, Log.FINER)
         if entity and entity.name == "dart-radar" then
             event.entity = entity -- pimp the event ;-)
@@ -276,7 +419,7 @@ end
 
 -- delegates the on_dart_gui_close event to the standard handler
 local function handle_on_dart_gui_close(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
     eventHandler.close(event.gae, event)
 end
 
