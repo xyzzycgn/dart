@@ -1103,11 +1103,23 @@ local function onResearchFinished(event)
     local name = research and research.name
     local darttech = constants.dart_technologies
     if name and (string.sub(name, 1, #darttech) == darttech) then
-        Log.log("new darttech", function(m)log(m)end, Log.FINE)
         local force = research.force
         local existing_radars_pimped = false
 
         local fd = global_data.getForce_data(force.index)
+
+        -- fix for #66
+        if not fd then
+            local fn = force.name
+            local odd_force = game.forces[fn]
+            local pattern =
+                odd_force and "on_research_finished event detected for force %s, that has no players -  IGNORED"
+                           or "on_research_finished event detected for unknown force %s -  IGNORED"
+            Log.logMsg(function(m)log(m)end, Log.WARN, pattern, fn)
+            return
+        end
+        Log.log("new darttech", function(m)log(m)end, Log.FINE)
+
         -- incr tecLevel
         local techLevel = fd.techLevel or 0
         techLevel = techLevel + 1
