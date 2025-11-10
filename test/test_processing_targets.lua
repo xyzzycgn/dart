@@ -154,23 +154,27 @@ end
 function TestProcessingTargets:test_calculatePrio_in_range()
     local turret = {
         position = { x = 0, y = 0 },
-        unit_number = 1
-    }
+        unit_number = 1   }
 
     local managedTurrets = {
         [1] = {
             turret = turret,
             range = 20,
+            is_priority_target = {},
+            priority_targets_list = {},
             targets_of_turret = {}
         }
     }
 
     local target = {
         unit_number = 4711,
-        position = { x = 10, y = 0 }
+        position = { x = 10, y = 0 },
+        prototype = {
+            name = "LuaEntityPrototype-asteroid"
+        }
     }
 
-    processing_targets.calculatePrio(managedTurrets, target, 1)
+    processing_targets.addToTargetList(managedTurrets, target, 1)
 
     lu.assertNotNil(managedTurrets[1].targets_of_turret[4711])
     lu.assertAlmostEquals(managedTurrets[1].targets_of_turret[4711], 10, 0.001)
@@ -193,10 +197,13 @@ function TestProcessingTargets:test_calculatePrio_out_of_range()
 
     local target = {
         unit_number = 4711,
-        position = { x = 20, y = 0 }
+        position = { x = 20, y = 0 },
+        prototype = {
+            name = "LuaEntityPrototype-asteroid"
+        }
     }
 
-    processing_targets.calculatePrio(managedTurrets, target, 1)
+    processing_targets.addToTargetList(managedTurrets, target, 1)
 
     lu.assertNil(managedTurrets[1].targets_of_turret[4711])
 end
@@ -218,10 +225,13 @@ function TestProcessingTargets:test_calculatePrio_not_hitting()
 
     local target = {
         unit_number = 4711,
-        position = { x = 10, y = 0 }
+        position = { x = 10, y = 0 },
+        prototype = {
+            name = "LuaEntityPrototype-asteroid"
+        }
     }
 
-    processing_targets.calculatePrio(managedTurrets, target, -1)
+    processing_targets.addToTargetList(managedTurrets, target, -1)
 
     lu.assertNil(managedTurrets[1].targets_of_turret[4711])
 end
@@ -245,10 +255,13 @@ function TestProcessingTargets:test_calculatePrio_removes_out_of_range()
 
     local target = {
         unit_number = 4711,
-        position = { x = 30, y = 0 }
+        position = { x = 30, y = 0 },
+        prototype = {
+            name = "LuaEntityPrototype-asteroid"
+        }
     }
 
-    processing_targets.calculatePrio(managedTurrets, target, 1)
+    processing_targets.addToTargetList(managedTurrets, target, 1)
 
     lu.assertNil(managedTurrets[1].targets_of_turret[4711])
 end
@@ -472,6 +485,11 @@ function TestProcessingTargets:test_assignTargets_sorting_by_distance()
                 [4711] = 30,
                 [4712] = 10,
                 [4713] = 20
+            },
+            is_priority_target = {
+                [4711] = false,
+                [4712] = false,
+                [4713] = false,
             },
             circuit_condition = createCircuitCondition("item", "iron-ore")
         }

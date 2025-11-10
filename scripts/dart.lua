@@ -80,8 +80,10 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
 --- @field turret LuaEntity turret
 --- @field circuit_condition CircuitConditionDefinition of the turret
---- @field targets_of_turret LuaEntity[] the targets of the turret
+--- @field targets_of_turret float[] distances of the targets of the turret indexed by unit_number of target
 --- @field range float range of the turret
+--- @field priority_targets_list table<string, true> names of LuaEntityPrototypes of the priority_targets set in turret
+--- @field is_priority_target boolean[] flags whether targets of the turret are priority targets (indexed by unit_number of target)
 
 --- @class DestroyedTarget contains data of a destroyed asteroid which are used to find the fragments arising from it
 --- @field aun uint unit_number of destroyed asteroid
@@ -171,6 +173,15 @@ local function initializeManagedTurrets(pons)
         local cnot = cnOfTurrets[nwid] or {}
         for _, cnOfTurret in pairs(cnot) do
             local turret = cnOfTurret.turret
+            -- check whether this turret has priority_targets
+            -- if yes - save theirs names
+            local priority_targets = turret.priority_targets
+            local priority_targets_list = {}
+            for _, pt in pairs(priority_targets) do
+                priority_targets_list[pt.name] = true
+            end
+
+            Log.logBlock({pname = pons.platform.name, ptl = priority_targets_list }, function(m)log(m)end, Log.FINER)
 
             --- @type ManagedTurret
             local mt = {
@@ -178,8 +189,10 @@ local function initializeManagedTurrets(pons)
                 circuit_condition = cnOfTurret.circuit_condition,
                 fcc = cnOfDart.fcc,
                 control_behavior = cnOfDart.control_behavior,
+                is_priority_target = {},
                 targets_of_turret = {},
-                range = pons.turretsOnPlatform[turret.unit_number].range
+                range = pons.turretsOnPlatform[turret.unit_number].range,
+                priority_targets_list = priority_targets_list
             }
             mts[#mts + 1] = mt
         end
@@ -393,7 +406,7 @@ local function businessLogic()
                         })
                     end
 
-                    processing_targets.calculatePrio(managedTurrets, asteroid, D)
+                    processing_targets.addToTargetList(managedTurrets, asteroid, D)
                 else
                     -- new asteroid
                     if table_size(knownAsteroids) == 0 then
