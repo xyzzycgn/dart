@@ -82,16 +82,18 @@ local function addToTargetList(managedTurrets, target, D)
         Log.logBlock(tun, function(m)log(m)end, Log.FINER)
         local turret = mt.turret
         local targeted = false
-        if D >= 0 and (not turret.ignore_unprioritised_targets or mt.priority_targets_list[target_prototype_name]) then
+        -- wanna have true or false - not nil!
+        local on_priority_list_of_turret = mt.priority_targets_list[target_prototype_name] or false
+        if D >= 0 and (not turret.ignore_unprioritised_targets or on_priority_list_of_turret) then
             -- target enters or touches protected area and is - if unprioritised targets should be ignored -
-            -- in priority list.
+            -- in priority list of turret.
             local dist = distToTurret(target, turret)
             -- remember distance for each turret to target if in range
             if dist <= mt.range then
                 Log.logBlock(target, function(m)log(m)end, Log.FINER)
                 mt.targets_of_turret[tun] = {
                     distance = dist,
-                    is_priority_target = mt.priority_targets_list[target_prototype_name]
+                    is_priority_target = on_priority_list_of_turret
                 }
                 targeted = true
             end
@@ -205,8 +207,7 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
         --   1st target is in priority_targets list
         --   2nd distance
         local simple = (not turret.priority_targets or (table_size(turret.priority_targets) == 0))
-                       or not turret.ignore_unprioritised_targets
-
+                       or turret.ignore_unprioritised_targets
 
         -- sort it (is a bit tricky - sorting prios by content from managedTurret)
         table.sort(prios, function(i, j)

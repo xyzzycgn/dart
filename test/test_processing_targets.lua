@@ -6,7 +6,23 @@ require('test.BaseTest')
 local lu = require('luaunit')
 
 require('factorio_def')
-local processing_targets = require('scripts.processing_targets')
+local processing_targets = require("scripts.processing_targets")
+
+-- Helper function to create mock asteroid entities
+local function createMockedPrototype(asteroidType)
+    return { name = asteroidType .. "-asteroid", }
+end
+
+-- Helper function to create mock asteroid entities
+local function createMockedAsteroid(asteroidType, unitNumber, x, y)
+    return {
+        type = "asteroid",
+        unit_number = unitNumber,
+        valid = true,
+        prototype = createMockedPrototype(asteroidType),
+        position = { x = x, y = y }
+    }
+end
 
 TestProcessingTargets = {}
 local on_event_called = 0
@@ -190,7 +206,8 @@ function TestProcessingTargets:test_calculatePrio_out_of_range()
         [1] = {
             turret = turret,
             range = 10,
-            targets_of_turret = {}
+            targets_of_turret = {},
+            priority_targets_list = {}
         }
     }
 
@@ -218,7 +235,8 @@ function TestProcessingTargets:test_calculatePrio_not_hitting()
         [1] = {
             turret = turret,
             range = 20,
-            targets_of_turret = {}
+            targets_of_turret = {},
+            priority_targets_list = {}
         }
     }
 
@@ -251,7 +269,8 @@ function TestProcessingTargets:test_calculatePrio_removes_out_of_range()
                     distance = 10,
                     is_priority_target = false
                 }
-            }
+            },
+            priority_targets_list = {}
         }
     }
 
@@ -468,6 +487,290 @@ function TestProcessingTargets:test_assignTargets_multiple_turrets_multiple_targ
     lu.assertEquals(lls, { filters={
         {min = 1, value = {name = "copper-ore", quality = "normal", type = "item"}},
         {min = 1, value = {name = "iron-ore",   quality = "normal", type = "item"}}
+    }})
+end
+-- ###############################################################
+
+-- tests that priority targets are added to target list if ignore_unprioritised_targets is set
+function TestProcessingTargets:test_addToTargetList_only_priority_targets()
+    local target = createMockedAsteroid("metallic", 11, 4, 3)
+
+    local asteroid_prototype = createMockedPrototype("metallic")
+    local turret1 = {
+        unit_number = 11,
+        -- only metallic asteroids are priority
+        priority_targets = {
+            [1] = asteroid_prototype
+        },
+        position = { x = 0, y = 0 },
+        ignore_unprioritised_targets = true
+    }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret1,
+            targets_of_turret = {},
+            range = 18,
+            priority_targets_list = {
+                [asteroid_prototype.name] = true
+            }
+        }
+    }
+
+    processing_targets.addToTargetList(managedTurrets, target, 5)
+
+    lu.assertEquals(managedTurrets[1].targets_of_turret, { [11] = { distance = 5, is_priority_target = true }}, "Metallic asteroid should be marked as priority target")
+end
+-- ###############################################################
+
+-- tests that non-priority targets are not added to target list if ignore_unprioritised_targets is set
+function TestProcessingTargets:test_addToTargetList_only_priority_targets_ignore_not_on_list()
+    local target = createMockedAsteroid("oxide", 11, 10, 10)
+
+    local asteroid_prototype = createMockedPrototype("metallic")
+    local turret1 = {
+        unit_number = 11,
+        -- only metallic asteroids are priority
+        priority_targets = {
+            [1] = asteroid_prototype
+        },
+        position = { x = 0, y = 0 },
+        ignore_unprioritised_targets = true
+    }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret1,
+            targets_of_turret = {},
+            range = 18,
+            priority_targets_list = {
+                [asteroid_prototype.name] = true
+            }
+        }
+    }
+
+    processing_targets.addToTargetList(managedTurrets, target, 5)
+
+    lu.assertEquals(managedTurrets[1].targets_of_turret, {}, "Oxide asteroid should not be marked target")
+end
+-- ###############################################################
+
+-- tests that non priority targets are added to target list if ignore_unprioritised_targets is not set
+function TestProcessingTargets:test_addToTargetList_non_prioritised_target()
+    local target = createMockedAsteroid("oxide", 11, 3, 4)
+
+    local asteroid_prototype = createMockedPrototype("metallic")
+    local turret1 = {
+        unit_number = 11,
+        -- only metallic asteroids are priority
+        priority_targets = {
+            [1] = asteroid_prototype
+        },
+        position = { x = 0, y = 0 },
+        ignore_unprioritised_targets = false
+    }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret1,
+            targets_of_turret = {},
+            range = 18,
+            priority_targets_list = {
+                [asteroid_prototype.name] = true
+            }
+        }
+    }
+
+    processing_targets.addToTargetList(managedTurrets, target, 5)
+
+    lu.assertEquals(managedTurrets[1].targets_of_turret, { [11] = { distance = 5, is_priority_target = false }},
+                    "non prio asteroid should be added")
+end
+-- ###############################################################
+
+-- tests that priority targets are added to target list if ignore_unprioritised_targets is not set
+function TestProcessingTargets:test_addToTargetList_prioritised_target()
+    local target = createMockedAsteroid("metallic", 11, 3, 4)
+
+    local asteroid_prototype = createMockedPrototype("metallic")
+    local turret1 = {
+        unit_number = 11,
+        -- only metallic asteroids are priority
+        priority_targets = {
+            [1] = asteroid_prototype
+        },
+        position = { x = 0, y = 0 },
+        ignore_unprioritised_targets = false
+    }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret1,
+            targets_of_turret = {},
+            range = 18,
+            priority_targets_list = {
+                [asteroid_prototype.name] = true
+            }
+        }
+    }
+
+    processing_targets.addToTargetList(managedTurrets, target, 5)
+
+    lu.assertEquals(managedTurrets[1].targets_of_turret, { [11] = { distance = 5, is_priority_target = true }},
+                    "prio asteroid should be added")
+end
+-- ###############################################################
+
+-- test with priority_targets set but ignore_unprioritised_targets = false
+function TestProcessingTargets:test_assignTargets_with_priority_targets_and_ignore_disabled()
+    local lls = {
+        filters = {}
+    }
+
+    local fcc = {
+        unit_number = 1000,
+        control_behavior = {
+            get_section = function(_)
+                return lls
+            end
+        }
+    }
+
+    local pons = {
+        platform = { name = "test" },
+        fccsOnPlatform = {
+            [1000] = fcc
+        }
+    }
+
+    local asteroid_prototype = createMockedPrototype("metallic")
+    local asteroid1 = createMockedAsteroid("metallic", 10)
+    local asteroid2 = createMockedAsteroid("oxide", 11)
+    local asteroid3 = createMockedAsteroid("metallic", 12)
+
+    local knownAsteroids = {
+        [10] = { entity = asteroid1 },
+        [11] = { entity = asteroid2 },
+        [12] = { entity = asteroid3 }
+    }
+
+    local turret1 = {
+        unit_number = 100,
+        targets_of_turret = {},
+        -- only metallic asteroids are priority
+        priority_targets = {
+            [1] = asteroid_prototype
+        },
+        ignore_unprioritised_targets = false
+    }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret1,
+            fcc = fcc,
+            targets_of_turret = {
+                [10] = {
+                    distance = 10,
+                    is_priority_target = true
+                },
+                [11] = {
+                    distance = 5,
+                    is_priority_target = false
+                },
+                [12] = {
+                    distance = 7,
+                    is_priority_target = true
+                },
+            },
+            circuit_condition = createCircuitCondition("item", "iron-ore"),
+            priority_targets_list = {
+                [asteroid_prototype.name] = true
+            }
+        },
+
+    }
+
+    processing_targets.assignTargets(pons, knownAsteroids, managedTurrets)
+
+    lu.assertEquals(turret1.shooting_target, asteroid3)
+    lu.assertEquals(on_event_called, 1)
+    lu.assertEquals(lls, { filters={
+        {min = 1, value = {name = "iron-ore", quality = "normal", type = "item"}}
+    }})
+end
+-- ###############################################################
+
+-- test with priority_targets set but ignore_unprioritised_targets = true
+function TestProcessingTargets:test_assignTargets_with_priority_targets_and_ignore_nonprio()
+    local lls = {
+        filters = {}
+    }
+
+    local fcc = {
+        unit_number = 1000,
+        control_behavior = {
+            get_section = function(_)
+                return lls
+            end
+        }
+    }
+
+    local pons = {
+        platform = { name = "test" },
+        fccsOnPlatform = {
+            [1000] = fcc
+        }
+    }
+
+    local asteroid_prototype = createMockedPrototype("metallic")
+    local asteroid1 = createMockedAsteroid("metallic", 10)
+    local asteroid2 = createMockedAsteroid("metallic", 11)
+
+    local knownAsteroids = {
+        [10] = { entity = asteroid1 },
+        [11] = { entity = asteroid2 }
+    }
+
+    local turret1 = {
+        unit_number = 100,
+        targets_of_turret = {},
+        priority_targets = {
+            [1] = asteroid_prototype
+        },
+        ignore_unprioritised_targets = true
+    }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret1,
+            fcc = fcc,
+            targets_of_turret = {
+                [10] = {
+                    distance = 10,
+                    is_priority_target = true
+                },
+                [11] = {
+                    distance = 5,
+                    is_priority_target = true
+                },
+            },
+            circuit_condition = createCircuitCondition("item", "iron-ore"),
+            priority_targets_list = {
+                [asteroid_prototype.name] = true
+            }
+        },
+
+    }
+
+    processing_targets.assignTargets(pons, knownAsteroids, managedTurrets)
+
+    lu.assertEquals(turret1.shooting_target, asteroid2)
+    lu.assertEquals(on_event_called, 1)
+    lu.assertEquals(raised_events[1].event_type, on_target_assigned_event)
+    lu.assertEquals(raised_events[1].event_data.tun, 100)
+    lu.assertEquals(raised_events[1].event_data.target, 11)
+    lu.assertEquals(lls, { filters={
+        {min = 1, value = {name = "iron-ore", quality = "normal", type = "item"}}
     }})
 end
 -- ###############################################################
