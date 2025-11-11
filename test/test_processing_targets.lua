@@ -621,6 +621,40 @@ function TestProcessingTargets:test_addToTargetList_prioritised_target()
 end
 -- ###############################################################
 
+-- tests that priority targets is removed from target list if no longer hitting
+function TestProcessingTargets:test_addToTargetList_remove_prioritised_target()
+    local target = createMockedAsteroid("metallic", 11, 3, 4)
+
+    local asteroid_prototype = createMockedPrototype("metallic")
+    local turret1 = {
+        unit_number = 11,
+        -- only metallic asteroids are priority
+        priority_targets = {
+            [1] = asteroid_prototype
+        },
+        position = { x = 0, y = 0 },
+        ignore_unprioritised_targets = false
+    }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret1,
+            targets_of_turret = {
+                [11] = { distance = 15, is_priority_target = true }
+            },
+            range = 18,
+            priority_targets_list = {
+                [asteroid_prototype.name] = true
+            }
+        }
+    }
+
+    processing_targets.addToTargetList(managedTurrets, target, -5)
+
+    lu.assertEquals(managedTurrets[1].targets_of_turret, {}, "prio asteroid should be removed")
+end
+-- ###############################################################
+
 -- test with priority_targets set but ignore_unprioritised_targets = false
 function TestProcessingTargets:test_assignTargets_with_priority_targets_and_ignore_disabled()
     local lls = {
