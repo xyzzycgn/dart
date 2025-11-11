@@ -77,7 +77,7 @@ end
 local function addToTargetList(managedTurrets, target, D)
     local tun = target.unit_number
     local target_prototype_name = target.prototype.name
-    Log.logBlock(target_prototype_name, function(m)log(m)end, Log.FINE)
+    Log.logBlock(target_prototype_name, function(m)log(m)end, Log.FINER)
     for _, mt in pairs(managedTurrets) do
         Log.logBlock(tun, function(m)log(m)end, Log.FINER)
         local turret = mt.turret
@@ -89,8 +89,10 @@ local function addToTargetList(managedTurrets, target, D)
             -- remember distance for each turret to target if in range
             if dist <= mt.range then
                 Log.logBlock(target, function(m)log(m)end, Log.FINER)
-                mt.targets_of_turret[tun] = dist
-                mt.is_priority_target[tun] = mt.priority_targets_list[target_prototype_name]
+                mt.targets_of_turret[tun] = {
+                    distance = dist,
+                    is_priority_target = mt.priority_targets_list[target_prototype_name]
+                }
                 targeted = true
             end
         end
@@ -155,17 +157,25 @@ end
 
 --- @param managedTurret ManagedTurret
 local function simpleSortByDistance(managedTurret, i, j)
-    return managedTurret.targets_of_turret[i] < managedTurret.targets_of_turret[j]
+    return managedTurret.targets_of_turret[i].distance < managedTurret.targets_of_turret[j].distance
 end
 
 --- @param managedTurret ManagedTurret
 local function complexSortByPriorityListAndDistance(managedTurret, i, j)
-    -- tru if mt[i] has prio, but mt[j] not
-    -- else if both have same priority, use distance
-    return (managedTurret.is_priority_target[i] and not managedTurret.is_priority_target[j]) or
-           (managedTurret.is_priority_target[i] == managedTurret.is_priority_target[j]) and
-           (managedTurret.targets_of_turret[i] < managedTurret.targets_of_turret[j])
+    local mti = managedTurret.targets_of_turret[i]
+    local mtj = managedTurret.targets_of_turret[j]
+
+    -- true if mti has prio, but mtj not
+    --      if both have same priority, use distance
+    return (mti.is_priority_target and not mtj.is_priority_target) or
+           (mti.is_priority_target == mtj.is_priority_target) and
+           (mti.distance < mtj.distance)
 end
+
+local sort_funcs = {
+    [true] = simpleSortByDistance,
+    [false] = complexSortByPriorityListAndDistance,
+}
 
 --- calculate prio (based on distance to turrets) for an asteroid if within range (and harmful)
 --- assign target to turrets depending on prio (nearest asteroid first)
@@ -197,10 +207,10 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
         local simple = (not turret.priority_targets or (table_size(turret.priority_targets) == 0))
                        or not turret.ignore_unprioritised_targets
 
+
         -- sort it (is a bit tricky - sorting prios by content from managedTurret)
         table.sort(prios, function(i, j)
-            return simple and simpleSortByDistance(managedTurret, i, j) or
-                 complexSortByPriorityListAndDistance(managedTurret, i, j)
+            return sort_funcs[simple](managedTurret, i, j)
         end)
 
         -- check whether control over turret has to be released

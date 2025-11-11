@@ -160,7 +160,6 @@ function TestProcessingTargets:test_calculatePrio_in_range()
         [1] = {
             turret = turret,
             range = 20,
-            is_priority_target = {},
             priority_targets_list = {},
             targets_of_turret = {}
         }
@@ -177,7 +176,7 @@ function TestProcessingTargets:test_calculatePrio_in_range()
     processing_targets.addToTargetList(managedTurrets, target, 1)
 
     lu.assertNotNil(managedTurrets[1].targets_of_turret[4711])
-    lu.assertAlmostEquals(managedTurrets[1].targets_of_turret[4711], 10, 0.001)
+    lu.assertAlmostEquals(managedTurrets[1].targets_of_turret[4711].distance, 10, 0.001)
 end
 -- ###############################################################
 
@@ -248,7 +247,10 @@ function TestProcessingTargets:test_calculatePrio_removes_out_of_range()
             turret = turret,
             range = 20,
             targets_of_turret = {
-                [4711] = 10
+                [4711] = {
+                    distance = 10,
+                    is_priority_target = false
+                }
             }
         }
     }
@@ -291,8 +293,14 @@ function TestProcessingTargets:test_assignTargets_single_turret_multiple_targets
             turret = turret,
             fcc = fcc,
             targets_of_turret = {
-                [4711] = 15,
-                [4712] = 25
+                [4711] = {
+                    distance = 15,
+                    is_priority_target = false
+                },
+                [4712] = {
+                    distance = 25,
+                    is_priority_target = false
+                },
             },
             circuit_condition = createCircuitCondition("item", "iron-ore")
         }
@@ -407,7 +415,10 @@ function TestProcessingTargets:test_assignTargets_multiple_turrets_multiple_targ
             turret = turret1,
             fcc = fcc,
             targets_of_turret = {
-                [4711] = 10
+                [4711] = {
+                    distance = 10,
+                    is_priority_target = false
+                },
             },
             circuit_condition = createCircuitCondition("item", "iron-ore")
         },
@@ -415,7 +426,10 @@ function TestProcessingTargets:test_assignTargets_multiple_turrets_multiple_targ
             turret = turret2,
             fcc = fcc,
             targets_of_turret = {
-                [4712] = 20
+                [4712] = {
+                    distance = 20,
+                    is_priority_target = false
+                },
             },
             circuit_condition = createCircuitCondition("item", "copper-ore")
         }
@@ -482,14 +496,18 @@ function TestProcessingTargets:test_assignTargets_sorting_by_distance()
             turret = turret,
             fcc = fcc,
             targets_of_turret = {
-                [4711] = 30,
-                [4712] = 10,
-                [4713] = 20
-            },
-            is_priority_target = {
-                [4711] = false,
-                [4712] = false,
-                [4713] = false,
+                [4711] = {
+                    distance = 30,
+                    is_priority_target = false
+                },
+                [4712] = {
+                    distance = 10,
+                    is_priority_target = false
+                },
+                [4713] = {
+                    distance = 20,
+                    is_priority_target = false
+                },
             },
             circuit_condition = createCircuitCondition("item", "iron-ore")
         }

@@ -75,12 +75,16 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field turret LuaEntity turret
 --- @field circuit_condition CircuitConditionDefinition of the turret
 
+--- @class TargetOfTurret
+--- @field distance float distance of target to the turret
+--- @field is_priority_target boolean flag whether target is priority target
+
 --- @class ManagedTurret turret managed by a D.A.R.T.
 --- @field fcc LuaEntity dart-fcc managing turret
 --- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
 --- @field turret LuaEntity turret
 --- @field circuit_condition CircuitConditionDefinition of the turret
---- @field targets_of_turret float[] distances of the targets of the turret indexed by unit_number of target
+--- @field targets_of_turret TargetOfTurret[] indexed by unit_number of target
 --- @field range float range of the turret
 --- @field priority_targets_list table<string, true> names of LuaEntityPrototypes of the priority_targets set in turret
 --- @field is_priority_target boolean[] flags whether targets of the turret are priority targets (indexed by unit_number of target)
@@ -189,7 +193,6 @@ local function initializeManagedTurrets(pons)
                 circuit_condition = cnOfTurret.circuit_condition,
                 fcc = cnOfDart.fcc,
                 control_behavior = cnOfDart.control_behavior,
-                is_priority_target = {},
                 targets_of_turret = {},
                 range = pons.turretsOnPlatform[turret.unit_number].range,
                 priority_targets_list = priority_targets_list
