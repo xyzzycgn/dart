@@ -75,7 +75,7 @@ end
 
 ---@field tc TurretConnection @ mis-/unconfigured but connected turret
 local function circuitNetworkDisabledInTurret(tc)
-    Log.logBlock(tc, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ tc = tc, first = first }, function(m)log(m)end, Log.FINE)
     local cb = getControlBehavior(tc)
     if cb then
         cb.circuit_enable_disable = true
@@ -87,7 +87,7 @@ end
 --- @param tc TurretConnection @ mis-/unconfigured but connected turret
 --- @param first? (optional) name of signal prototype to be set as 1st signal
 local function repairCircuitCondition(tc, first)
-    Log.logBlock(tc, function(m)log(m)end, Log.FINE)
+    Log.logBlock({ tc = tc, first = first }, function(m)log(m)end, Log.FINE)
     local cb = getControlBehavior(tc)
     if cb and cb.valid then
         --- @type CircuitCondition
@@ -98,6 +98,7 @@ local function repairCircuitCondition(tc, first)
         end
         cc.comparator = '>'
         cc.constant = 0
+        cc.second_signal = nil
 
         cb.circuit_condition = cc
     else
@@ -161,7 +162,6 @@ end
 -- emulate case switch - lua is so sh...
 local switch4autoConfigure = {
     [states.circuitNetworkDisabledInTurret] = circuitNetworkDisabledInTurret,
-    [states.firstSignalEmpty] = firstSignalEmpty,
     [states.secondSignalNotSupported] = repairCircuitCondition,
     [states.invalidComparator] = repairCircuitCondition,
     [states.noFalse] = repairCircuitCondition,
@@ -175,14 +175,26 @@ local meta = { __index = function(_, key)
 end }
 setmetatable(switch4autoConfigure, meta)
 
+--- fix for #71
+---@field tc TurretConnection @ possibly mis-/unconfigured but connected turret
+--- @field pons Pons
+local function wrappedRepairs(tc, pons)
+    if tc.stateConfiguration == states.firstSignalEmpty then
+        -- special case firstSignalEmpty with pons as 2nd arg
+        firstSignalEmpty(tc, pons)
+    else
+        -- all others without 2nd arg
+        switch4autoConfigure[tc.stateConfiguration](tc)
+    end
+end
+
 ---@field tcs TurretConnection[] @ mis-/unconfigured but connected turrets
 local function autoConfigure(tcs, pons)
     for _, tc in pairs(tcs) do
         Log.logBlock(tc, function(m)log(m)end, Log.FINE)
 
-        switch4autoConfigure[tc.stateConfiguration](tc, pons)
+        wrappedRepairs(tc, pons)
         local fixed = {}
-
 
         local act = updateTurretConnection(tc) -- check if succeeded
         Log.logLine(act, function(m)log(m)end, Log.FINE)
@@ -200,7 +212,7 @@ local function autoConfigure(tcs, pons)
                 act = states.ok -- leave while loop
             else
                 tc.stateConfiguration = act -- try to fix next one
-                switch4autoConfigure[tc.stateConfiguration](tc, pons)
+                wrappedRepairs(tc, pons)
                 act = updateTurretConnection(tc)
             end
 
