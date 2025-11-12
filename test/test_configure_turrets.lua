@@ -60,11 +60,6 @@ function TestConfigureTurrets:tearDown()
     end
 end
 
-local function mockCheckCircuitCondition(func)
-    originalFunction = utils.checkCircuitCondition
-    utils.checkCircuitCondition = func
-end
-
 -- ###############################################################
 -- Tests für states Konstanten
 -- ###############################################################
@@ -155,11 +150,6 @@ end
 -- ###############################################################
 
 function TestConfigureTurrets:test_checkNetworkCondition_invalid_configuration()
-    -- Mock utils.checkCircuitCondition to return invalid
-    mockCheckCircuitCondition(function(cc)
-        return false, configureTurrets.states.firstSignalEmpty
-    end)
-
     local tc = {
         num_connections = 1,
         managedBy = { fcc1 = true },
@@ -169,6 +159,21 @@ function TestConfigureTurrets:test_checkNetworkCondition_invalid_configuration()
 
     local result = configureTurrets.checkNetworkCondition(tc)
     lu.assertEquals(result, configureTurrets.states.firstSignalEmpty)
+end
+-- ###############################################################
+
+function TestConfigureTurrets:test_checkNetworkCondition_invalid_configuration_with_2nd_signal()
+    local tc = {
+        num_connections = 1,
+        managedBy = { fcc1 = true },
+        circuit_enable_disable = true,
+        cc = { first_signal = { type = "virtual", name = "signal-A" },
+               comparator = ">",
+               second_signal = { type = "virtual", name = "signal-B" } }
+    }
+
+    local result = configureTurrets.checkNetworkCondition(tc)
+    lu.assertEquals(result, configureTurrets.states.secondSignalNotSupported)
 end
 -- ###############################################################
 
@@ -202,11 +207,6 @@ function TestConfigureTurrets:test_autoConfigure_circuitNetworkDisabledInTurret(
         circuit_enable_disable = false,
         stateConfiguration = configureTurrets.states.circuitNetworkDisabledInTurret
     }
-
-    -- Mock utils.checkCircuitCondition
-    mockCheckCircuitCondition(function(cc)
-        return true, nil
-    end)
 
     configureTurrets.autoConfigure({tc}, {})
 
@@ -268,11 +268,6 @@ function TestConfigureTurrets:test_autoConfigure_firstSignalEmpty()
         }
     }
 
-    -- Mock utils.checkCircuitCondition
-    mockCheckCircuitCondition(function(cc)
-        return true, nil
-    end)
-
     configureTurrets.autoConfigure({tc}, pons)
 
     -- Überprüfe, dass ein Signal gesetzt wurde
@@ -310,16 +305,48 @@ function TestConfigureTurrets:test_autoConfigure_repairCircuitCondition_invalidC
         cc = mockControlBehavior.circuit_condition
     }
 
-    -- Mock utils.checkCircuitCondition
-    mockCheckCircuitCondition(function(cc)
-        return true, nil
-    end)
+    configureTurrets.autoConfigure({tc}, {})
+
+    -- Überprüfe, dass die Werte korrigiert wurden
+    lu.assertEquals(mockControlBehavior.circuit_condition.comparator, ">")
+    lu.assertEquals(mockControlBehavior.circuit_condition.constant, 0)
+end
+-- ###############################################################
+
+function TestConfigureTurrets:test_autoConfigure_repairCircuitCondition_2nd_signal()
+    local mockControlBehavior = {
+        valid = true,
+        circuit_enable_disable = true,
+        circuit_condition = {
+            first_signal = { type = "virtual", name = "signal-A" },
+            comparator = "=",
+            second_signal = { type = "virtual", name = "signal-B" }
+        }
+    }
+
+    local mockTurret = {
+        valid = true,
+        unit_number = 123,
+        get_control_behavior = function()
+            return mockControlBehavior
+        end
+    }
+
+    local tc = {
+        turret = mockTurret,
+        num_connections = 1,
+        managedBy = { fcc1 = true },
+        circuit_enable_disable = true,
+        stateConfiguration = configureTurrets.states.secondSignalNotSupported,
+        cc = mockControlBehavior.circuit_condition
+    }
 
     configureTurrets.autoConfigure({tc}, {})
 
     -- Überprüfe, dass die Werte korrigiert wurden
     lu.assertEquals(mockControlBehavior.circuit_condition.comparator, ">")
     lu.assertEquals(mockControlBehavior.circuit_condition.constant, 0)
+    lu.assertNil(mockControlBehavior.circuit_condition.second_signal)
 end
 -- ###############################################################
 
@@ -362,19 +389,6 @@ function TestConfigureTurrets:test_autoConfigure_multiple_errors()
         }
     }
 
-    local checkCount = 0
-    -- Mock utils.checkCircuitCondition to simulate multiple errors
-    mockCheckCircuitCondition(function(cc)
-        checkCount = checkCount + 1
-        if checkCount == 1 then
-            -- Nach erstem Fix: noch firstSignalEmpty
-            return false, configureTurrets.states.firstSignalEmpty
-        else
-            -- Nach zweitem Fix: ok
-            return true, nil
-        end
-    end)
-
     configureTurrets.autoConfigure({tc}, pons)
 
     -- Überprüfe, dass beide Fehler behoben wurden
@@ -410,11 +424,6 @@ function TestConfigureTurrets:test_autoConfigure_infinite_loop_protection()
         stateConfiguration = configureTurrets.states.firstSignalEmpty,
         cc = mockControlBehavior.circuit_condition
     }
-
-    -- Mock utils.checkCircuitCondition um immer den gleichen Fehler zurückzugeben
-    mockCheckCircuitCondition(function(cc)
-        return false, configureTurrets.states.firstSignalEmpty
-    end)
 
     -- Das sollte nicht in einer Endlosschleife enden
     configureTurrets.autoConfigure({tc}, { turretsOnPlatform = {} })
