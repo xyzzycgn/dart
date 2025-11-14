@@ -89,7 +89,7 @@ local function addToTargetList(managedTurrets, target, D)
             -- in priority list of turret.
             local dist = distToTurret(target, turret)
             -- remember distance for each turret to target if in range
-            if dist <= mt.range then
+            if (mt.min_range <= dist) and (dist <= mt.range) then -- fix for #65 - check min_range too
                 Log.logBlock(target, function(m)log(m)end, Log.FINER)
                 mt.targets_of_turret[tun] = {
                     distance = dist,

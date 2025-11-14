@@ -21,4 +21,20 @@ end
 
 log(string.format("reorganized %d managed_turrets on %d platforms", nturrets, nplatforms))
 
+nturrets, nplatforms = 0, 0
+
+for _, pons in pairs(global_data.getPlatforms()) do
+    for _, top in pairs(pons.turretsOnPlatform) do
+        local turret = top.turret
+        local prot = prototypes.entity[turret.name]
+        local ap = prot.attack_parameters
+        top.min_range = ap.min_range or 0
+        nturrets = nturrets + 1
+    end
+
+    nplatforms = nplatforms + 1
+end
+
+log(string.format("determined min_range for %d turrets on %d platforms", nturrets, nplatforms))
+
 log("migration to 1.2.4 finished")

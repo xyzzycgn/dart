@@ -176,6 +176,7 @@ function TestProcessingTargets:test_calculatePrio_in_range()
         [1] = {
             turret = turret,
             range = 20,
+            min_range = 0,
             priority_targets_list = {},
             targets_of_turret = {}
         }
@@ -196,6 +197,35 @@ function TestProcessingTargets:test_calculatePrio_in_range()
 end
 -- ###############################################################
 
+function TestProcessingTargets:test_calculatePrio_in_range_inside_min_range()
+    local turret = {
+        position = { x = 0, y = 0 },
+        unit_number = 1   }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret,
+            range = 20,
+            min_range = 11,
+            priority_targets_list = {},
+            targets_of_turret = {}
+        }
+    }
+
+    local target = {
+        unit_number = 4711,
+        position = { x = 10, y = 0 },
+        prototype = {
+            name = "LuaEntityPrototype-asteroid"
+        }
+    }
+
+    processing_targets.addToTargetList(managedTurrets, target, 1)
+
+    lu.assertNil(managedTurrets[1].targets_of_turret[4711], "target should not be added")
+end
+-- ###############################################################
+
 function TestProcessingTargets:test_calculatePrio_out_of_range()
     local turret = {
         position = { x = 0, y = 0 },
@@ -206,6 +236,7 @@ function TestProcessingTargets:test_calculatePrio_out_of_range()
         [1] = {
             turret = turret,
             range = 10,
+            min_range = 0,
             targets_of_turret = {},
             priority_targets_list = {}
         }
@@ -264,6 +295,7 @@ function TestProcessingTargets:test_calculatePrio_removes_out_of_range()
         [1] = {
             turret = turret,
             range = 20,
+            min_range = 0,
             targets_of_turret = {
                 [4711] = {
                     distance = 10,
@@ -511,6 +543,7 @@ function TestProcessingTargets:test_addToTargetList_only_priority_targets()
             turret = turret1,
             targets_of_turret = {},
             range = 18,
+            min_range = 0,
             priority_targets_list = {
                 [asteroid_prototype.name] = true
             }
@@ -575,6 +608,7 @@ function TestProcessingTargets:test_addToTargetList_non_prioritised_target()
             turret = turret1,
             targets_of_turret = {},
             range = 18,
+            min_range = 0,
             priority_targets_list = {
                 [asteroid_prototype.name] = true
             }
@@ -608,6 +642,7 @@ function TestProcessingTargets:test_addToTargetList_prioritised_target()
             turret = turret1,
             targets_of_turret = {},
             range = 18,
+            min_range = 0,
             priority_targets_list = {
                 [asteroid_prototype.name] = true
             }
