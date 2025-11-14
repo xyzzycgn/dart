@@ -8,11 +8,6 @@ local Log = require("__log4factorio__.Log")
 
 local dart_release_control = settings.startup["dart-release-control"].value
 
-local function distToTurret(target, turret)
-    local dx = target.position.x - turret.position.x
-    local dy = target.position.y - turret.position.y
-    return math.sqrt(dx * dx + dy * dy)
-end
 -- ###############################################################
 
 --- Calculates whether an asteroid hits, grazes or passes the defended area.
@@ -87,7 +82,7 @@ local function addToTargetList(managedTurrets, target, D)
         if D >= 0 and (not turret.ignore_unprioritised_targets or on_priority_list_of_turret) then
             -- target enters or touches protected area and is - if unprioritised targets should be ignored -
             -- in priority list of turret.
-            local dist = distToTurret(target, turret)
+            local dist = utils.distFromTurret(target, turret)
             -- remember distance for each turret to target if in range
             if (mt.min_range <= dist) and (dist <= mt.range) then -- fix for #65 - check min_range too
                 Log.logBlock(target, function(m)log(m)end, Log.FINER)

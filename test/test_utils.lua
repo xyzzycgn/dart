@@ -212,6 +212,62 @@ function TestUtils:testBitOperBordercases()
     lu.assertEquals(utils.bitoper(pattern1, pattern2, utils.bitOps.OR), maxUint)
     lu.assertEquals(utils.bitoper(pattern1, pattern2, utils.bitOps.XOR), maxUint)
 end
+-- ###############################################################
+
+function TestUtils:testDistFromTurretHorizontalRight()
+    local target = { position = { x = 13, y = 10 } }
+    local turret = { position = { x = 10, y = 10 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, 3.0, 1e-9)
+    -- dy = 0, dx = 3  => angle = 0
+    lu.assertAlmostEquals(angle, 0.25, 1e-9)
+end
+
+function TestUtils:testDistFromTurretHorizontalLeft()
+    local target = { position = { x = 7, y = 10 } }
+    local turret = { position = { x = 10, y = 10 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, 3.0, 1e-9)
+    -- dy = 0, dx = -3 => angle = pi
+    lu.assertAlmostEquals(angle, 0.75, 1e-9)
+end
+
+function TestUtils:testDistFromTurretVerticalUp()
+    local target = { position = { x = 10, y = 14 } }
+    local turret = { position = { x = 10, y = 10 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, 4.0, 1e-9)
+    -- dy = 4, dx = 0  => angle = pi/2
+    lu.assertAlmostEquals(angle, 0, 1e-9)
+end
+
+function TestUtils:testDistFromTurretVerticalDown()
+    local target = { position = { x = 10, y =  6 } }
+    local turret = { position = { x = 10, y = 10 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, 4.0, 1e-9)
+    -- dy = -4, dx = 0 => angle = -pi/2
+    lu.assertAlmostEquals(angle, 0.5, 1e-9)
+end
+
+function TestUtils:testDistFromTurretDiagonal()
+    local target = { position = { x = 4, y = 5 } }
+    local turret = { position = { x = 1, y = 2 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, math.sqrt(18), 1e-9)
+    lu.assertAlmostEquals(angle, 0.125, 1e-9)
+end
+-- ###############################################################
 
 -- Run the tests
 BaseTest:hookTests()

@@ -118,5 +118,18 @@ function utils.bitoper(a, b, oper)
     until m < 1
     return r
 end
+-- ###############################################################
+
+local two_pi = 2 * math.pi
+--- calculates distance and angle between an asteroid and a turret
+--- @param target LuaEntity asteroid which should be targeted
+--- @param turret LuaEntity turret
+--- @return float, RealOrientation distance and angle between turret and asteroid
+function utils.distFromTurret(target, turret)
+    local dx = target.position.x - turret.position.x
+    local dy = target.position.y - turret.position.y
+    return math.sqrt(dx * dx + dy * dy), 0.25 + math.atan(-dy, dx) / two_pi
+end
+
 
 return utils
