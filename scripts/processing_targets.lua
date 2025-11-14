@@ -109,7 +109,7 @@ end
 
 --- @param managedTurret ManagedTurret
 --- @param filter_settings any
---- @param assigned number?
+--- @param assigned number? unit_number of asteroid to be assigned
 --- @param knownAsteroids LuaEntity[]?
 local function prepareCircuitCondition(managedTurret, filter_settings, assigned, knownAsteroids)
     local turret = managedTurret.turret
@@ -130,7 +130,10 @@ local function prepareCircuitCondition(managedTurret, filter_settings, assigned,
             newTarget = true
         end
     else
+        -- control released by FCC
         turret.shooting_target = nil
+        Log.logLine({assigned = assigned, knownAsteroids = knownAsteroids}, function(m)log(m)end, Log.FINE)
+        script.raise_event(on_target_unassigned_event, { tun = turret.unit_number, reason="unassign", target = old and old.unit_number } )
     end
 
     -- now prepare to set the CircuitConditions
@@ -149,7 +152,8 @@ local function prepareCircuitCondition(managedTurret, filter_settings, assigned,
         filter_setting_by_un[#filter_setting_by_un + 1] = filter
         filter_settings[un] = filter_setting_by_un
         if newTarget then
-            script.raise_event(on_target_assigned_event, { tun = turret.unit_number, target = assigned, reason=old and "reassign" or "assign"} )
+            script.raise_event(on_target_assigned_event,
+                    { tun = turret.unit_number, target = assigned, reason=old and "reassign" or "assign", old = old and old.unit_number})
         end
     else
         Log.logMsg(function(m)log(m)end, Log.WARN, "ignored turret with invalid CircuitCondition=%s", turret.unit_number or "<NIL>")
