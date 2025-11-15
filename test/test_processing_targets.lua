@@ -167,9 +167,10 @@ function TestProcessingTargets:test_targeting_multiple_radars_one_hit()
 end
 -- ###############################################################
 
-function TestProcessingTargets:test_calculatePrio_in_range()
+function TestProcessingTargets:test_addToTargetList_in_range()
     local turret = {
         position = { x = 0, y = 0 },
+        orientation = 0,
         unit_number = 1   }
 
     local managedTurrets = {
@@ -177,6 +178,7 @@ function TestProcessingTargets:test_calculatePrio_in_range()
             turret = turret,
             range = 20,
             min_range = 0,
+            turn_range = 1,
             priority_targets_list = {},
             targets_of_turret = {}
         }
@@ -197,9 +199,10 @@ function TestProcessingTargets:test_calculatePrio_in_range()
 end
 -- ###############################################################
 
-function TestProcessingTargets:test_calculatePrio_in_range_inside_min_range()
+function TestProcessingTargets:test_addToTargetList_in_range_inside_min_range()
     local turret = {
         position = { x = 0, y = 0 },
+        orientation = 0,
         unit_number = 1   }
 
     local managedTurrets = {
@@ -207,6 +210,7 @@ function TestProcessingTargets:test_calculatePrio_in_range_inside_min_range()
             turret = turret,
             range = 20,
             min_range = 11,
+            turn_range = 1,
             priority_targets_list = {},
             targets_of_turret = {}
         }
@@ -226,9 +230,72 @@ function TestProcessingTargets:test_calculatePrio_in_range_inside_min_range()
 end
 -- ###############################################################
 
-function TestProcessingTargets:test_calculatePrio_out_of_range()
+function TestProcessingTargets:test_addToTargetList_in_range_inside_turn_range()
+    local turret = {
+        position = { x = 10, y = 20 },
+        orientation = 0,
+        unit_number = 1   }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret,
+            range = 20,
+            min_range = 0,
+            turn_range = 0.25,
+            priority_targets_list = {},
+            targets_of_turret = {}
+        }
+    }
+
+    local target = {
+        unit_number = 4711,
+        position = { x = 10, y = 30 },
+        prototype = {
+            name = "LuaEntityPrototype-asteroid"
+        }
+    }
+
+    processing_targets.addToTargetList(managedTurrets, target, 1)
+
+    lu.assertEquals(managedTurrets[1].targets_of_turret[4711], { distance = 10, is_priority_target = false})
+end
+-- ###############################################################
+
+function TestProcessingTargets:test_addToTargetList_in_range_outside_turn_range()
+    local turret = {
+        position = { x = 10, y = 20 },
+        orientation = 0.25,
+        unit_number = 1   }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret,
+            range = 20,
+            min_range = 0,
+            turn_range = 0.25,
+            priority_targets_list = {},
+            targets_of_turret = {}
+        }
+    }
+
+    local target = {
+        unit_number = 4711,
+        position = { x = 10, y = 30 },
+        prototype = {
+            name = "LuaEntityPrototype-asteroid"
+        }
+    }
+
+    processing_targets.addToTargetList(managedTurrets, target, 1)
+
+    lu.assertNil(managedTurrets[1].targets_of_turret[4711], "target should not be added")
+end
+-- ###############################################################
+
+function TestProcessingTargets:test_addToTargetList_out_of_range()
     local turret = {
         position = { x = 0, y = 0 },
+        orientation = 0,
         unit_number = 1
     }
 
@@ -237,6 +304,7 @@ function TestProcessingTargets:test_calculatePrio_out_of_range()
             turret = turret,
             range = 10,
             min_range = 0,
+            turn_range = 1,
             targets_of_turret = {},
             priority_targets_list = {}
         }
@@ -256,7 +324,7 @@ function TestProcessingTargets:test_calculatePrio_out_of_range()
 end
 -- ###############################################################
 
-function TestProcessingTargets:test_calculatePrio_not_hitting()
+function TestProcessingTargets:test_addToTargetList_not_hitting()
     local turret = {
         position = { x = 0, y = 0 },
         unit_number = 1
@@ -285,9 +353,10 @@ function TestProcessingTargets:test_calculatePrio_not_hitting()
 end
 -- ###############################################################
 
-function TestProcessingTargets:test_calculatePrio_removes_out_of_range()
+function TestProcessingTargets:test_addToTargetList_removes_out_of_range()
     local turret = {
         position = { x = 0, y = 0 },
+        orientation = 0,
         unit_number = 1
     }
 
@@ -296,6 +365,7 @@ function TestProcessingTargets:test_calculatePrio_removes_out_of_range()
             turret = turret,
             range = 20,
             min_range = 0,
+            turn_range = 1,
             targets_of_turret = {
                 [4711] = {
                     distance = 10,
@@ -535,6 +605,7 @@ function TestProcessingTargets:test_addToTargetList_only_priority_targets()
             [1] = asteroid_prototype
         },
         position = { x = 0, y = 0 },
+        orientation = 0,
         ignore_unprioritised_targets = true
     }
 
@@ -544,6 +615,7 @@ function TestProcessingTargets:test_addToTargetList_only_priority_targets()
             targets_of_turret = {},
             range = 18,
             min_range = 0,
+            turn_range = 1,
             priority_targets_list = {
                 [asteroid_prototype.name] = true
             }
@@ -600,6 +672,7 @@ function TestProcessingTargets:test_addToTargetList_non_prioritised_target()
             [1] = asteroid_prototype
         },
         position = { x = 0, y = 0 },
+        orientation = 0,
         ignore_unprioritised_targets = false
     }
 
@@ -609,6 +682,7 @@ function TestProcessingTargets:test_addToTargetList_non_prioritised_target()
             targets_of_turret = {},
             range = 18,
             min_range = 0,
+            turn_range = 1,
             priority_targets_list = {
                 [asteroid_prototype.name] = true
             }
@@ -634,6 +708,7 @@ function TestProcessingTargets:test_addToTargetList_prioritised_target()
             [1] = asteroid_prototype
         },
         position = { x = 0, y = 0 },
+        orientation = 0,
         ignore_unprioritised_targets = false
     }
 
@@ -643,6 +718,7 @@ function TestProcessingTargets:test_addToTargetList_prioritised_target()
             targets_of_turret = {},
             range = 18,
             min_range = 0,
+            turn_range = 1,
             priority_targets_list = {
                 [asteroid_prototype.name] = true
             }
@@ -653,6 +729,40 @@ function TestProcessingTargets:test_addToTargetList_prioritised_target()
 
     lu.assertEquals(managedTurrets[1].targets_of_turret, { [11] = { distance = 5, is_priority_target = true }},
                     "prio asteroid should be added")
+end
+-- ###############################################################
+
+-- tests that priority target is removed from target list if it's no longer hitting
+function TestProcessingTargets:test_addToTargetList_remove_prioritised_target()
+    local target = createMockedAsteroid("metallic", 11, 3, 4)
+
+    local asteroid_prototype = createMockedPrototype("metallic")
+    local turret1 = {
+        unit_number = 11,
+        -- only metallic asteroids are priority
+        priority_targets = {
+            [1] = asteroid_prototype
+        },
+        position = { x = 0, y = 0 },
+        ignore_unprioritised_targets = false
+    }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret1,
+            targets_of_turret = {
+                [11] = { distance = 15, is_priority_target = true }
+            },
+            range = 18,
+            priority_targets_list = {
+                [asteroid_prototype.name] = true
+            }
+        }
+    }
+
+    processing_targets.addToTargetList(managedTurrets, target, -5)
+
+    lu.assertEquals(managedTurrets[1].targets_of_turret, {}, "prio asteroid should be removed")
 end
 -- ###############################################################
 

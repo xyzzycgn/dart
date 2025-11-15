@@ -29,6 +29,7 @@ for _, pons in pairs(global_data.getPlatforms()) do
         local prot = prototypes.entity[turret.name]
         local ap = prot.attack_parameters
         top.min_range = ap.min_range or 0
+        top.turn_range = ap.turn_range or 1
         nturrets = nturrets + 1
     end
 

@@ -221,7 +221,6 @@ function TestUtils:testDistFromTurretHorizontalRight()
     local dist, angle = utils.distFromTurret(target, turret)
 
     lu.assertAlmostEquals(dist, 3.0, 1e-9)
-    -- dy = 0, dx = 3  => angle = 0
     lu.assertAlmostEquals(angle, 0.25, 1e-9)
 end
 
@@ -232,7 +231,6 @@ function TestUtils:testDistFromTurretHorizontalLeft()
     local dist, angle = utils.distFromTurret(target, turret)
 
     lu.assertAlmostEquals(dist, 3.0, 1e-9)
-    -- dy = 0, dx = -3 => angle = pi
     lu.assertAlmostEquals(angle, 0.75, 1e-9)
 end
 
@@ -243,7 +241,6 @@ function TestUtils:testDistFromTurretVerticalUp()
     local dist, angle = utils.distFromTurret(target, turret)
 
     lu.assertAlmostEquals(dist, 4.0, 1e-9)
-    -- dy = 4, dx = 0  => angle = pi/2
     lu.assertAlmostEquals(angle, 0, 1e-9)
 end
 
@@ -254,7 +251,6 @@ function TestUtils:testDistFromTurretVerticalDown()
     local dist, angle = utils.distFromTurret(target, turret)
 
     lu.assertAlmostEquals(dist, 4.0, 1e-9)
-    -- dy = -4, dx = 0 => angle = -pi/2
     lu.assertAlmostEquals(angle, 0.5, 1e-9)
 end
 

@@ -24,6 +24,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field control_behavior LuaTurretControlBehavior of the turret
 --- @field range float range of the turret
 --- @field min_range float mininum range of the turret
+--- @field turn_range float arc that the turret can attack in. Fraction of a circle. A value of 1 means the full 360°.
 
 --- @class AmmoWarningThreshold threshold for warning of ammo shortage of a certain ammo type
 --- @field type string ammo type
@@ -600,7 +601,8 @@ local function addTurretToPons(turretsOnPlatform, turret)
         turret = turret,
         control_behavior = turret.get_or_create_control_behavior(),
         range = ap.range * quality.range_multiplier,
-        min_range = ap.min_range or 0
+        min_range = ap.min_range or 0,
+        turn_range = ap.turn_range or 1
     }
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
