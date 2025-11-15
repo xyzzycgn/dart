@@ -130,6 +130,30 @@ function utils.distFromTurret(target, turret)
     local dy = target.position.y - turret.position.y
     return math.sqrt(dx * dx + dy * dy), 0.25 + math.atan(-dy, dx) / two_pi
 end
+-- ###############################################################
 
+local direction2RealOrientation = {
+    [defines.direction.north] = 0,
+    [defines.direction.northnortheast] = 0.0625,
+    [defines.direction.northeast] = 0.125,
+    [defines.direction.eastnortheast] = 0.1875,
+    [defines.direction.east] = 0.25,
+    [defines.direction.eastsoutheast] = 0.3125,
+    [defines.direction.southeast] = 0.375,
+    [defines.direction.southsoutheast] = 0.4375,
+    [defines.direction.south] = 0.5,
+    [defines.direction.southsouthwest] = 0.5625,
+    [defines.direction.southwest] = 0.625,
+    [defines.direction.westsouthwest] = 0.6875,
+    [defines.direction.west] = 0.75,
+    [defines.direction.westnorthwest] = 0.8125,
+    [defines.direction.northwest] = 0.875,
+    [defines.direction.northnorthwest] = 0.9375,
+}
+
+--- converts a direction (from defines.direction) into a RealOrientation
+function utils.directionToRealOrientation(dir)
+    return direction2RealOrientation[dir] or 0
+end
 
 return utils

@@ -233,7 +233,38 @@ end
 function TestProcessingTargets:test_addToTargetList_in_range_inside_turn_range()
     local turret = {
         position = { x = 10, y = 20 },
-        orientation = 0,
+        direction = defines.direction.north,
+        unit_number = 1   }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret,
+            range = 20,
+            min_range = 0,
+            turn_range = 0.25,
+            priority_targets_list = {},
+            targets_of_turret = {}
+        }
+    }
+
+    local target = {
+        unit_number = 4711,
+        position = { x = 10, y = 30 },
+        prototype = {
+            name = "LuaEntityPrototype-asteroid"
+        }
+    }
+
+    processing_targets.addToTargetList(managedTurrets, target, 1)
+
+    lu.assertEquals(managedTurrets[1].targets_of_turret[4711], { distance = 10, is_priority_target = false})
+end
+-- ###############################################################
+
+function TestProcessingTargets:test_addToTargetList_in_range_on_border_of_turn_range()
+    local turret = {
+        position = { x = 10, y = 20 },
+        direction = defines.direction.northeast,
         unit_number = 1   }
 
     local managedTurrets = {
@@ -264,7 +295,7 @@ end
 function TestProcessingTargets:test_addToTargetList_in_range_outside_turn_range()
     local turret = {
         position = { x = 10, y = 20 },
-        orientation = 0.25,
+        direction = defines.direction.northeast,
         unit_number = 1   }
 
     local managedTurrets = {
@@ -280,7 +311,7 @@ function TestProcessingTargets:test_addToTargetList_in_range_outside_turn_range(
 
     local target = {
         unit_number = 4711,
-        position = { x = 10, y = 30 },
+        position = { x = 9, y = 30 },
         prototype = {
             name = "LuaEntityPrototype-asteroid"
         }

@@ -3,6 +3,7 @@
 ---
 require('test.BaseTest')
 local lu = require('luaunit')
+require('factorio_def')
 local utils = require('scripts.utils')
 
 TestUtils = {}
@@ -262,6 +263,13 @@ function TestUtils:testDistFromTurretDiagonal()
 
     lu.assertAlmostEquals(dist, math.sqrt(18), 1e-9)
     lu.assertAlmostEquals(angle, 0.125, 1e-9)
+end
+-- ###############################################################
+
+function TestUtils:testdirectionToRealOrientation()
+    for dir, val in pairs(defines.direction) do
+        lu.assertEquals(utils.directionToRealOrientation(defines.direction[dir]), val * 0.0625, dir)
+    end
 end
 -- ###############################################################
 
