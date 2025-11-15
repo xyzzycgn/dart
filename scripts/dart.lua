@@ -89,6 +89,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field targets_of_turret TargetOfTurret[] indexed by unit_number of target
 --- @field range float range of the turret
 --- @field min_range float minimum range of the turret
+--- @field turn_range float arc that the turret can attack in. Fraction of a circle. A value of 1 means the full 360°.
 --- @field priority_targets_list table<string, true> names of LuaEntityPrototypes of the priority_targets set in turret
 --- @field is_priority_target boolean[] flags whether targets of the turret are priority targets (indexed by unit_number of target)
 
@@ -201,6 +202,7 @@ local function initializeManagedTurrets(pons)
                 targets_of_turret = {},
                 range = top.range,
                 min_range = top.min_range,
+                turn_range = top.turn_range,
                 priority_targets_list = priority_targets_list
             }
             mts[#mts + 1] = mt
