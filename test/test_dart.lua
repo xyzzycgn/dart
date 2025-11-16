@@ -266,7 +266,11 @@ function TestDart:test_on_init()
                         get_or_create_control_behavior = function()
                             return "simulated CB"
                         end,
-                        name = "gun-turret"
+                        name = "gun-turret",
+                        quality = {
+                            level = 2,
+                            range_multiplier = 1.2
+                        }
                     }
                 }
             end
@@ -285,6 +289,7 @@ function TestDart:test_on_init()
     lu.assertEquals(getTableSize(plat.turretsOnPlatform), 1)
     local tur = plat.turretsOnPlatform[4711]
     lu.assertNotNil(tur)
+    lu.assertEquals(tur.range, 18 * 1.2)
     lu.assertEquals(tur.control_behavior, "simulated CB")
 end
 -- ###############################################################

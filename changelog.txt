@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.4
+Date: 2025-11-10
+  Combat Balancing:
+    -  use improved ranges of higher quality turrets
+  Info:
+    - Upgraded log4factorio to V 0.2.2
+    - Upgraded versions of base game / SPA to 2.0.72
+---------------------------------------------------------------------------------------------------
 Version: 1.2.3
 Date: 2025-11-12
   Bugfixes:
@@ -49,7 +57,7 @@ Date: 2025-10-24
   Ease of use:
     - added an automatic configuration of the turrets connected to a FCC
   Info:
-    - Upgraded log4factorio to V 1.2.1
+    - Upgraded log4factorio to V 0.2.1
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.16
 Date: 2025-09-01

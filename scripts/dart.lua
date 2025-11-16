@@ -573,11 +573,12 @@ end
 local function addTurretToPons(turretsOnPlatform, turret)
     local prot = prototypes.entity[turret.name]
     local ap = prot.attack_parameters
+    local quality = turret.quality
 
     turretsOnPlatform[turret.unit_number] = {
         turret = turret,
         control_behavior = turret.get_or_create_control_behavior(),
-        range = ap.range
+        range = ap.range * quality.range_multiplier
     }
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
