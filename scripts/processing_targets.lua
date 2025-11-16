@@ -70,30 +70,38 @@ local function targeting(pons, asteroid)
 end
 -- ###############################################################
 
---- calculate prio (based on distance to turrets) for an asteroid if within range (and harmful)
+--- assign asteroid if hitting and not ignored by priority settings in turret
 --- @param managedTurrets ManagedTurret[]
 --- @param target LuaEntity asteroid which should be targeted
 --- @param D float discriminant (@see targeting())
-local function calculatePrio(managedTurrets, target, D)
+local function addToTargetList(managedTurrets, target, D)
     local tun = target.unit_number
-    for _, v in pairs(managedTurrets) do
-        -- target enters or touches protected area
+    local target_prototype_name = target.prototype.name
+    Log.logBlock(target_prototype_name, function(m)log(m)end, Log.FINER)
+    for _, mt in pairs(managedTurrets) do
         Log.logBlock(tun, function(m)log(m)end, Log.FINER)
-
-        local inRange = false
-        if D >= 0 then
-            local dist = distToTurret(target, v.turret)
+        local turret = mt.turret
+        local targeted = false
+        -- wanna have true or false - not nil!
+        local on_priority_list_of_turret = mt.priority_targets_list[target_prototype_name] or false
+        if D >= 0 and (not turret.ignore_unprioritised_targets or on_priority_list_of_turret) then
+            -- target enters or touches protected area and is - if unprioritised targets should be ignored -
+            -- in priority list of turret.
+            local dist = distToTurret(target, turret)
             -- remember distance for each turret to target if in range
-            if dist <= v.range then
+            if dist <= mt.range then
                 Log.logBlock(target, function(m)log(m)end, Log.FINER)
-                v.targets_of_turret[tun] = dist
-                inRange = true
+                mt.targets_of_turret[tun] = {
+                    distance = dist,
+                    is_priority_target = on_priority_list_of_turret
+                }
+                targeted = true
             end
         end
-        if not inRange then
-            -- no longer or not in range / not hitting
+        if not targeted then
+            -- no longer or not in range / not hitting / filtered by priority list
             Log.logBlock(target, function(m)log(m)end, Log.FINER)
-            v.targets_of_turret[tun] = nil
+            mt.targets_of_turret[tun] = nil
         end
     end
 end
@@ -101,7 +109,7 @@ end
 
 --- @param managedTurret ManagedTurret
 --- @param filter_settings any
---- @param assigned number?
+--- @param assigned number? unit_number of asteroid to be assigned
 --- @param knownAsteroids LuaEntity[]?
 local function prepareCircuitCondition(managedTurret, filter_settings, assigned, knownAsteroids)
     local turret = managedTurret.turret
@@ -122,7 +130,10 @@ local function prepareCircuitCondition(managedTurret, filter_settings, assigned,
             newTarget = true
         end
     else
+        -- control released by FCC
         turret.shooting_target = nil
+        Log.logLine({assigned = assigned, knownAsteroids = knownAsteroids}, function(m)log(m)end, Log.FINE)
+        script.raise_event(on_target_unassigned_event, { tun = turret.unit_number, reason="unassign", target = old and old.unit_number } )
     end
 
     -- now prepare to set the CircuitConditions
@@ -141,7 +152,8 @@ local function prepareCircuitCondition(managedTurret, filter_settings, assigned,
         filter_setting_by_un[#filter_setting_by_un + 1] = filter
         filter_settings[un] = filter_setting_by_un
         if newTarget then
-            script.raise_event(on_target_assigned_event, { tun = turret.unit_number, target = assigned, reason=old and "reassign" or "assign"} )
+            script.raise_event(on_target_assigned_event,
+                    { tun = turret.unit_number, target = assigned, reason=old and "reassign" or "assign", old = old and old.unit_number})
         end
     else
         Log.logMsg(function(m)log(m)end, Log.WARN, "ignored turret with invalid CircuitCondition=%s", turret.unit_number or "<NIL>")
@@ -149,6 +161,29 @@ local function prepareCircuitCondition(managedTurret, filter_settings, assigned,
 end
 -- ###############################################################
 
+--- @param managedTurret ManagedTurret
+local function simpleSortByDistance(managedTurret, i, j)
+    return managedTurret.targets_of_turret[i].distance < managedTurret.targets_of_turret[j].distance
+end
+
+--- @param managedTurret ManagedTurret
+local function complexSortByPriorityListAndDistance(managedTurret, i, j)
+    local mti = managedTurret.targets_of_turret[i]
+    local mtj = managedTurret.targets_of_turret[j]
+
+    -- true if mti has prio, but mtj not
+    --      if both have same priority, use distance
+    return (mti.is_priority_target and not mtj.is_priority_target) or
+           (mti.is_priority_target == mtj.is_priority_target) and
+           (mti.distance < mtj.distance)
+end
+
+local sort_funcs = {
+    [true] = simpleSortByDistance,
+    [false] = complexSortByPriorityListAndDistance,
+}
+
+--- calculate prio (based on distance to turrets) for an asteroid if within range (and harmful)
 --- assign target to turrets depending on prio (nearest asteroid first)
 --- @param pons Pons for which assignment of targets occurs
 --- @param knownAsteroids LuaEntity[]
@@ -168,9 +203,19 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
             prios[#prios + 1] = tun
         end
 
-        -- sort it by distance (ascending)
+        -- at this point we have 3 possibilities
+        -- - the turret has no priority_targets => sort by distance
+        -- - the turret has priority_targets AND ignore_unprioritised_targets is set => sort by distance (list contains
+        --   only targets matching the priority_targets list)
+        -- - else sort with these 2 criteria
+        --   1st target is in priority_targets list
+        --   2nd distance
+        local simple = (not turret.priority_targets or (table_size(turret.priority_targets) == 0))
+                       or turret.ignore_unprioritised_targets
+
+        -- sort it (is a bit tricky - sorting prios by content from managedTurret)
         table.sort(prios, function(i, j)
-            return managedTurret.targets_of_turret[i] < managedTurret.targets_of_turret[j]
+            return sort_funcs[simple](managedTurret, i, j)
         end)
 
         -- check whether control over turret has to be released
@@ -228,7 +273,7 @@ end
 
 local processing_targets = {
     targeting = targeting,
-    calculatePrio = calculatePrio,
+    addToTargetList = addToTargetList,
     assignTargets = assignTargets,
 }
 
