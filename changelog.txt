@@ -1,8 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.4
-Date: 2025-11-10
-  Combat Balancing:
-    -  use improved ranges of higher quality turrets
+Date: 2025-11-16
+  Features:
+    - use improved ranges of higher quality turrets
+    - use target priorities set in turret
+    - recognize minimum range and reduced firing angles (turn_range) of gun turrets
   Info:
     - Upgraded log4factorio to V 0.2.2
     - Upgraded versions of base game / SPA to 2.0.72

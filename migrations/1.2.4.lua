@@ -4,7 +4,7 @@ log("migration to 1.2.4 started")
 local nturrets, nplatforms = 0, 0
 
 for _, pons in pairs(global_data.getPlatforms()) do
-    for _, mt in pairs(pons.managedTurrets) do
+    for _, mt in pairs(pons.managedTurrets or {}) do
         for tun, dist in pairs(mt.targets_of_turret) do
             --- @type TargetOfTurret
             local tt = {
