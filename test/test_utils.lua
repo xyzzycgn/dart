@@ -3,6 +3,7 @@
 ---
 require('test.BaseTest')
 local lu = require('luaunit')
+require('factorio_def')
 local utils = require('scripts.utils')
 
 TestUtils = {}
@@ -212,6 +213,182 @@ function TestUtils:testBitOperBordercases()
     lu.assertEquals(utils.bitoper(pattern1, pattern2, utils.bitOps.OR), maxUint)
     lu.assertEquals(utils.bitoper(pattern1, pattern2, utils.bitOps.XOR), maxUint)
 end
+-- ###############################################################
+
+function TestUtils:testDistFromTurretHorizontalRight()
+    local turret = { position = { x = 10, y = 10 } }
+    local target = { position = { x = 13, y = 10 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, 3.0, 1e-9)
+    lu.assertAlmostEquals(angle, 0.25, 1e-9)
+end
+
+function TestUtils:testDistFromTurretHorizontalLeft()
+    local turret = { position = { x = 10, y = 10 } }
+    local target = { position = { x = 7, y = 10 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, 3.0, 1e-9)
+    lu.assertAlmostEquals(angle, 0.75, 1e-9)
+end
+
+function TestUtils:testDistFromTurretVerticalUp()
+    local turret = { position = { x = 10, y = 10 } }
+    local target = { position = { x = 10, y = 6 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, 4.0, 1e-9)
+    lu.assertAlmostEquals(angle, 0, 1e-9)
+end
+
+function TestUtils:testDistFromTurretVerticalDown()
+    local turret = { position = { x = 10, y = 10 } }
+    local target = { position = { x = 10, y = 14 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, 4.0, 1e-9)
+    lu.assertAlmostEquals(angle, 0.5, 1e-9)
+end
+
+function TestUtils:testDistFromTurretDiagonalRightUp()
+    local turret = { position = { x = 1, y = 2 } }
+    local target = { position = { x = 4, y = -1 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, math.sqrt(18), 1e-9)
+    lu.assertAlmostEquals(angle, 0.125, 1e-9)
+end
+
+function TestUtils:testDistFromTurretDiagonalLeftUp()
+    local turret = { position = { x = 1, y = 2 } }
+    local target = { position = { x = -2, y = -1 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, math.sqrt(18), 1e-9)
+    lu.assertAlmostEquals(angle, 0.875, 1e-9)
+end
+
+function TestUtils:testDistFromTurretDiagonalLeftUpInQuadrantLeftUp()
+    local turret = { position = { x = -2, y = -2 } }
+    local target = { position = { x = -5, y = -5 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, math.sqrt(18), 1e-9)
+    lu.assertAlmostEquals(angle, 0.875, 1e-9)
+end
+
+function TestUtils:testDistFromTurretDiagonalLeftUpInQuadrantLeftUp2()
+    local turret = { position = { x = -3, y = -12 } }
+    local target = { position = { x = -38.7109375, y = -56.38671875 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, 56.9688, 1e-4)
+    lu.assertAlmostEquals(angle, 0.8921719291134842, 1e-8)
+end
+
+function TestUtils:testDistFromTurretDiagonalRightDown()
+    local turret = { position = { x = 1, y = 2 } }
+    local target = { position = { x = 4, y = 5 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, math.sqrt(18), 1e-9)
+    lu.assertAlmostEquals(angle, 0.375, 1e-9)
+end
+
+function TestUtils:testDistFromTurretDiagonalLeftDown()
+    local turret = { position = { x =  1, y = 2 } }
+    local target = { position = { x = -2, y = 5 } }
+
+    local dist, angle = utils.distFromTurret(target, turret)
+
+    lu.assertAlmostEquals(dist, math.sqrt(18), 1e-9)
+    lu.assertAlmostEquals(angle, 0.625, 1e-9)
+end
+-- ###############################################################
+
+function TestUtils:testLeftRightAngle_N()
+    local left, right = utils.leftRightAngle(defines.direction.north, 0.5)
+    lu.assertAlmostEquals(left,  0.75, 1e-9)
+    lu.assertAlmostEquals(right, 0.25, 1e-9)
+end
+
+function TestUtils:testLeftRightAngle_NNE()
+    local left, right = utils.leftRightAngle(defines.direction.northnortheast, 0.25)
+    lu.assertAlmostEquals(left, 0.9375, 1e-9)
+    lu.assertAlmostEquals(right, 0.1875, 1e-9)
+end
+
+function TestUtils:testLeftRightAngle_NE()
+    local left, right = utils.leftRightAngle(defines.direction.northeast, 0.25)
+    lu.assertAlmostEquals(left, 0, 1e-9)
+    lu.assertAlmostEquals(right, 0.25, 1e-9)
+end
+
+function TestUtils:testLeftRightAngle_ENE()
+    local left, right = utils.leftRightAngle(defines.direction.eastnortheast, 0.5)
+    lu.assertAlmostEquals(left, 0.9375, 1e-9)
+    lu.assertAlmostEquals(right, 0.4375, 1e-9)
+end
+
+function TestUtils:testLeftRightAngle_E()
+    local left, right = utils.leftRightAngle(defines.direction.east, 0.5)
+    lu.assertAlmostEquals(left, 0, 1e-9)
+    lu.assertAlmostEquals(right, 0.5, 1e-9)
+end
+
+function TestUtils:testLeftRightAngle_ESE()
+    local left, right = utils.leftRightAngle(defines.direction.eastsoutheast, 0.5)
+    lu.assertAlmostEquals(left, 0.0625, 1e-9)
+    lu.assertAlmostEquals(right, 0.5625, 1e-9)
+end
+
+function TestUtils:testLeftRightAngle_S()
+    local left, right = utils.leftRightAngle(defines.direction.south, 0.5)
+    lu.assertAlmostEquals(left, 0.25, 1e-9)
+    lu.assertAlmostEquals(right, 0.75, 1e-9)
+end
+
+function TestUtils:testLeftRightAngle_W()
+    local left, right = utils.leftRightAngle(defines.direction.west, 0.5)
+    lu.assertAlmostEquals(left, 0.5, 1e-9)
+    lu.assertAlmostEquals(right, 0, 1e-9)
+end
+
+function TestUtils:testLeftRightAngle_WNW()
+    local left, right = utils.leftRightAngle(defines.direction.westnorthwest, 0.5)
+    lu.assertAlmostEquals(left, 0.5625, 1e-9)
+    lu.assertAlmostEquals(right, 0.0625, 1e-9)
+end
+
+function TestUtils:testLeftRightAngle_NW()
+    local left, right = utils.leftRightAngle(defines.direction.northwest, 0.25)
+    lu.assertAlmostEquals(left, 0.75, 1e-9)
+    lu.assertAlmostEquals(right, 0, 1e-9)
+end
+
+function TestUtils:testLeftRightAngle_NNW()
+    local left, right = utils.leftRightAngle(defines.direction.northnorthwest, 0.25)
+    lu.assertAlmostEquals(left, 0.8125, 1e-9)
+    lu.assertAlmostEquals(right, 0.0625, 1e-9)
+end
+-- ###############################################################
+
+function TestUtils:testdirectionToRealOrientation()
+    for dir, val in pairs(defines.direction) do
+        lu.assertEquals(utils.directionToRealOrientation(defines.direction[dir]), val * 0.0625, dir)
+    end
+end
+-- ###############################################################
 
 -- Run the tests
 BaseTest:hookTests()

@@ -23,6 +23,8 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field turret LuaEntity the turret
 --- @field control_behavior LuaTurretControlBehavior of the turret
 --- @field range float range of the turret
+--- @field min_range float mininum range of the turret
+--- @field turn_range float arc that the turret can attack in. Fraction of a circle. A value of 1 means the full 360°.
 
 --- @class AmmoWarningThreshold threshold for warning of ammo shortage of a certain ammo type
 --- @field type string ammo type
@@ -86,6 +88,8 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field circuit_condition CircuitConditionDefinition of the turret
 --- @field targets_of_turret TargetOfTurret[] indexed by unit_number of target
 --- @field range float range of the turret
+--- @field min_range float minimum range of the turret
+--- @field turn_range float arc that the turret can attack in. Fraction of a circle. A value of 1 means the full 360°.
 --- @field priority_targets_list table<string, true> names of LuaEntityPrototypes of the priority_targets set in turret
 --- @field is_priority_target boolean[] flags whether targets of the turret are priority targets (indexed by unit_number of target)
 
@@ -187,6 +191,8 @@ local function initializeManagedTurrets(pons)
 
             Log.logBlock({pname = pons.platform.name, ptl = priority_targets_list }, function(m)log(m)end, Log.FINER)
 
+            local top = pons.turretsOnPlatform[turret.unit_number]
+
             --- @type ManagedTurret
             local mt = {
                 turret = turret,
@@ -194,7 +200,9 @@ local function initializeManagedTurrets(pons)
                 fcc = cnOfDart.fcc,
                 control_behavior = cnOfDart.control_behavior,
                 targets_of_turret = {},
-                range = pons.turretsOnPlatform[turret.unit_number].range,
+                range = top.range,
+                min_range = top.min_range,
+                turn_range = top.turn_range,
                 priority_targets_list = priority_targets_list
             }
             mts[#mts + 1] = mt
@@ -594,7 +602,9 @@ local function addTurretToPons(turretsOnPlatform, turret)
     turretsOnPlatform[turret.unit_number] = {
         turret = turret,
         control_behavior = turret.get_or_create_control_behavior(),
-        range = ap.range * quality.range_multiplier
+        range = ap.range * quality.range_multiplier,
+        min_range = ap.min_range or 0,
+        turn_range = ap.turn_range or 1
     }
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

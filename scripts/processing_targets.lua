@@ -8,11 +8,6 @@ local Log = require("__log4factorio__.Log")
 
 local dart_release_control = settings.startup["dart-release-control"].value
 
-local function distToTurret(target, turret)
-    local dx = target.position.x - turret.position.x
-    local dy = target.position.y - turret.position.y
-    return math.sqrt(dx * dx + dy * dy)
-end
 -- ###############################################################
 
 --- Calculates whether an asteroid hits, grazes or passes the defended area.
@@ -70,6 +65,37 @@ local function targeting(pons, asteroid)
 end
 -- ###############################################################
 
+--- checks if distance fits into range parameters (from attack_parameters of prototype)
+--- fix for #65 - check min_range and turn_range too
+--- @param mt ManagedTurret
+--- @param dist float distance of asteroid
+--- @param angle RealOrientation angle of asteroid in relation to turret
+local function checkInRange(mt, dist, angle)
+    local ret
+    if (dist < mt.min_range) or (dist > mt.range) then
+        -- outside interval [min_range, range] - turn_range doesn't matter
+        ret = false
+    elseif (mt.turn_range == 1) then
+        -- inside range interval and full circle
+        ret = true
+    else
+        -- need to check turn_range
+        -- one half left, the other right from direction of turret
+        -- target area is from left to right (clockwise)
+        local left, right = utils.leftRightAngle(mt.turret.direction, mt.turn_range)
+        if left < right  then
+            ret = left <= angle and angle <= right
+        else
+            -- target area crosses 0° (aka NORTH)
+            ret = (left <= angle and angle <= 1) or (0 <= angle and angle <= right)
+        end
+        Log.logBlock({ dist = dist, left = left, right = right, angle = angle,
+                       mt = mt, ret = ret, dir = mt.turret.direction }, function(m)log(m)end, Log.FINER)
+    end
+    return ret
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- assign asteroid if hitting and not ignored by priority settings in turret
 --- @param managedTurrets ManagedTurret[]
 --- @param target LuaEntity asteroid which should be targeted
@@ -87,9 +113,9 @@ local function addToTargetList(managedTurrets, target, D)
         if D >= 0 and (not turret.ignore_unprioritised_targets or on_priority_list_of_turret) then
             -- target enters or touches protected area and is - if unprioritised targets should be ignored -
             -- in priority list of turret.
-            local dist = distToTurret(target, turret)
+            local dist, angle = utils.distFromTurret(target, turret)
             -- remember distance for each turret to target if in range
-            if dist <= mt.range then
+            if checkInRange(mt, dist, angle) then -- fix for #65 - check min_range too
                 Log.logBlock(target, function(m)log(m)end, Log.FINER)
                 mt.targets_of_turret[tun] = {
                     distance = dist,
