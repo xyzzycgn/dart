@@ -249,7 +249,7 @@ function TestProcessingTargets:test_addToTargetList_in_range_inside_turn_range()
 
     local target = {
         unit_number = 4711,
-        position = { x = 10, y = 30 },
+        position = { x = 10, y = 10 },
         prototype = {
             name = "LuaEntityPrototype-asteroid"
         }
@@ -280,7 +280,7 @@ function TestProcessingTargets:test_addToTargetList_in_range_on_border_of_turn_r
 
     local target = {
         unit_number = 4711,
-        position = { x = 10, y = 30 },
+        position = { x = 10, y = 10 },
         prototype = {
             name = "LuaEntityPrototype-asteroid"
         }

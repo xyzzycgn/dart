@@ -71,19 +71,28 @@ end
 --- @param dist float distance of asteroid
 --- @param angle RealOrientation angle of asteroid in relation to turret
 local function checkInRange(mt, dist, angle)
+    local ret
     if (dist < mt.min_range) or (dist > mt.range) then
         -- outside interval [min_range, range] - turn_range doesn't matter
-        return false
+        ret = false
     elseif (mt.turn_range == 1) then
         -- inside range interval and full circle
-        return true
+        ret = true
     else
         -- need to check turn_range
-        local tor = utils.directionToRealOrientation(mt.turret.direction)
-        Log.logLine({ un = mt.turret.unit_number, tor = tor }, function(m)log(m)end, Log.FINE)
-        -- turn_range one half left, the other right from direction of turret
-        return math.abs(tor - angle) * 2 <= mt.turn_range
+        -- one half left, the other right from direction of turret
+        -- target area is from left to right (clockwise)
+        local left, right = utils.leftRightAngle(mt.turret.direction, mt.turn_range)
+        if left < right  then
+            ret = left <= angle and angle <= right
+        else
+            -- target area crosses 0° (aka NORTH)
+            ret = (left <= angle and angle <= 1) or (0 <= angle and angle <= right)
+        end
+        Log.logBlock({ dist = dist, left = left, right = right, angle = angle,
+                       mt = mt, ret = ret, dir = mt.turret.direction }, function(m)log(m)end, Log.FINER)
     end
+    return ret
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
