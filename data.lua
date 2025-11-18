@@ -109,11 +109,19 @@ dart_fcc_entity = meld(dart_fcc_entity, dart_fcc_entity_update)
 
 Log.logBlock(dart_fcc_entity, function(m)log(m)end, Log.FINER)
 
+local tint = { r = 0.65, g = 0.65, b = 1, a = 0.5 }
+local icons = {
+    {
+        icon = "__base__/graphics/icons/radar.png",
+        icon_size = 64,
+        tint = tint,
+    }
+}
+
 --- create the D.A.R.T-radar entity
 local dart_radar_entity = data_util.copy_prototype(data.raw["radar"]["radar"], "dart-radar")
-dart_radar_entity.icon = "__dart__/graphics/icons/radar.png"
-dart_radar_entity.icon_size = 64
-dart_radar_entity.icon_mipmaps = 4
+dart_radar_entity.icon = nil
+dart_radar_entity.icons = icons
 dart_radar_entity.next_upgrade = nil
 -- twice as fast and clockwise rotation - use of the neg. value is an undocumented feature, but works fine ;-)
 dart_radar_entity.rotation_speed = -0.02
@@ -122,7 +130,7 @@ dart_radar_entity.fast_replaceable_group = nil
 
 local dart_radar_entity_update = {
     pictures = {
-        layers = {{ filename  =  "__dart__/graphics/entity/radar.png"}}
+        layers = {{ filename = "__base__/graphics/entity/radar/radar.png", tint = tint }}
     }
 }
 dart_radar_entity = meld(dart_radar_entity, dart_radar_entity_update)
@@ -150,9 +158,8 @@ Log.logBlock(dart_radar_entity, function(m)log(m)end, Log.FINER)
 --- create the D.A.R.T-radar item
 local dart_radar_item = data_util.copy_prototype(data.raw["item"]["radar"], "dart-radar")
 local order = dart_radar_item.order or "dart"
-dart_radar_item.icon = "__dart__/graphics/icons/radar.png"
-dart_radar_item.icon_size = 64
-dart_radar_item.icon_mipmaps = 4
+dart_radar_item.icon = nil
+dart_radar_item.icons = icons
 dart_radar_item.order = order .. "-a"
 
 --- create the D.A.R.T-fcc item
