@@ -10,6 +10,14 @@ Then D.A.R.T. might be the solution for you. It continuously monitors the space 
 connected ammo turrets, and prioritizes the approaching asteroids. Those that are heading directly toward your platforms
 and are likely to collide with them are attacked, while the others are ignored, saving you tons of ammunition.
 
+### D.A.R.T. in action
+A small comparison should show you the difference:
+
+- The 1st [video](https://youtu.be/hZGajh5M93g) shows a flight to fulgora with disabled D.A.R.T. (thus simulating a vanilla flight)
+- The 2nd [video](https://youtu.be/AKpU_mEaESk) shows the same flight with fully operating D.A.R.T.
+
+Both videos were created with the same save file as starting point.
+
 ## Components
 D.A.R.T. consist of two special devices. The central fire control computer (FCC) and a specialized variant of radar -
 miniaturized with reduced power consumption and only usable on platforms. To use them, you have to research the D.A.R.T. 
@@ -17,7 +25,7 @@ technology.
 
 ![D.A.R.T. technology](https://github.com/xyzzycgn/dart/blob/main/doc/dart-technology.png?raw=true)
 
-As of V 1.2.0 you can increase the maximum detection range of your dart-radars by resarching additional technologies
+As of V 1.2.0 you can increase the maximum detection range of your dart-radars by researching additional technologies
 
 ## Usage
 To protect a platform with D.A.R.T., you have to build a FCC and at least one dart-radar (exact number depends on size and 
@@ -58,7 +66,7 @@ To use D.A.R.T., it must be configured (per platform). This has to be done in th
 **Hint**
 D.A.R.T. controls a turret by setting its circuit network condition to 0 resp. 1.
 
-### Automatically (new in 1.1)
+### Automatically (since 1.1)
 
 Version 1.1 introduces an automatic configuration of the turrets, that should make this process much easier. Turrets 
 connected to a FCC which are unconfigured or not properly configured and show according warnings can be made operable
@@ -90,13 +98,19 @@ If enabled you have the choice between three modes how a FCC deals with the cont
 
   In this mode for all turrets connected to this FCC control over these turrets is released, i.e. they are permanently enabled 
   and handle all attacks on their own (not recommended 😉)
+
 - automatic
 
   In this mode the FCC releases control over a turret, if the number of asteroids that are in range of the turret and 
   on collision course exceeds the threshold 
+
 - always
 
   Normal operational mode - all turrets are under full control of the FCC (same as disabling adjustment in startup settings)
+
+## Prioritizing
+D.A.R.T. recognizes priority targets set in a turret, i.e. a turret under control of the FCC will only attack harmful 
+asteroids fitting the list - all others will be ignored by the turret.
 
 ## Compatibility
 This mod is compatible to vanilla game (= space age) and other mods introducing new turrets derived from 
