@@ -10,7 +10,6 @@ local function bonus(lvl)
     return { 'effect-description.dart-radar-range-bonus', tostring(constants.range_bonus[lvl] * 100) }
 end
 
-
 local function techname(lvl)
     return constants.dart_technologies .. lvl
 end
@@ -42,13 +41,22 @@ local dart_tech = {
     order = "c-e-b2",
 }
 
+local icons = {
+    {
+        icon = "__dart__/graphics/technology/radar.png",
+        icon_size = 256,
+    },
+    {
+        icon = "__dart__/graphics/technology/radar_up.png",
+        icon_size = 256,
+    }
+}
+
 --- increase of D.A.R.T-radar range
 local dart_tech_radar_range1 = {
     name = techname(1),
     type = 'technology',
-    icon = "__dart__/graphics/technology/radar_range.png",
-    icon_size = 256,
-    icon_mipmaps = 4,
+    icons = icons,
 
     prerequisites = { "dart-radar" },
     localised_description = bonus(1),
@@ -74,9 +82,7 @@ local dart_tech_radar_range1 = {
 local dart_tech_radar_range2 = {
     name = techname(2),
     type = 'technology',
-    icon = "__dart__/graphics/technology/radar_range.png",
-    icon_size = 256,
-    icon_mipmaps = 4,
+    icons = icons,
 
     prerequisites = { techname(1) },
     localised_description = bonus(2),
@@ -103,9 +109,7 @@ local dart_tech_radar_range2 = {
 local dart_tech_radar_range3 = {
     name = techname(3),
     type = 'technology',
-    icon = "__dart__/graphics/technology/radar_range.png",
-    icon_size = 256,
-    icon_mipmaps = 4,
+    icons = icons,
 
     prerequisites = { techname(2) },
     localised_description = bonus(3),
