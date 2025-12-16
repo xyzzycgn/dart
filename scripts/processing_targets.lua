@@ -219,8 +219,19 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
     Log.log("assignTargets", function(m)log(m)end, Log.FINER)
     local filter_settings = {}
 
+    -- first check if all turrets are still valid - fix for #80
+    local validManagedTurrets = {}
+    for ndx, managedTurret in pairs(managedTurrets) do
+        local turret = managedTurret.turret
+        if turret.valid then
+            validManagedTurrets[#validManagedTurrets + 1] = managedTurret
+        else
+            Log.log("skipped already invalidated turret", function(m)log(m)end, Log.WARN)
+        end
+    end
+
     -- reorganize prio
-    for _, managedTurret in pairs(managedTurrets) do
+    for _, managedTurret in pairs(validManagedTurrets) do
         local turret = managedTurret.turret
 
         local prios = {}
