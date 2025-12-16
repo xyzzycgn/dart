@@ -139,8 +139,16 @@ end
 --- @param knownAsteroids LuaEntity[]?
 local function prepareCircuitCondition(managedTurret, filter_settings, assigned, knownAsteroids)
     local turret = managedTurret.turret
+
+    -- fix for #80 check fcc for validity before usage
+    local fcc = managedTurret.fcc
+    if not fcc.valid then
+        Log.log("skipping already invalidated FCC", function(m)log(m)end, Log.WARN)
+        return -- TODO check if it's possible to release all turrets
+    end
+
     -- unit number of dart-fcc managing this turret
-    local un = managedTurret.fcc.unit_number
+    local un = fcc.unit_number
     -- filter_settings for this dart-fcc
     local filter_setting_by_un = filter_settings[un] or {}
 
