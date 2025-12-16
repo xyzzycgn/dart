@@ -87,9 +87,9 @@ data:extend({
         name = "dart-asteroid-warning-threshold",
         order = "m-b",
         setting_type = "runtime-global",
-        default_value = 10,
-        minimum_value = 1,
-        maximum_value = 100,
+        default_value = 15,
+        minimum_value = 5,
+        maximum_value = 150,
     },
     {
         type = "string-setting",
