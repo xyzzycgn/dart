@@ -516,87 +516,6 @@ local function fragments(dest_target)
 end
 -- ###############################################################
 
---- @param entity LuaEntity asteroid that just was destroyed
-local function asteroid_died(entity)
-    Log.logLine( { died=entity }, function(m)log(m)end, Log.FINER)
-    script.raise_event(on_target_destroyed_event, { entity=entity, un=entity.unit_number, reason="destroy" } )
-
-    --- @type Pons
-    local pons = global_data.getPlatforms()[entity.surface.index]
-    if pons then
-        -- use initializeManagedTurrets() only if the managedTurrets are NOT filled
-        -- unconditional use of it causes unwanted unassign of turrets (and thus pauses in defense)
-        -- but not using if managedTurrets is nil - it was previously uninitialized :-( -causes #63
-        local managedTurrets = pons.managedTurrets or initializeManagedTurrets(pons)
-        local knownAsteroids = pons.knownAsteroids
-        Log.logLine(managedTurrets, function(m)log(m)end, Log.FINER)
-
-        local aun = entity.unit_number
-        local size = knownAsteroids[aun] and knownAsteroids[aun].size
-
-        -- delete it from list of known asteroids
-        knownAsteroids[aun] = nil
-
-        -- delete it from target list
-        for _, v in pairs(managedTurrets) do
-            v.targets_of_turret[aun] = nil
-        end
-
-        -- if destroyed asteroid is not small (=> larger than small), start a search for the fragments
-        if size and (size ~= "small") then
-            -- execute fragments() in 2 ticks
-            local deltatick = 2
-            local nextPos = entity.position
-            nextPos.y = nextPos.y + pons.platform.speed * deltatick / 60
-            asyncHandler.enqueue(asyncFragments,
-                    { aun = aun, surface = entity.surface, position = nextPos, knownAsteroids = knownAsteroids },
-                    deltatick)
-        end
-
-        -- assign remaining asteroids to turrets
-        processing_targets.assignTargets(pons, knownAsteroids, managedTurrets)
-    else
-        Log.logMsg(function(m)log(m)end, Log.WARN, "asteroid_died - unknown pons for surface=%s", entity.surface.index)
-    end
-end
-
-local function hub_died(entity)
-    -- remove references to platform or objects on it
-    local sid = entity.surface.index
-    local pons = global_data.getPlatforms()[sid]
-    if pons then
-        Log.logMsg(function(m)log(m)end, Log.INFO, "removing all D.A.R.T. installations on platform=%s", pons.platform.name)
-        global_data.getPlatforms()[sid] = nil
-        -- remove references to platform in player_data
-        local platform = pons.platform
-        if platform.valid then
-            for _, player in pairs(platform.force.players) do
-                local pd = global_data.getPlayer_data(player.index)
-                pd.pons[platform.index] = nil
-            end
-        else
-            Log.logMsg(function(m)log(m)end, Log.WARN, "platform already invalid - surfaceid = %s", event.surface_index)
-        end
-    else
-        Log.logMsg(function(m)log(m)end, Log.WARN, "hub_died - unknown pons for surface=%s", sid)
-    end
-end
-
-local diedFuncs = {
-    ["space-platform-hub"] = hub_died,
-    asteroid = asteroid_died,
-}
-
---- event handler called if an asteroid or a hub is destroyed
-local function entity_died(event)
-    --- @type LuaEntity
-    local entity = event.entity
-
-    local func = diedFuncs[entity.name] or diedFuncs[entity.type]
-    _= func and func(entity, event)
-end
--- ###############################################################
-
 --- @param turretsOnPlatform TurretOnPlatform[]
 --- @param turret LuaEntity
 local function addTurretToPons(turretsOnPlatform, turret)
@@ -804,6 +723,110 @@ local function entityRemoved(event)
     local entity = event.entity
     local func = removedFuncs[entity.name] or removedFuncs[entity.type]
 
+    _= func and func(entity, event)
+end
+-- ###############################################################
+
+--- @param entity LuaEntity asteroid that just was destroyed
+local function asteroid_died(entity)
+    Log.logLine( { died=entity }, function(m)log(m)end, Log.FINER)
+    script.raise_event(on_target_destroyed_event, { entity=entity, un=entity.unit_number, reason="destroy" } )
+
+    --- @type Pons
+    local pons = global_data.getPlatforms()[entity.surface.index]
+    if pons then
+        -- use initializeManagedTurrets() only if the managedTurrets are NOT filled
+        -- unconditional use of it causes unwanted unassign of turrets (and thus pauses in defense)
+        -- but not using if managedTurrets is nil - it was previously uninitialized :-( -causes #63
+        local managedTurrets = pons.managedTurrets or initializeManagedTurrets(pons)
+        local knownAsteroids = pons.knownAsteroids
+        Log.logLine(managedTurrets, function(m)log(m)end, Log.FINER)
+
+        local aun = entity.unit_number
+        local size = knownAsteroids[aun] and knownAsteroids[aun].size
+
+        -- delete it from list of known asteroids
+        knownAsteroids[aun] = nil
+
+        -- delete it from target list
+        for _, v in pairs(managedTurrets) do
+            v.targets_of_turret[aun] = nil
+        end
+
+        -- if destroyed asteroid is not small (=> larger than small), start a search for the fragments
+        if size and (size ~= "small") then
+            -- execute fragments() in 2 ticks
+            local deltatick = 2
+            local nextPos = entity.position
+            nextPos.y = nextPos.y + pons.platform.speed * deltatick / 60
+            asyncHandler.enqueue(asyncFragments,
+                    { aun = aun, surface = entity.surface, position = nextPos, knownAsteroids = knownAsteroids },
+                    deltatick)
+        end
+
+        -- assign remaining asteroids to turrets
+        processing_targets.assignTargets(pons, knownAsteroids, managedTurrets)
+    else
+        Log.logMsg(function(m)log(m)end, Log.WARN, "asteroid_died - unknown pons for surface=%s", entity.surface.index)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function hub_died(entity)
+    -- remove references to platform or objects on it
+    local sid = entity.surface.index
+    local pons = global_data.getPlatforms()[sid]
+    if pons then
+        Log.logMsg(function(m)log(m)end, Log.INFO, "removing all D.A.R.T. installations on platform=%s", pons.platform.name)
+        global_data.getPlatforms()[sid] = nil
+        -- remove references to platform in player_data
+        local platform = pons.platform
+        if platform.valid then
+            for _, player in pairs(platform.force.players) do
+                local pd = global_data.getPlayer_data(player.index)
+                pd.pons[platform.index] = nil
+            end
+        else
+            Log.logMsg(function(m)log(m)end, Log.WARN, "platform already invalid - surfaceid = %s", event.surface_index)
+        end
+    else
+        Log.logMsg(function(m)log(m)end, Log.WARN, "hub_died - unknown pons for surface=%s", sid)
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function dart_radar_died(entity, event)
+    Log.logLine( { died=entity, un=entity.unit_number }, function(m)log(m)end, Log.FINE)
+    removedRadar(entity, event)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function fcc_died(entity)
+    Log.logLine( { died=entity, un=entity.unit_number }, function(m)log(m)end, Log.FINE)
+    removedFcc(entity)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function turret_died(entity)
+    Log.logLine( { died=entity, un=entity.unit_number }, function(m)log(m)end, Log.FINE)
+    removedTurret(entity)
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local diedFuncs = {
+    ["space-platform-hub"] = hub_died,
+    asteroid = asteroid_died,
+    ['dart-radar'] = dart_radar_died,
+    ['dart-fcc'] = fcc_died,
+    ['ammo-turret'] = turret_died,
+}
+
+--- event handler called if an asteroid or a hub or a dart component is destroyed
+local function entity_died(event)
+    --- @type LuaEntity
+    local entity = event.entity
+
+    local func = diedFuncs[entity.name] or diedFuncs[entity.type]
     _= func and func(entity, event)
 end
 -- ###############################################################
@@ -1052,6 +1075,11 @@ local function registerEvents()
         { filter = "type", type = "asteroid" },
         { filter = "type", type = "space-platform-hub" },
     }
+
+    -- monitor dart_components too in on_entity_died, fix for #80
+    for _, filter in pairs(filters_dart_components) do
+        filters_entity_died[#filters_entity_died + 1] = filter
+    end
 
     script.on_event(defines.events.on_space_platform_built_entity, entityCreated,       filters_dart_components)
     script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved,       filters_dart_components)
