@@ -685,12 +685,17 @@ end
 
 --- @param entity LuaEntity
 local function removedFcc(entity)
-    local darts = global_data.getPlatforms()[entity.surface.index].fccsOnPlatform
-    local fccun = entity.unit_number
-    Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
+    local pons = global_data.getPlatforms()[entity.surface.index]
+    if pons then -- fix for #83
+        local darts = pons.fccsOnPlatform
 
-    -- clear the data belonging to the dart-fcc
-    darts[fccun] = nil
+        local fccun = entity.unit_number
+        Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
+
+        -- clear the data belonging to the dart-fcc
+        darts[fccun] = nil
+        raiseDartComponentRemoved(entity)
+    end
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
