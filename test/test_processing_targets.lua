@@ -424,7 +424,8 @@ end
 function TestProcessingTargets:test_assignTargets_single_turret_multiple_targets()
     local turret = {
         unit_number = 1,
-        position = { x = 0, y = 0 }
+        position = { x = 0, y = 0 },
+        valid = true
     }
 
     local lls = {
@@ -437,7 +438,8 @@ function TestProcessingTargets:test_assignTargets_single_turret_multiple_targets
             get_section = function(_)
                 return lls
             end
-        }
+        },
+        valid = true
     }
 
     local managedTurrets = {
@@ -495,7 +497,8 @@ function TestProcessingTargets:test_assignTargets_no_targets()
     local turret = {
         unit_number = 1,
         position = { x = 0, y = 0 },
-        shooting_target = {}
+        shooting_target = {},
+        valid = true
     }
 
     local lls = {
@@ -508,7 +511,8 @@ function TestProcessingTargets:test_assignTargets_no_targets()
             get_section = function(_)
                 return lls
             end
-        }
+        },
+        valid = true
     }
 
     local managedTurrets = {
@@ -541,12 +545,14 @@ end
 function TestProcessingTargets:test_assignTargets_multiple_turrets_multiple_targets()
     local turret1 = {
         unit_number = 1,
-        position = { x = 0, y = 0 }
+        position = { x = 0, y = 0 },
+        valid = true
     }
 
     local turret2 = {
         unit_number = 2,
-        position = { x = 10, y = 0 }
+        position = { x = 10, y = 0 },
+        valid = true
     }
 
     local lls = {
@@ -559,7 +565,8 @@ function TestProcessingTargets:test_assignTargets_multiple_turrets_multiple_targ
             get_section = function(_)
                 return lls
             end
-        }
+        },
+        valid = true
     }
 
     local managedTurrets = {
@@ -843,7 +850,8 @@ function TestProcessingTargets:test_assignTargets_with_priority_targets_and_igno
             get_section = function(_)
                 return lls
             end
-        }
+        },
+        valid = true
     }
 
     local pons = {
@@ -871,7 +879,8 @@ function TestProcessingTargets:test_assignTargets_with_priority_targets_and_igno
         priority_targets = {
             [1] = asteroid_prototype
         },
-        ignore_unprioritised_targets = false
+        ignore_unprioritised_targets = false,
+        valid = true
     }
 
     local managedTurrets = {
@@ -922,7 +931,8 @@ function TestProcessingTargets:test_assignTargets_with_priority_targets_and_igno
             get_section = function(_)
                 return lls
             end
-        }
+        },
+        valid = true
     }
 
     local pons = {
@@ -947,7 +957,8 @@ function TestProcessingTargets:test_assignTargets_with_priority_targets_and_igno
         priority_targets = {
             [1] = asteroid_prototype
         },
-        ignore_unprioritised_targets = true
+        ignore_unprioritised_targets = true,
+        valid = true
     }
 
     local managedTurrets = {
@@ -988,7 +999,8 @@ end
 function TestProcessingTargets:test_assignTargets_sorting_by_distance()
     local turret = {
         unit_number = 1,
-        position = { x = 0, y = 0 }
+        position = { x = 0, y = 0 },
+        valid = true
     }
 
     local lls = {
@@ -1001,7 +1013,8 @@ function TestProcessingTargets:test_assignTargets_sorting_by_distance()
             get_section = function(_)
                 return lls
             end
-        }
+        },
+        valid = true
     }
 
     local managedTurrets = {

@@ -8,6 +8,22 @@ local lu = require('luaunit')
 require('factorio_def')
 local dart = require('scripts.dart')
 
+-- mock function table_size (normally provided by the game runtime)
+-- already defined in BaseTest, but overwritten in factorio_def
+function table_size(table)
+    if (table) then
+        if (type(table) == "table") then
+            local count = 0
+            for _ in pairs(table) do
+                count = count + 1
+            end
+            return count
+        end
+    end
+
+    return 0
+end
+
 TestDart = {}
 local on_event_called = 0
 
@@ -33,6 +49,7 @@ end
 function TestDart:setUp()
     -- clear call count
     on_event_called = 0
+    risen_event = {}
 
     -- simulated (global) storage object
     storage = {
@@ -152,6 +169,14 @@ local function entityRemovedWithValidOutput(valid, expected)
         name = "dart-fcc",
         surface = {
             index = 2
+        },
+        force = {
+            index = 1,
+            players = {
+                {
+                    index = 2,
+                }
+            }
         }
     }
     -- mock event
@@ -166,6 +191,18 @@ local function entityRemovedWithValidOutput(valid, expected)
     eventhandler(event)
 
     lu.assertNil(storage.platforms[2].fccsOnPlatform[4711])
+    lu.assertEquals(#risen_event, 1)
+    local event = risen_event[1]
+    lu.assertNotNil(event)
+    lu.assertEquals(event.number, 1707)
+    lu.assertEquals(event.event_data, { entity={
+            force={index=1, players={{index=2}}},
+            name="dart-fcc",
+            surface={index=2},
+            unit_number=4711
+        },
+        player_index=2})
+
 end
 
 function TestDart:test_entityRemovedWithValidOutput()

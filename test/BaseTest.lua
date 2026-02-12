@@ -29,12 +29,21 @@ settings = {
 storage = {}
 
 local event_num = 1700
+risen_event = {
+
+}
 
 script = {
     mod_name = "TEST_OF_MOD",
     generate_event_name = function()
         event_num = event_num + 1
         return event_num
+    end,
+    raise_event = function(number, event_data)
+        risen_event[#risen_event + 1] = {
+            number = number,
+            event_data = event_data
+        }
     end
 }
 
