@@ -8,6 +8,7 @@ local components = require("scripts/gui/components")
 local utils = require("scripts/utils")
 local eventHandler = require("scripts/gui/eventHandler")
 local global_data = require("scripts.global_data")
+local force_data = require("scripts.force_data")
 local dump = require("__log4factorio__.dump")
 local constants = require("scripts.constants")
 local entities_radar = require("scripts.entities.radars")
@@ -49,7 +50,14 @@ local function getMaxDetectionRange(rop)
     Log.logBlock(rop.radar.force_index, function(m)log(m)end, Log.FINE)
     Log.logBlock(storage.forces, function(m)log(m)end, Log.FINE)
 
-    local lvl = global_data.getForce_data(rop.radar.force_index).techLevel
+    local fi = rop.radar.force_index
+    local fd = global_data.getForce_data(fi)
+    if not fd then
+        fd = force_data.init_force_data()
+        global_data.addForce_data(fi, fd)
+        Log.logMsg(function(m)log(m)end, Log.WARN, "Reinitialized force_data - index=%d", fi)
+    end
+    local lvl = fd.techLevel
     return entities_radar.addIncreaseBasedOnQuality(rop, constants.max_detectionRange) * entities_radar.calculateRangeBonus(lvl)
 end
 -- ###############################################################
