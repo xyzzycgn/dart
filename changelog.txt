@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.7
+Date: 2026-02-12
+  Bugfixes:
+    - Fixed a nil access when destroying a dart-radar in a blueprint sandbox
+    - mitigated a possible nil access when opening dart-radar GUI when internal force_data haven't been
+      initialized properly
+---------------------------------------------------------------------------------------------------
 Version: 1.2.6
 Date: 2026-01-02
   Bugfixes:
