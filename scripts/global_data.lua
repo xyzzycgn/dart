@@ -17,10 +17,10 @@ function global_data.init()
 end
 -- ###############################################################
 
---- @param force LuaForce
+--- @param force number | LuaForce
 --- @param forceData ForceData
 function global_data.addForce_data(force, forceData)
-    local fi = force.index
+    local fi = type(force) == "number" and force or force.index
     if (storage.forces[fi] == nil) then
         storage.forces[fi] = forceData
     else

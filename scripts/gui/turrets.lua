@@ -482,7 +482,7 @@ function turrets.update(gae, pons, pd)
         end
     end
 
-    Log.logBlock(mayBeAutoConfigured, function(m)log(m)end, Log.FINE)
+    Log.logBlock(mayBeAutoConfigured, function(m)log(m)end, Log.FINER)
     -- show button if needed and autoConfigure is possible
     gae.elems.turrets_bottom_button_frame.visible = table_size(mayBeAutoConfigured) > 0
     gae.mayBeAutoConfigured = mayBeAutoConfigured -- remember misconfigured
