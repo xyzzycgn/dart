@@ -36,13 +36,16 @@ local function getTableSize(t)
     return count
 end
 
-local function init_storagePlatforms()
-    local platform = { index = 4711 }
+local function init_storagePlatforms(fccs, ka, turrets, radars)
+    local platform = { index = 4711, valid = true }
     local surface = { platform = platform, index = 2 }
     storage.platforms[2] = {
         surface = surface,
         platform = platform,
-        fccsOnPlatform = {},
+        fccsOnPlatform = fccs or {},
+        knownAsteroids = ka or {},
+        turretsOnPlatform = turrets or {},
+        radarsOnPlatform = radars or {}
     }
 end
 
@@ -99,7 +102,8 @@ function TestDart:setUp()
     -- mock the settings object
     settings = {
         global = {
-            ["dart-low-ammo-warning-threshold-default"] = { value = 200 }
+            ["dart-low-ammo-warning-threshold-default"] = { value = 200 },
+            ["dart-asteroid-warning-threshold"] = { value = 15 }
         }
     }
 end
@@ -158,10 +162,7 @@ end
 
 local function entityRemovedWithValidOutput(valid, expected)
     -- prepare storage entries
-    init_storagePlatforms()
-
-    local radarAndOutput = createDart(valid)
-    storage.platforms[2].fccsOnPlatform[4711] = radarAndOutput
+    init_storagePlatforms({ [4711] = createDart(valid) })
 
     -- mock entity in event
     local entity = {
@@ -180,7 +181,7 @@ local function entityRemovedWithValidOutput(valid, expected)
         }
     }
     -- mock event
-    local event = {
+    local mock_event = {
         entity = entity,
     }
 
@@ -188,7 +189,7 @@ local function entityRemovedWithValidOutput(valid, expected)
     local eventhandler =  dart.events[defines.events.script_raised_destroy]
     lu.assertEquals(type(eventhandler), "function")
 
-    eventhandler(event)
+    eventhandler(mock_event)
 
     lu.assertNil(storage.platforms[2].fccsOnPlatform[4711])
     lu.assertEquals(#risen_event, 1)
@@ -334,6 +335,37 @@ end
 function TestDart:test_on_load()
     dart.on_load()
 
+    lu.assertEquals(on_event_called, 6)
+end
+-- ###############################################################
+
+function TestDart:test_business_all_empty()
+    dart.on_load()
+    init_storagePlatforms()
+
+    dart.on_nth_tick[60]()
+    lu.assertEquals(on_event_called, 6)
+end
+-- ###############################################################
+
+function TestDart:test_business_all_fcc_only()
+    dart.on_load()
+    local fcc = createDart(true)
+    fcc.control_behavior = {
+        get_circuit_network = function()
+            return nil
+        end,
+        get_section = function()
+            return { filters = {}}
+        end
+    }
+    fcc.ammo_warning = {
+        turret_types = {}
+    }
+
+    init_storagePlatforms({ [4711] = fcc })
+
+    dart.on_nth_tick[60]()
     lu.assertEquals(on_event_called, 6)
 end
 -- ###############################################################
