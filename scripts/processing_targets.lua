@@ -136,7 +136,7 @@ end
 --- @param managedTurret ManagedTurret
 --- @param filter_settings any
 --- @param assigned number? unit_number of asteroid to be assigned
---- @param knownAsteroids LuaEntity[]?
+--- @param knownAsteroids KnownAsteroid[]?
 local function prepareCircuitCondition(managedTurret, filter_settings, assigned, knownAsteroids)
     local turret = managedTurret.turret
 
@@ -155,7 +155,7 @@ local function prepareCircuitCondition(managedTurret, filter_settings, assigned,
     local newTarget = false
     local old = turret.shooting_target
 
-    if assigned and knownAsteroids then
+    if assigned and knownAsteroids and knownAsteroids[assigned] then
         local asteroid = knownAsteroids[assigned].entity
         Log.logBlock(asteroid, function(m)log(m)end, Log.FINER)
         if (not old or (old.unit_number ~= asteroid.unit_number)) then
@@ -166,7 +166,7 @@ local function prepareCircuitCondition(managedTurret, filter_settings, assigned,
     else
         -- control released by FCC
         turret.shooting_target = nil
-        Log.logLine({assigned = assigned, knownAsteroids = knownAsteroids}, function(m)log(m)end, Log.FINE)
+        Log.logLine({assigned = assigned, knownAsteroids = knownAsteroids}, function(m)log(m)end, Log.FINER)
         script.raise_event(on_target_unassigned_event, { tun = turret.unit_number, reason="unassign", target = old and old.unit_number } )
     end
 
@@ -217,10 +217,44 @@ local sort_funcs = {
     [false] = complexSortByPriorityListAndDistance,
 }
 
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+--- removes asteroids from passed arrays that became invalid in the meantime
+--- @param prios number[] array with un of targeted asteroids
+--- @param knownAsteroids KnownAsteroid[] (modified by call)
+--- @return number[] remaining targeted asteroids after removal of invalid ones
+local function eliminateInvalid(prios, knownAsteroids)
+    local invalid = {}
+
+    -- look for asteroids that became invalid in the meantime
+    for un, ka in pairs(knownAsteroids) do
+        if not ka.entity.valid then
+            Log.logBlock({ un = un, entity = ka.entity }, function(m)log(m)end, Log.FINE)
+            invalid[un] = true
+        end
+    end
+
+    for un, _ in pairs(invalid) do
+        Log.logMsg(function(m)log(m)end, Log.FINE, "removed invalid knownAsteroid un=%d", un)
+        knownAsteroids[un] = nil
+    end
+
+    local newPrios = {}
+    for _, tun in pairs(prios) do
+        -- add only if valid and still in knownAsteroids
+        if not invalid[tun] and knownAsteroids[tun] then
+            newPrios[#newPrios + 1] = tun
+        end
+    end
+
+    return newPrios
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- calculate prio (based on distance to turrets) for an asteroid if within range (and harmful)
 --- assign target to turrets depending on prio (nearest asteroid first)
 --- @param pons Pons for which assignment of targets occurs
---- @param knownAsteroids LuaEntity[]
+--- @param knownAsteroids KnownAsteroid[]
 --- @param managedTurrets ManagedTurret[]
 --- @return any resulting filter setting (for all darts of a platform)
 local function assignTargets(pons, knownAsteroids, managedTurrets)
@@ -229,7 +263,7 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
 
     -- first check if all turrets are still valid - fix for #80
     local validManagedTurrets = {}
-    for ndx, managedTurret in pairs(managedTurrets) do
+    for _, managedTurret in pairs(managedTurrets) do
         local turret = managedTurret.turret
         if turret.valid then
             validManagedTurrets[#validManagedTurrets + 1] = managedTurret
@@ -247,6 +281,8 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
         for tun, _ in pairs(managedTurret.targets_of_turret) do
             prios[#prios + 1] = tun
         end
+
+        prios = eliminateInvalid(prios, knownAsteroids)
 
         -- at this point we have 3 possibilities
         -- - the turret has no priority_targets => sort by distance
@@ -277,7 +313,7 @@ local function assignTargets(pons, knownAsteroids, managedTurrets)
                     -- automatic release of control requested
                     release_control = tc.threshold < #prios
                 end
-                Log.logLine({ prios = prios, rc = release_control }, function(m)log(m)end, release_control and Log.FINE or Log.FINER)
+                Log.logLine({ prios = prios, rc = release_control }, function(m)log(m)end, Log.FINER)
             end
         end
 

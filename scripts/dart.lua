@@ -143,6 +143,7 @@ end
 --- @return FccOnPlatform[] indexed by network id
 local function circuitNetworkOfDarts(pons)
     local darts = pons.fccsOnPlatform
+    Log.logLine(darts, function(m)log(m)end, Log.FINER)
 
     --- @type FccOnPlatform[]
     local cnOfDarts = {}
@@ -370,6 +371,27 @@ local function updateTurretTypes(pons, managedTurrets)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+--- removes asteroids from passed array that became invalid in the meantime
+--- @param knownAsteroids KnownAsteroid[] (modified by call)
+local function eliminateInvalid(knownAsteroids)
+    local invalid = {}
+
+    for un, ka in pairs(knownAsteroids) do
+        if not ka.entity.valid then
+            Log.logBlock({ un = un, entity = ka.entity }, function(m)log(m)end, Log.FINE)
+            invalid[un] = true
+        end
+    end
+
+    for un, _ in pairs(invalid) do
+        Log.logMsg(function(m)log(m)end, Log.FINE, "removed invalid knownAsteroid un=%d", un)
+        knownAsteroids[un] = nil
+    end
+
+    return knownAsteroids
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 --- performs decision which asteroid should be targeted
 local function businessLogic()
     Log.log("enter BL", function(m)log(m)end, Log.FINER)
@@ -380,7 +402,7 @@ local function businessLogic()
         --- @type LuaSpacePlatform
         local platform = pons.platform
         local managedTurrets = initializeManagedTurrets(pons)
-        local knownAsteroids = pons.knownAsteroids
+        local knownAsteroids = eliminateInvalid(pons.knownAsteroids)
 
         updateTurretTypes(pons, managedTurrets)
 
