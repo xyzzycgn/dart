@@ -462,11 +462,13 @@ function TestProcessingTargets:test_assignTargets_single_turret_multiple_targets
 
     local asteroid1 = {
         unit_number = 4711,
-        name = "small-metallic-asteroid"
+        name = "small-metallic-asteroid",
+        valid = true
     }
     local asteroid2 = {
         unit_number = 4712,
-        name = "small-carbonic-asteroid"
+        name = "small-carbonic-asteroid",
+        valid = true
     }
 
     local knownAsteroids = {
@@ -596,15 +598,15 @@ function TestProcessingTargets:test_assignTargets_multiple_turrets_multiple_targ
 
     local asteroid1 = {
         unit_number = 4711,
-        name = "small-metallic-asteroid"
+        name = "small-metallic-asteroid", valid = true
     }
     local asteroid2 = {
         unit_number = 4712,
-        name = "small-carbonic-asteroid"
+        name = "small-carbonic-asteroid", valid = true
     }
     local asteroid3 = {
         unit_number = 4713,
-        name = "small-carbonic-asteroid"
+        name = "small-carbonic-asteroid", valid = true
     }
 
     local knownAsteroids = {
@@ -627,6 +629,94 @@ function TestProcessingTargets:test_assignTargets_multiple_turrets_multiple_targ
     lu.assertEquals(lls, { filters={
         {min = 1, value = {name = "copper-ore", quality = "normal", type = "item"}},
         {min = 1, value = {name = "iron-ore",   quality = "normal", type = "item"}}
+    }})
+end
+-- ###############################################################
+
+function TestProcessingTargets:test_assignTargets_multiple_turrets_multiple_targets_with_invalid()
+    local turret1 = {
+        unit_number = 1,
+        position = { x = 0, y = 0 },
+        valid = true
+    }
+
+    local turret2 = {
+        unit_number = 2,
+        position = { x = 10, y = 0 },
+        valid = true
+    }
+
+    local lls = {
+        filters = {}
+    }
+
+    local fcc = {
+        unit_number = 10,
+        control_behavior = {
+            get_section = function(_)
+                return lls
+            end
+        },
+        valid = true
+    }
+
+    local managedTurrets = {
+        [1] = {
+            turret = turret1,
+            fcc = fcc,
+            targets_of_turret = {
+                [4711] = {
+                    distance = 10,
+                    is_priority_target = false
+                },
+            },
+            circuit_condition = createCircuitCondition("item", "iron-ore")
+        },
+        [2] = {
+            turret = turret2,
+            fcc = fcc,
+            targets_of_turret = {
+                [4712] = {
+                    distance = 20,
+                    is_priority_target = false
+                },
+            },
+            circuit_condition = createCircuitCondition("item", "copper-ore")
+        }
+    }
+
+    local asteroid1 = {
+        unit_number = 4711,
+        name = "small-metallic-asteroid"
+    }
+    local asteroid2 = {
+        unit_number = 4712,
+        name = "small-carbonic-asteroid", valid = true
+    }
+    local asteroid3 = {
+        unit_number = 4713,
+        name = "small-carbonic-asteroid", valid = true
+    }
+
+    local knownAsteroids = {
+        [4711] = { entity = asteroid1 },
+        [4712] = { entity = asteroid2 },
+        [4713] = { entity = asteroid3 }
+    }
+
+    local pons = {
+        fccsOnPlatform = {
+            [10] = fcc
+        }
+    }
+
+    processing_targets.assignTargets(pons, knownAsteroids, managedTurrets)
+
+    lu.assertNil(turret1.shooting_target)
+    lu.assertEquals(turret2.shooting_target, asteroid2)
+    lu.assertEquals(on_event_called, 1)
+    lu.assertEquals(lls, { filters={
+        {min = 1, value = {name = "copper-ore", quality = "normal", type = "item"}},
     }})
 end
 -- ###############################################################
@@ -1039,9 +1129,9 @@ function TestProcessingTargets:test_assignTargets_sorting_by_distance()
         }
     }
 
-    local asteroid1 = { unit_number = 4711, name = "asteroid1" }
-    local asteroid2 = { unit_number = 4712, name = "asteroid2" }
-    local asteroid3 = { unit_number = 4713, name = "asteroid3" }
+    local asteroid1 = { unit_number = 4711, name = "asteroid1", valid = true }
+    local asteroid2 = { unit_number = 4712, name = "asteroid2", valid = true }
+    local asteroid3 = { unit_number = 4713, name = "asteroid3", valid = true }
 
     local knownAsteroids = {
         [4711] = { entity = asteroid1 },

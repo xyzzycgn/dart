@@ -92,7 +92,7 @@ local function repairCircuitCondition(tc, first)
     if cb and cb.valid then
         --- @type CircuitCondition
         local cc = cb.circuit_condition
-        Log.logBlock(cc, function(m)log(m)end, Log.FINE)
+        Log.logBlock(cc, function(m)log(m)end, Log.FINER)
         if first then
             cc.first_signal = { type = "virtual", name = first }
         end
