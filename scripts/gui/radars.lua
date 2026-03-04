@@ -48,7 +48,7 @@ end
 --- @param rop RadarOnPlatform
 local function getMaxDetectionRange(rop)
     Log.logBlock(rop.radar.force_index, function(m)log(m)end, Log.FINE)
-    Log.logBlock(storage.forces, function(m)log(m)end, Log.FINE)
+    Log.logBlock(storage.forces, function(m)log(m)end, Log.FINER)
 
     local fi = rop.radar.force_index
     local fd = global_data.getForce_data(fi)

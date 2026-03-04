@@ -338,7 +338,7 @@ local function getCompanions(event)
     local element = event.element
     local switch_name = element.tags.switch_name
     local middle_name = element.tags.middle_name
-    Log.logLine({ name = switch_name, middle = middle_name }, function(m)log(m)end, Log.FINE)
+    Log.logLine({ name = switch_name, middle = middle_name }, function(m)log(m)end, Log.FINER)
 
     return switch_name, middle_name
 end
@@ -356,7 +356,7 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 function components.middle_clicked(gae, event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 
     local name, middle = getCompanions(event)
     local mid_luaGuiElement = gae.elems[middle]
@@ -370,7 +370,7 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 function components.tristate_switch_state_changed(gae, event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    Log.logEvent(event, function(m)log(m)end, Log.FINER)
 
     local switch_name, middle_name = getCompanions(event)
     local switch = gae.elems[switch_name]
