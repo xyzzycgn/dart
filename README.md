@@ -38,6 +38,12 @@ To control ammo turrets with D.A.R.T., you have to connect them with red or gree
 ![D.A.R.T. on a platform](https://github.com/xyzzycgn/dart/blob/main/doc/dart-on-platform.png?raw=true)
 
 ## Configuration of D.A.R.T.
+
+To optimize your ammo consumption you should maximize detection range of your dart-radars (ideally at least
+to the range of your turrets) and minimize defended area. This increases the chances that asteroids on a collision
+course can be detected and fought early, while harmless ones are ignored, because only asteroids whose course leads
+into the defended area are attacked by D.A.R.T.
+
 ### Manually
 Configuration can be done by simply opening the FCC 
 
@@ -45,7 +51,6 @@ Configuration can be done by simply opening the FCC
 
 All (= all on platform) dart-radars and ammo-turrets are accessible through this. Unconnected ammo-turrets or turrets 
 with ambiguous circuit network conditions will be shown with according warnings.
-
 
 To use D.A.R.T., it must be configured (per platform). This has to be done in these steps (not necessarily in this order)
 
@@ -63,7 +68,7 @@ To use D.A.R.T., it must be configured (per platform). This has to be done in th
 
 ![configure turret](https://github.com/xyzzycgn/dart/blob/main/doc/gun-turret.png?raw=true|height=300)
 
-**Hint**
+**Hint:**
 D.A.R.T. controls a turret by setting its circuit network condition to 0 resp. 1.
 
 ### Automatically (since 1.1)
@@ -74,7 +79,7 @@ by simply pressing the "automatic turret configuration" button.
 
 ![show turrets](https://github.com/xyzzycgn/dart/blob/main/doc/dart-configure-main-turrets-automatically.png?raw=true)
 
-**Hint**
+**Hint:**
 Warnings triggered by an erroneous wiring - for example wiring the same turret with both green and red wire to a FCC -
 are not covered and must be solved by correcting the wiring.
 
@@ -116,7 +121,8 @@ asteroids fitting the list - all others will be ignored by the turret.
 This mod is compatible to vanilla game (= space age) and other mods introducing new turrets derived from 
 ammo-turret prototype and/or new ammunition for these turrets.
 
-**IMPORTANT**: For working correctly with D.A.R.T., mods introducing new turrets need connectivity to the circuit network
+**IMPORTANT**: 
+For working correctly with D.A.R.T., mods introducing new turrets need connectivity to the circuit network
 (i.e. the turrets must be connectible with red or green wire). This can be achieved by the other mod itself or require 
 some additional (specifically adapted for each mod) support by this mod (introduced in v 1.0.15).
 
