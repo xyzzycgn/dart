@@ -154,7 +154,7 @@ connectivity to the circuit network and want to use it together with D.A.R.T., l
   - polski (pl)
   - português (pt-BR)
   - русский (ru)
-  - senska (sv-SE)
+  - svenska (sv-SE)
   - türkçe (tr)
   - українська (uk-UA)    
   - 中国人 (zh-CN)
