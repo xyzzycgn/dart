@@ -12,6 +12,15 @@ local function createVariation(variation, x, y)
     return { variation = variation, main_offset = util.by_pixel(x, y), shadow_offset = util.by_pixel(0, 0), show_shadow = false }
 end
 
+--- @param variation number
+--- @param x number
+--- @param y number
+local function createVariationAsArray(variation, x, y)
+    return {
+        { variation = variation, main_offset = util.by_pixel(x, y), shadow_offset = util.by_pixel(0, 0), show_shadow = false }
+    }
+end
+
 local function repeatCreateVariation(variation, x, y, cnt)
     local listOfVariations = {}
     for i = 1, cnt do
@@ -46,7 +55,7 @@ if mods['vtk-cannon-turret'] then
 
     createVariationsAndAddCircuitConnector(
         "dart-turret-heavy-vtk",
-        repeatCreateVariation(17,   -31,  21, 4),
+        repeatCreateVariation(17, -31,  21, 4),
         "vtk-cannon-turret-heavy"
     )
 end
@@ -60,12 +69,12 @@ if mods['RampantArsenalFork'] then
     end
 
     createVariationsAndAddCircuitConnector("dart-cannon-rampant",
-        repeatCreateVariation(17,   -41.5,  24, 4),
+        repeatCreateVariation(17, -41.5, 24, 4),
         rampant_name("cannon")
     )
 
     createVariationsAndAddCircuitConnector("dart-rapid-cannon-rampant",
-        repeatCreateVariation(26,   0,  28, 4),
+        repeatCreateVariation(26, 0, 28, 4),
         rampant_name("rapid-cannon")
     )
 
@@ -79,9 +88,9 @@ if mods['RampantArsenalFork'] then
         rampant_name("rapid-rocket")
     )
 
-    createVariationsAndAddCircuitConnector("dart-gun-rampant", {
-        createVariation(33, 15, 21),
-    }, rampant_name("gun"))
+    createVariationsAndAddCircuitConnector("dart-gun-rampant",
+        createVariationAsArray(33, 15, 21),
+        rampant_name("gun"))
 end
 
 if mods["Additional-Turret-revived"] then
@@ -89,8 +98,15 @@ if mods["Additional-Turret-revived"] then
 
     createVariationsAndAddCircuitConnector(
         "dart-cannon-turret-mk1-at",
-        { createVariation(26, 2, 11), },
+        createVariationAsArray(26, 2, 11),
         "at-cannon-turret-mk1"
+    )
+
+    --data.raw["ammo-turret"]["at-rocket-turret-mk1"].turret_base_has_direction = true
+    createVariationsAndAddCircuitConnector(
+        "dart-rocket-turret-mk1-at",
+        createVariationAsArray(26, 14, 17),
+        "at-rocket-turret-mk1"
     )
 
 end
