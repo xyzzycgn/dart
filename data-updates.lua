@@ -5,6 +5,9 @@
 local Log = require("__log4factorio__.Log")
 Log.setSeverity(Log.CONFIG)
 
+--- @param variation number
+--- @param x number
+--- @param y number
 local function createVariation(variation, x, y)
     return { variation = variation, main_offset = util.by_pixel(x, y), shadow_offset = util.by_pixel(0, 0), show_shadow = false }
 end
@@ -81,3 +84,13 @@ if mods['RampantArsenalFork'] then
     }, rampant_name("gun"))
 end
 
+if mods["Additional-Turret-revived"] then
+    Log.log("mod Additional-Turret-revived detected", function(m)log(m)end, Log.CONFIG)
+
+    createVariationsAndAddCircuitConnector(
+        "dart-cannon-turret-mk1-at",
+        { createVariation(26, 2, 11), },
+        "at-cannon-turret-mk1"
+    )
+
+end
