@@ -20,6 +20,7 @@ require('test.test_force')
 require('test.test_force_data')
 require('test.test_radars')
 require('test.test_processing_targets')
+require('test.test_data-updates')
 
 BaseTest.hooked = false
 BaseTest:hookTests()
