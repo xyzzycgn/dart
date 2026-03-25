@@ -263,22 +263,33 @@ function TestDataUpdates:test_Additional_Turret_revived_createsExpectedConnector
 end
 -- ###############################################################
 
-function TestDataUpdates:test_bothMods_createAllConnectors()
+function TestDataUpdates:test_AllMods_createAllConnectors()
     mods["vtk-cannon-turret"] = true
     mods["RampantArsenalFork"] = true
+    mods["Additional-Turret-revived"] = true
 
     local mocked = makeData()
     reloadModule()
 
-    lu.assertEquals(#self.createdConnectors, 7)
+    lu.assertEquals(#self.createdConnectors, 15)
 
     lu.assertEquals(mocked.vtkTurret.circuit_connector, self.createdConnectors[1])
     lu.assertEquals(mocked.vtkHeavyTurret.circuit_connector, self.createdConnectors[2])
+
     lu.assertEquals(mocked.rampantCannonTurret.circuit_connector, self.createdConnectors[3])
     lu.assertEquals(mocked.rampantRapidCannonTurret.circuit_connector, self.createdConnectors[4])
     lu.assertEquals(mocked.rampantRocketTurret.circuit_connector, self.createdConnectors[5])
     lu.assertEquals(mocked.rampantRapidRocketTurret.circuit_connector, self.createdConnectors[6])
     lu.assertEquals(mocked.rampantGunTurret.circuit_connector, self.createdConnectors[7])
+
+    lu.assertEquals(mocked.atrCannonTurretMk1.circuit_connector, self.createdConnectors[8])
+    lu.assertEquals(mocked.atrRocketTurretMk1.circuit_connector, self.createdConnectors[9])
+    lu.assertEquals(mocked.atrCannonTurretMk2.circuit_connector, self.createdConnectors[10])
+    lu.assertEquals(mocked.atrRocketTurretMk2.circuit_connector, self.createdConnectors[11])
+    lu.assertEquals(mocked.atrGatlingTurret.circuit_connector, self.createdConnectors[12])
+    lu.assertEquals(mocked.atrCRb.circuit_connector, self.createdConnectors[13])
+    lu.assertEquals(mocked.atrA1b.circuit_connector, self.createdConnectors[14])
+    lu.assertEquals(mocked.atrA2b.circuit_connector, self.createdConnectors[15])
 end
 -- ###############################################################
 
