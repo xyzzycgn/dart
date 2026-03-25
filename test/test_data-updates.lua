@@ -25,6 +25,9 @@ local function makeData()
     local atrCannonTurretMk2 = {}
     local atrRocketTurretMk2 = {}
     local atrGatlingTurret = {}
+    local atrCRb = {}
+    local atrA1b = {}
+    local atrA2b = {}
 
     data = {
         raw = {
@@ -43,6 +46,9 @@ local function makeData()
                 ["at-cannon-turret-mk2"] = atrCannonTurretMk2,
                 ["at-rocket-turret-mk2"] = atrRocketTurretMk2,
                 ["at-gatling-turret"]    = atrGatlingTurret,
+                ["at_CR_b"]              = atrCRb,
+                ["at_A1_b"]              = atrA1b,
+                ["at_A2_b"]              = atrA2b,
             }
         }
     }
@@ -62,6 +68,9 @@ local function makeData()
         atrCannonTurretMk2 = atrCannonTurretMk2,
         atrRocketTurretMk2 = atrRocketTurretMk2,
         atrGatlingTurret   = atrGatlingTurret,
+        atrCRb             = atrCRb,
+        atrA1b             = atrA1b,
+        atrA2b             = atrA2b,
     }
 end
 
@@ -210,25 +219,34 @@ function TestDataUpdates:test_Additional_Turret_revived_createsExpectedConnector
     local mocked = makeData()
     reloadModule()
 
-    lu.assertEquals(#self.createdConnectors, 5)
+    lu.assertEquals(#self.createdConnectors, 8)
 
     lu.assertEquals(mocked.atrCannonTurretMk1.circuit_connector, self.createdConnectors[1])
     lu.assertEquals(mocked.atrRocketTurretMk1.circuit_connector, self.createdConnectors[2])
     lu.assertEquals(mocked.atrCannonTurretMk2.circuit_connector, self.createdConnectors[3])
     lu.assertEquals(mocked.atrRocketTurretMk2.circuit_connector, self.createdConnectors[4])
     lu.assertEquals(mocked.atrGatlingTurret.circuit_connector, self.createdConnectors[5])
+    lu.assertEquals(mocked.atrCRb.circuit_connector, self.createdConnectors[6])
+    lu.assertEquals(mocked.atrA1b.circuit_connector, self.createdConnectors[7])
+    lu.assertEquals(mocked.atrA2b.circuit_connector, self.createdConnectors[8])
 
     lu.assertEquals(mocked.atrCannonTurretMk1.circuit_wire_max_distance, 42)
     lu.assertEquals(mocked.atrRocketTurretMk1.circuit_wire_max_distance, 42)
     lu.assertEquals(mocked.atrCannonTurretMk2.circuit_wire_max_distance, 42)
     lu.assertEquals(mocked.atrRocketTurretMk2.circuit_wire_max_distance, 42)
     lu.assertEquals(mocked.atrGatlingTurret.circuit_wire_max_distance, 42)
+    lu.assertEquals(mocked.atrCRb.circuit_wire_max_distance, 42)
+    lu.assertEquals(mocked.atrA1b.circuit_wire_max_distance, 42)
+    lu.assertEquals(mocked.atrA2b.circuit_wire_max_distance, 42)
 
     lu.assertEquals(#self.createdConnectors[1].variations, 1)
     lu.assertEquals(#self.createdConnectors[2].variations, 1)
     lu.assertEquals(#self.createdConnectors[3].variations, 1)
     lu.assertEquals(#self.createdConnectors[4].variations, 4)
     lu.assertEquals(#self.createdConnectors[5].variations, 1)
+    lu.assertEquals(#self.createdConnectors[6].variations, 1)
+    lu.assertEquals(#self.createdConnectors[7].variations, 1)
+    lu.assertEquals(#self.createdConnectors[8].variations, 1)
 
     assertRepeatedVariation(self.createdConnectors[1], 17, -18, 7, 1)
 
@@ -239,6 +257,9 @@ function TestDataUpdates:test_Additional_Turret_revived_createsExpectedConnector
     assertRepeatedVariation(self.createdConnectors[4], 12, 27, 14, 4)
 
     assertVariation(self.createdConnectors[5].variations[1], 27, 28, 19)
+    assertVariation(self.createdConnectors[6].variations[1], 26, 0, 36)
+    assertVariation(self.createdConnectors[7].variations[1], 18, -2, 40)
+    assertVariation(self.createdConnectors[8].variations[1], 18, -2, 40)
 end
 -- ###############################################################
 

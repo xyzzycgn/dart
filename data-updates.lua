@@ -117,15 +117,30 @@ if mods["Additional-Turret-revived"] then
             "at-rocket-turret-mk2"
     )
 
+    --
     createVariationsAndAddCircuitConnector(
             "dart-gatling-turret-at",
             createVariation(27, 28, 19, true),
             "at-gatling-turret"
     )
 
-    -- at_1
-    -- at_A1_b
-    -- at_1
-    -- at_A2_b
-    -- at_CR_b
+
+    createVariationsAndAddCircuitConnector(
+            "dart-CR_b-at",
+            createVariation(26, 0, 36, true),
+            "at_CR_b"
+    )
+
+    createVariationsAndAddCircuitConnector(
+            "dart-A1_b-at",
+            createVariation(18, -2, 40, true),
+            "at_A1_b"
+    )
+
+    createVariationsAndAddCircuitConnector(
+            "dart-A2_b-at",
+            createVariation(18, -2, 40, true),
+            "at_A2_b"
+    )
+
 end
