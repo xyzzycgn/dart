@@ -8,17 +8,10 @@ Log.setSeverity(Log.CONFIG)
 --- @param variation number
 --- @param x number
 --- @param y number
-local function createVariation(variation, x, y)
-    return { variation = variation, main_offset = util.by_pixel(x, y), shadow_offset = util.by_pixel(0, 0), show_shadow = false }
-end
-
---- @param variation number
---- @param x number
---- @param y number
-local function createVariationAsArray(variation, x, y)
-    return {
-        { variation = variation, main_offset = util.by_pixel(x, y), shadow_offset = util.by_pixel(0, 0), show_shadow = false }
-    }
+--- @param asArray boolean
+local function createVariation(variation, x, y, asArray)
+    local var = { variation = variation, main_offset = util.by_pixel(x, y), shadow_offset = util.by_pixel(0, 0), show_shadow = false }
+    return asArray and { var } or var
 end
 
 local function repeatCreateVariation(variation, x, y, cnt)
@@ -89,24 +82,50 @@ if mods['RampantArsenalFork'] then
     )
 
     createVariationsAndAddCircuitConnector("dart-gun-rampant",
-        createVariationAsArray(33, 15, 21),
+        createVariation(33, 15, 21, true),
         rampant_name("gun"))
 end
+-- ###############################################################
 
 if mods["Additional-Turret-revived"] then
     Log.log("mod Additional-Turret-revived detected", function(m)log(m)end, Log.CONFIG)
 
+    -- MK1
     createVariationsAndAddCircuitConnector(
         "dart-cannon-turret-mk1-at",
-        createVariationAsArray(26, 2, 11),
+        createVariation(17, -18, 7, true),
         "at-cannon-turret-mk1"
     )
 
     --data.raw["ammo-turret"]["at-rocket-turret-mk1"].turret_base_has_direction = true
     createVariationsAndAddCircuitConnector(
         "dart-rocket-turret-mk1-at",
-        createVariationAsArray(26, 14, 17),
+        createVariation(26, 14, 17, true),
         "at-rocket-turret-mk1"
     )
 
+    -- MK2
+    createVariationsAndAddCircuitConnector(
+            "dart-cannon-turret-mk2-at",
+            createVariation(24, -25, 5, true),
+            "at-cannon-turret-mk2"
+    )
+
+    createVariationsAndAddCircuitConnector(
+            "dart-rocket-turret-mk2-at",
+            repeatCreateVariation(12, 27, 14, 4),
+            "at-rocket-turret-mk2"
+    )
+
+    createVariationsAndAddCircuitConnector(
+            "dart-gatling-turret-at",
+            createVariation(27, 28, 19, true),
+            "at-gatling-turret"
+    )
+
+    -- at_1
+    -- at_A1_b
+    -- at_1
+    -- at_A2_b
+    -- at_CR_b
 end

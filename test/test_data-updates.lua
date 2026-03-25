@@ -13,22 +13,36 @@ TestDataUpdates = {}
 local function makeData()
     local vtkTurret = {}
     local vtkHeavyTurret = {}
+
     local rampantCannonTurret = {}
     local rampantRapidCannonTurret = {}
     local rampantRocketTurret = {}
     local rampantRapidRocketTurret = {}
     local rampantGunTurret = {}
 
+    local atrCannonTurretMk1 = {}
+    local atrRocketTurretMk1 = {}
+    local atrCannonTurretMk2 = {}
+    local atrRocketTurretMk2 = {}
+    local atrGatlingTurret = {}
+
     data = {
         raw = {
             ["ammo-turret"] = {
                 ["vtk-cannon-turret"] = vtkTurret,
                 ["vtk-cannon-turret-heavy"] = vtkHeavyTurret,
+
                 ["cannon-ammo-turret-rampant-arsenal"] = rampantCannonTurret,
                 ["rapid-cannon-ammo-turret-rampant-arsenal"] = rampantRapidCannonTurret,
                 ["rocket-ammo-turret-rampant-arsenal"] = rampantRocketTurret,
                 ["rapid-rocket-ammo-turret-rampant-arsenal"] = rampantRapidRocketTurret,
                 ["gun-ammo-turret-rampant-arsenal"] = rampantGunTurret,
+
+                ["at-cannon-turret-mk1"] = atrCannonTurretMk1,
+                ["at-rocket-turret-mk1"] = atrRocketTurretMk1,
+                ["at-cannon-turret-mk2"] = atrCannonTurretMk2,
+                ["at-rocket-turret-mk2"] = atrRocketTurretMk2,
+                ["at-gatling-turret"]    = atrGatlingTurret,
             }
         }
     }
@@ -36,11 +50,18 @@ local function makeData()
     return {
         vtkTurret = vtkTurret,
         vtkHeavyTurret = vtkHeavyTurret,
+
         rampantCannonTurret = rampantCannonTurret,
         rampantRapidCannonTurret = rampantRapidCannonTurret,
         rampantRocketTurret = rampantRocketTurret,
         rampantRapidRocketTurret = rampantRapidRocketTurret,
         rampantGunTurret = rampantGunTurret,
+
+        atrCannonTurretMk1 = atrCannonTurretMk1,
+        atrRocketTurretMk1 = atrRocketTurretMk1,
+        atrCannonTurretMk2 = atrCannonTurretMk2,
+        atrRocketTurretMk2 = atrRocketTurretMk2,
+        atrGatlingTurret   = atrGatlingTurret,
     }
 end
 
@@ -161,6 +182,9 @@ function TestDataUpdates:test_rampantMod_createsExpectedConnectors()
 
     lu.assertEquals(mocked.rampantCannonTurret.circuit_wire_max_distance, 42)
     lu.assertEquals(mocked.rampantGunTurret.circuit_wire_max_distance, 42)
+    lu.assertEquals(mocked.rampantGunTurret.circuit_wire_max_distance, 42)
+    lu.assertEquals(mocked.rampantGunTurret.circuit_wire_max_distance, 42)
+    lu.assertEquals(mocked.rampantGunTurret.circuit_wire_max_distance, 42)
 
     lu.assertEquals(#self.createdConnectors[1].variations, 4)
     lu.assertEquals(#self.createdConnectors[2].variations, 4)
@@ -177,6 +201,44 @@ function TestDataUpdates:test_rampantMod_createsExpectedConnectors()
     assertRepeatedVariation(self.createdConnectors[4], 0, 6, 24, 4)
 
     assertVariation(self.createdConnectors[5].variations[1], 33, 15, 21)
+end
+-- ###############################################################
+
+function TestDataUpdates:test_Additional_Turret_revived_createsExpectedConnectors()
+    mods["Additional-Turret-revived"] = true
+
+    local mocked = makeData()
+    reloadModule()
+
+    lu.assertEquals(#self.createdConnectors, 5)
+
+    lu.assertEquals(mocked.atrCannonTurretMk1.circuit_connector, self.createdConnectors[1])
+    lu.assertEquals(mocked.atrRocketTurretMk1.circuit_connector, self.createdConnectors[2])
+    lu.assertEquals(mocked.atrCannonTurretMk2.circuit_connector, self.createdConnectors[3])
+    lu.assertEquals(mocked.atrRocketTurretMk2.circuit_connector, self.createdConnectors[4])
+    lu.assertEquals(mocked.atrGatlingTurret.circuit_connector, self.createdConnectors[5])
+
+    lu.assertEquals(mocked.atrCannonTurretMk1.circuit_wire_max_distance, 42)
+    lu.assertEquals(mocked.atrRocketTurretMk1.circuit_wire_max_distance, 42)
+    lu.assertEquals(mocked.atrCannonTurretMk2.circuit_wire_max_distance, 42)
+    lu.assertEquals(mocked.atrRocketTurretMk2.circuit_wire_max_distance, 42)
+    lu.assertEquals(mocked.atrGatlingTurret.circuit_wire_max_distance, 42)
+
+    lu.assertEquals(#self.createdConnectors[1].variations, 1)
+    lu.assertEquals(#self.createdConnectors[2].variations, 1)
+    lu.assertEquals(#self.createdConnectors[3].variations, 1)
+    lu.assertEquals(#self.createdConnectors[4].variations, 4)
+    lu.assertEquals(#self.createdConnectors[5].variations, 1)
+
+    assertRepeatedVariation(self.createdConnectors[1], 17, -18, 7, 1)
+
+    assertRepeatedVariation(self.createdConnectors[2], 26, 14, 17, 1)
+
+    assertRepeatedVariation(self.createdConnectors[3], 24, -25, 5, 1)
+
+    assertRepeatedVariation(self.createdConnectors[4], 12, 27, 14, 4)
+
+    assertVariation(self.createdConnectors[5].variations[1], 27, 28, 19)
 end
 -- ###############################################################
 
