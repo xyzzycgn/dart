@@ -1,7 +1,7 @@
 mod_info:
   description_file: README.md
-  summary: Save ammunition by smarter targeting
-  title: D.A.R.T
+  summary: An optimized asteroid defense that saves a lot of ammunition by smarter targeting
+  title: D.A.R.T.
   attach_source_link: true
   license: mit
   category: content

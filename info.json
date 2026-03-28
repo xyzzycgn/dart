@@ -1,7 +1,7 @@
 {
   "name": "dart",
   "title": "Dangerous Asteroids Radar Tracking",
-  "description": "save ammunition by smarter targeting",
+  "description": "An optimized asteroid defense that saves a lot of ammunition by smarter targeting",
   "author": "xyzzycgn",
   "homepage": "https://github.com/xyzzycgn/dart.git",
   "version": "1.2.10",
