@@ -673,6 +673,29 @@ end
 local function raiseDartComponentRemoved(entity)
     raiseDartComponentEvent(on_dart_component_removed_event, entity)
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function checkForOpenGui(entity, event)
+    -- check if deleted entity is just shown in a GUI -> close it (for all players of the force owning the entity)
+    for _, player in pairs(entity.force.players) do
+        local pd = global_data.getPlayer_data(player.index)
+        if pd and pd.guis and pd.guis.open then
+            -- there is an open GUI
+            local opengui = pd.guis.open -- the actual opened gui
+            Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
+
+            if opengui and opengui.entity and (opengui.entity.unit_number == entity.unit_number) then
+                -- for the deleted dart-radar
+                event.gae = opengui
+                event.player_index = player.index
+                -- close the opened gui for this dart-radar
+                Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINE)
+                script.raise_event(on_dart_gui_close_event, event)
+            end
+        end
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param entity LuaEntity
 local function removedRadar(entity, event)
@@ -685,23 +708,7 @@ local function removedRadar(entity, event)
         Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
 
         -- check if deleted radar is just shown in a GUI -> close it (for all players of the force owning the entity)
-        for _, player in pairs(entity.force.players) do
-            local pd = global_data.getPlayer_data(player.index)
-            if pd and pd.guis and pd.guis.open then
-                -- there is an open GUI
-                local opengui = pd.guis.open -- the actual opened gui
-                Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
-
-                if opengui and opengui.entity and (opengui.entity.unit_number == entity.unit_number) then
-                    -- for the deleted dart-radar
-                    event.gae = opengui
-                    event.player_index = player.index
-                    -- close the opened gui for this dart-radar
-                    Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINE)
-                    script.raise_event(on_dart_gui_close_event, event)
-                end
-            end
-        end
+        checkForOpenGui(entity, event)
 
         -- clear the data belonging to the dart-radar
         darts[fccun] = nil
@@ -723,23 +730,7 @@ local function removedFcc(entity, event)
 
         -- fix for #95
         -- check if deleted fcc is just shown in a GUI -> close it (for all players of the force owning the entity)
-        for _, player in pairs(entity.force.players) do
-            local pd = global_data.getPlayer_data(player.index)
-            if pd and pd.guis and pd.guis.open then
-                -- there is an open GUI ...
-                local opengui = pd.guis.open -- the actual opened gui
-                Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
-
-                if opengui and opengui.entity and (opengui.entity.unit_number == fccun) then
-                    -- ... for the deleted fcc
-                    event.gae = opengui
-                    event.player_index = player.index
-                    -- close the opened gui for this fcc
-                    Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINE)
-                    script.raise_event(on_dart_gui_close_event, event)
-                end
-            end
-        end
+        checkForOpenGui(entity, event)
 
         -- clear the data belonging to the dart-fcc
         darts[fccun] = nil
@@ -758,25 +749,7 @@ local function removedTurret(entity, event)
 
         -- fix for #95 (same problem as for fcc)
         -- check if deleted turret is just shown in a GUI -> close it (for all players of the force owning the entity)
-        for _, player in pairs(entity.force.players) do
-            local pd = global_data.getPlayer_data(player.index)
-            if pd and pd.guis and pd.guis.open then
-                -- there is an open GUI ...
-                local opengui = pd.guis.open -- the actual opened gui
-                Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
-
-                if opengui and opengui.entity and (opengui.entity.unit_number == entity.unit_number) then
-                    -- ... for the deleted turret
-                    event.gae = opengui
-                    event.player_index = player.index
-                    -- close the opened gui for this turret
-                    Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINE)
-                    script.raise_event(on_dart_gui_close_event, event)
-                end
-            end
-        end
-
-
+        checkForOpenGui(entity, event)
 
         local turretsOnPlatform = pons.turretsOnPlatform
         turretsOnPlatform[entity.unit_number] = nil
