@@ -57,6 +57,11 @@ end
 function global_data.getPlayer_data(playerindex)
     return storage.players[playerindex]
 end
+
+--- @return PlayerData[]
+function global_data.getAllPlayer_data()
+    return storage.players
+end
 -- ###############################################################
 
 --- structure containing all data concerning the darts and turrets of all platforms

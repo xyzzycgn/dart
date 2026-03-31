@@ -378,13 +378,13 @@ local function eliminateInvalid(knownAsteroids)
 
     for un, ka in pairs(knownAsteroids) do
         if not ka.entity.valid then
-            Log.logBlock({ un = un, entity = ka.entity }, function(m)log(m)end, Log.FINE)
+            Log.logBlock({ un = un, entity = ka.entity }, function(m)log(m)end, Log.FINER)
             invalid[un] = true
         end
     end
 
     for un, _ in pairs(invalid) do
-        Log.logMsg(function(m)log(m)end, Log.FINE, "removed invalid knownAsteroid un=%d", un)
+        Log.logMsg(function(m)log(m)end, Log.FINER, "removed invalid knownAsteroid un=%d", un)
         knownAsteroids[un] = nil
     end
 
@@ -697,7 +697,7 @@ local function removedRadar(entity, event)
                     event.gae = opengui
                     event.player_index = player.index
                     -- close the opened gui for this dart-radar
-                    Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINER)
+                    Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINE)
                     script.raise_event(on_dart_gui_close_event, event)
                 end
             end
@@ -713,13 +713,33 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param entity LuaEntity
-local function removedFcc(entity)
+local function removedFcc(entity, event)
     local pons = global_data.getPlatforms()[entity.surface.index]
     if pons then -- fix for #83
         local darts = pons.fccsOnPlatform
 
         local fccun = entity.unit_number
         Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
+
+        -- fix for #95
+        -- check if deleted fcc is just shown in a GUI -> close it (for all players of the force owning the entity)
+        for _, player in pairs(entity.force.players) do
+            local pd = global_data.getPlayer_data(player.index)
+            if pd and pd.guis and pd.guis.open then
+                -- there is an open GUI ...
+                local opengui = pd.guis.open -- the actual opened gui
+                Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
+
+                if opengui and opengui.entity and (opengui.entity.unit_number == fccun) then
+                    -- ... for the deleted fcc
+                    event.gae = opengui
+                    event.player_index = player.index
+                    -- close the opened gui for this fcc
+                    Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINE)
+                    script.raise_event(on_dart_gui_close_event, event)
+                end
+            end
+        end
 
         -- clear the data belonging to the dart-fcc
         darts[fccun] = nil
@@ -729,12 +749,35 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param entity LuaEntity
-local function removedTurret(entity)
+local function removedTurret(entity, event)
     Log.log(entity.unit_number, function(m)log(m)end, Log.FINER)
 
     -- remove turret
     local pons = global_data.getPlatforms()[entity.surface.index]
     if pons then -- fix for #25
+
+        -- fix for #95 (same problem as for fcc)
+        -- check if deleted turret is just shown in a GUI -> close it (for all players of the force owning the entity)
+        for _, player in pairs(entity.force.players) do
+            local pd = global_data.getPlayer_data(player.index)
+            if pd and pd.guis and pd.guis.open then
+                -- there is an open GUI ...
+                local opengui = pd.guis.open -- the actual opened gui
+                Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
+
+                if opengui and opengui.entity and (opengui.entity.unit_number == entity.unit_number) then
+                    -- ... for the deleted turret
+                    event.gae = opengui
+                    event.player_index = player.index
+                    -- close the opened gui for this turret
+                    Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINE)
+                    script.raise_event(on_dart_gui_close_event, event)
+                end
+            end
+        end
+
+
+
         local turretsOnPlatform = pons.turretsOnPlatform
         turretsOnPlatform[entity.unit_number] = nil
         raiseDartComponentRemoved(entity)
@@ -835,15 +878,15 @@ local function dart_radar_died(entity, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function fcc_died(entity)
+local function fcc_died(entity, event)
     Log.logLine( { died=entity, un=entity.unit_number }, function(m)log(m)end, Log.FINE)
-    removedFcc(entity)
+    removedFcc(entity, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function turret_died(entity)
+local function turret_died(entity, event)
     Log.logLine( { died=entity, un=entity.unit_number }, function(m)log(m)end, Log.FINE)
-    removedTurret(entity)
+    removedTurret(entity, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
