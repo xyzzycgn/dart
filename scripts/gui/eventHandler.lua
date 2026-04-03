@@ -132,16 +132,23 @@ function eventHandler.close(gae, event)
             -- remove closed gui from list
             guis.recentlyopen[#guis.recentlyopen] = nil
             -- make former gui visible again
-            ropen.gui.visible = true
+            local gui = ropen.gui
+
+            if gui.object_name == "LuaGuiElement" then
+                -- only valid for real guielements - not for entities
+                ropen.gui.visible = true
+            end
+
             guis.open = ropen
             Log.log("raise on_dart_gui_needs_update_event", function(m)log(m)end, Log.FINER)
             script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = ropen.entity })
         end
     else
+        Log.log("custom gui", function(m)log(m)end, Log.FINE)
         -- close single gui - either fcc or turret
         if components.checkIfValidGuiElement(guiToBeCLosed) then
             -- must be fcc
-            Log.log("destroy custom gui", function(m)log(m)end, Log.FINER)
+            Log.log("destroy custom gui", function(m)log(m)end, Log.FINE)
             guiToBeCLosed.destroy()
             guis.open = nil
         end
