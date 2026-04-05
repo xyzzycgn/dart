@@ -39,7 +39,7 @@ local function sort_clicked_handler(gae, event)
         sortings.active = column
     end
 
-    script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = gae.entity } )
+    script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = gae.entity, reason = "sort clicked" } )
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -87,23 +87,31 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 function eventHandler.close(gae, event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     Log.logBlock(gae, function(m)log(m)end, Log.FINEST)
     local guis = global_data.getPlayer_data(event.player_index).guis
+    Log.logBlock(guis, function(m)log(m)end, Log.FINE)
     local guiToBeCLosed = gae.gui
     guis.recentlyopen = guis.recentlyopen or {}
     local ropen = guis.recentlyopen[#guis.recentlyopen]
+    Log.logBlock(ropen, function(m)log(m)end, Log.FINE)
 
     -- has an entity in main window been highlighted?
     local highlight = gae.highlight or (ropen and ropen.highlight)
-    if (highlight and highlight.valid) then
-        -- yes - destroy the highlight-box
-        highlight.destroy()
-        gae.highlight = nil
+    if highlight then
+        if highlight.valid then
+            -- if still valid - destroy the highlight-box
+            highlight.destroy()
+        end
+        -- remove stored highlight
+        if gae.highlight then
+            gae.highlight = nil
+        else
+            ropen.highlight = nil
+        end
     end
 
-    Log.logBlock(ropen, function(m)log(m)end, Log.FINER)
-    Log.logLine((ropen and ropen.gui) == event.element, function(m)log(m)end, Log.FINER)
+    Log.logLine((ropen and ropen.gui) == event.element, function(m)log(m)end, Log.FINE)
 
     -- 3 cases
     -- only fcc-gui open and close it                                 -- ropen == nil
@@ -114,14 +122,17 @@ function eventHandler.close(gae, event)
     -- close or chaining gui?
     if ropen and ropen.gui then
         local rogui = ropen.gui
-        Log.logLuaGuiElement(rogui, function(m)log(m)end, Log.FINER)
+        Log.logBlock(rogui, function(m)log(m)end, Log.FINE)
         -- chaining gui?
         if (rogui.valid and rogui == event.element) then
+            Log.log("chain to turret", function(m)log(m)end, Log.FINE)
             -- chaining to turret gui
             rogui.visible = false
         else
+            Log.log("closing gui", function(m)log(m)end, Log.FINE)
             -- special handling for dart-radar
             if gae.dart_gui_type == components.dart_guis.dart_radar_gui then
+                Log.log("closing dart radar", function(m)log(m)end, Log.FINE)
                 local entity = gae.entity
                 local rop = global_data.getRadarOnPlatform(entity)
                 rop.edited = false
@@ -131,6 +142,7 @@ function eventHandler.close(gae, event)
             end
             -- remove closed gui from list
             guis.recentlyopen[#guis.recentlyopen] = nil
+            Log.logBlock(guis.recentlyopen, function(m)log(m)end, Log.FINE)
             -- make former gui visible again
             local gui = ropen.gui
 
@@ -139,9 +151,10 @@ function eventHandler.close(gae, event)
                 ropen.gui.visible = true
             end
 
+            Log.log("back to last gui", function(m)log(m)end, Log.FINE)
             guis.open = ropen
-            Log.log("raise on_dart_gui_needs_update_event", function(m)log(m)end, Log.FINER)
-            script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = ropen.entity })
+            Log.log("raise on_dart_gui_needs_update_event", function(m)log(m)end, Log.FINE)
+            script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = ropen.entity, reason = "gui close" })
         end
     else
         Log.log("custom gui", function(m)log(m)end, Log.FINE)

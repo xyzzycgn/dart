@@ -588,6 +588,7 @@ end
 
 --- @param entity LuaEntity
 local function newRadar(entity)
+    Log.log(entity.unit_number, function(m)log(m)end, Log.FINE)
     local radar_un = entity.unit_number
     --- @type RadarOnPlatform
     local dart = {
@@ -609,6 +610,7 @@ end
 
 --- @param entity LuaEntity
 local function newFcc(entity)
+    Log.log(entity.unit_number, function(m)log(m)end, Log.FINE)
     local fccun = entity.unit_number
     -- the tuple of dart-fcc and its control_behavior
     --- @type FccOnPlatform
@@ -634,7 +636,7 @@ end
 
 --- @param entity LuaEntity
 local function newTurret(entity)
-    Log.log(entity.unit_number, function(m)log(m)end, Log.FINER)
+    Log.log(entity.unit_number, function(m)log(m)end, Log.FINE)
 
     local pons = global_data.getPlatforms()[entity.surface.index]
     if pons then -- fix for #25
@@ -658,7 +660,7 @@ local createFuncs = {
 --- event handler called if a new dart-fcc/dart-radar or a turret is build on a platform
 --- @param event EventData
 local function entityCreated(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
 
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
@@ -676,6 +678,7 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 local function checkForOpenGui(entity, event)
+    Log.logEntity(entity, function(m)log(m)end, Log.FINE)
     -- check if deleted entity is just shown in a GUI -> close it (for all players of the force owning the entity)
     for _, player in pairs(entity.force.players) do
         local pd = global_data.getPlayer_data(player.index)
@@ -737,6 +740,7 @@ end
 
 --- @param entity LuaEntity
 local function removedFcc(entity, event)
+    Log.logBlock({ entity = entity, event = event }, function(m)log(m)end, Log.FINE)
     local pons = global_data.getPlatforms()[entity.surface.index]
     if pons then -- fix for #83
         local darts = pons.fccsOnPlatform
@@ -757,7 +761,7 @@ end
 
 --- @param entity LuaEntity
 local function removedTurret(entity, event)
-    Log.log(entity.unit_number, function(m)log(m)end, Log.FINER)
+    Log.logBlock({ entity = entity, event = event }, function(m)log(m)end, Log.FINE)
 
     -- remove turret
     local pons = global_data.getPlatforms()[entity.surface.index]
@@ -1269,7 +1273,7 @@ local function onResearchFinished(event)
                 -- but if player has an open GUI => update it
                 local opengui = pd and pd.guis and pd.guis.open
                 if opengui and opengui.entity then
-                    script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
+                    script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index, reason = "research finished"} )
                 end
             end
         else
@@ -1317,7 +1321,7 @@ local function ammo_in_stock_updated(event)
         local pd = global_data.getPlayer_data(player.index)
         local opengui = pd and pd.guis and pd.guis.open
         if opengui and opengui.entity then
-            script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
+            script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index, reason = "ammo updated" } )
         end
     end
 end

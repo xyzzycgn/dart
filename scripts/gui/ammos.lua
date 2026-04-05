@@ -231,6 +231,9 @@ function ammos.update(elems, pons, pd)
 
     -- fcc entity managed in gui
     local entity = elems.entity
+
+    Log.logBlock(elems, function(m)log(m)end, Log.FINE)
+
     -- corresponding FccOnPlatform
     local fop = data[entity.unit_number]
 
@@ -301,8 +304,7 @@ end
 --- @param gae GuiAndElements
 --- @param event EventData
 local function save_clicked(gae, event)
-    Log.logBlock(gae.elems, function(m)log(m)end, Log.FINEST)
-    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINER)
+    Log.logBlock({ gae = gae, event = dump.dumpEvent(event) }, function(m)log(m)end, Log.FINE)
     local pd = global_data.getPlayer_data(event.player_index)
     local platform = gae.entity.surface.platform
     local pons = pd.pons[platform.index]

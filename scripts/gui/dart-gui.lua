@@ -148,6 +148,7 @@ local function change_tab(gae, event)
     gae.activeTab = tab.selected_tab_index
     gae.fields_initialized = false  -- force all fields to be initialized
     event.entity = gae.entity -- pimp the event ;-)
+    event.reason = "tab changed"
     script.raise_event(on_dart_gui_needs_update_event, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -375,6 +376,7 @@ local function gui_opened(event)
             gae.sortings = allSortings
         end
 
+        event.reason = "fcc gui opened"
         script.raise_event(on_dart_gui_needs_update_event, event)
     elseif event.gui_type == defines.gui_type.custom then
         local pd = global_data.getPlayer_data(event.player_index)
@@ -382,6 +384,7 @@ local function gui_opened(event)
         Log.logBlock(entity, function(m)log(m)end, Log.FINER)
         if entity and entity.name == "dart-radar" then
             event.entity = entity -- pimp the event ;-)
+            event.reason = "dart-radar gui opened"
             script.raise_event(on_dart_gui_needs_update_event, event)
         end
     end
@@ -389,7 +392,7 @@ end
 -- ###############################################################
 
 local function gui_closed(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINEST)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local pd = global_data.getPlayer_data(event.player_index)
     --- @type LuaEntity
     local entity = event.entity
@@ -419,7 +422,7 @@ end
 
 -- delegates the on_dart_gui_close event to the standard handler
 local function handle_on_dart_gui_close(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     eventHandler.close(event.gae, event)
 end
 
