@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.10
+Date: 2026-04-06
+  Bugfixes:
+    - improved GUI handling to avoid certain error conditions, e.g. when deleting D.A.R.T. components while GUI is open
+---------------------------------------------------------------------------------------------------
 Version: 1.2.9
 Date: 2026-03-25
   Features:
