@@ -210,7 +210,7 @@ function ammos.dataForPresentation(elems, pons)
     local entity = elems.entity
     local fop = pons.fccsOnPlatform[entity.unit_number]
 
-    return fop and fop.ammo_warning and
+    return fop and fop.ammo_warning and (table_size(pons.turretsOnPlatform) > 0) and
            presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType) or {}
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -235,10 +235,7 @@ function ammos.update(elems, pons, pd)
     Log.logBlock(elems, function(m)log(m)end, Log.FINE)
 
     -- corresponding FccOnPlatform
-    local fop = data[entity.unit_number]
-
-    local sorteddata = fop and fop.ammo_warning and
-            presentationData(fop.ammo_warning.thresholds, pons.ammoInStockPerType) or {}
+    local sorteddata = ammos.dataForPresentation(elems, pons)
     Log.logBlock(sorteddata, function(m)log(m)end, Log.FINER)
 
     local gae = pd.guis.open
@@ -251,9 +248,20 @@ function ammos.update(elems, pons, pd)
         sorteddata = utils.sort(sorteddata, sortings.sorting[active], comparators[active])
     end
 
+    local ammos_table = elems.elems["ammos_table"]
+    local valid_data_present = table_size(sorteddata) > 0
+
     Log.logLine(gae.fields_initialized, function(m)log(m)end, Log.FINER)
     components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow,
                      gae.fields_initialized and updateTableRow or updateFullTableRow)
+
+    -- make table visible and enable button, if valid data present
+    ammos_table.visible = valid_data_present
+    elems.elems["ammos_save"].enabled = valid_data_present
+    if valid_data_present then
+        components.updateVisualizedData(elems, sorteddata, getTableAndTab, appendTableRow,
+                gae.fields_initialized and updateTableRow or updateFullTableRow)
+    end
 end
 -- ###############################################################
 
