@@ -29,11 +29,11 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @class AmmoWarningThreshold threshold for warning of ammo shortage of a certain ammo type
 --- @field type string ammo type
 --- @field enabled boolean flag whether warning (for a certain ammo type) is active
---- @field threshold uint threshold value for warning for low ammo
+--- @field threshold number threshold value for warning for low ammo
 
 --- @class AmmoWarningThresholdAndStock threshold for warning of ammo shortage of a certain ammo type + stock in hub
 --- @field threshold AmmoWarningThreshold
---- @field stockInHub uint stock in hub for this ammo type
+--- @field stockInHub number stock in hub for this ammo type
 
 --- @class AmmoWarning settings for warning of ammo shortage for a fcc
 --- @field autoValues boolean flag if thresholds have been initially set, but may (probably) need updates in gui
@@ -47,15 +47,15 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @class FccOnPlatform a dart-fcc on a platform
 --- @field fcc LuaEntity dart-fcc
 --- @field control_behavior LuaConstantCombinatorControlBehavior of fcc
---- @field fcc_un uint64 unit_number of dart-fcc
+--- @field fcc_un number unit_number of dart-fcc
 --- @field ammo_warning AmmoWarning
 --- @field turretControl TurretControl? (opt.) determines how the connected turrets are controlled
 
 --- @class RadarOnPlatform a dart-radar on a platform
 --- @field radar LuaEntity dart-radar
---- @field radar_un uint64 unit_number of dart-radar
---- @field detectionRange uint radius of detection around a dart-radar
---- @field defenseRange uint radius of defended area around a dart-radar
+--- @field radar_un number unit_number of dart-radar
+--- @field detectionRange number radius of detection around a dart-radar
+--- @field defenseRange number radius of defended area around a dart-radar
 
 --- @class KnownAsteroid: any describes an asteroid tracked by D.A.R.T
 --- @field position MapPosition
@@ -67,10 +67,10 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field surface LuaSurface surface containing the platform
 --- @field platform LuaSpacePlatform the platform
 --- @field turretsOnPlatform TurretOnPlatform[] array of turrets located on the platform, indexed by unit_number
---- @field fccsOnPlatform table<uint, FccOnPlatform> array of D.A.R.T. fcc entities located on the platform, indexed by un of fcc
+--- @field fccsOnPlatform table<number, FccOnPlatform> array of D.A.R.T. fcc entities located on the platform, indexed by un of fcc
 --- @field radarsOnPlatform RadarOnPlatform[] array of D.A.R.T. radar entities located on the platform
 --- @field knownAsteroids KnownAsteroid[] array of asteroids currently known and in detection range
---- @field ammoInStockPerType table<string, uint> array with stock in hub per ammo type
+--- @field ammoInStockPerType table<string, number> array with stock in hub per ammo type
 --- @field managedTurrets ManagedTurret[] updated in businessLogic()
 
 --- @class CnOfTurret circuit network belonging to a turret.
@@ -94,7 +94,7 @@ local ammoTurretMapping = require("scripts.ammoTurretMapping")
 --- @field is_priority_target boolean[] flags whether targets of the turret are priority targets (indexed by unit_number of target)
 
 --- @class DestroyedTarget contains data of a destroyed asteroid which are used to find the fragments arising from it
---- @field aun uint unit_number of destroyed asteroid
+--- @field aun number unit_number of destroyed asteroid
 --- @field position MapPosition  last known position of destroyed asteroid
 --- @field surface LuaSurface where destruction of an asteroid happened
 --- @field knownAsteroids KnownAsteroid[] list of actual known asteroids in this surface
@@ -378,13 +378,13 @@ local function eliminateInvalid(knownAsteroids)
 
     for un, ka in pairs(knownAsteroids) do
         if not ka.entity.valid then
-            Log.logBlock({ un = un, entity = ka.entity }, function(m)log(m)end, Log.FINE)
+            Log.logBlock({ un = un, entity = ka.entity }, function(m)log(m)end, Log.FINER)
             invalid[un] = true
         end
     end
 
     for un, _ in pairs(invalid) do
-        Log.logMsg(function(m)log(m)end, Log.FINE, "removed invalid knownAsteroid un=%d", un)
+        Log.logMsg(function(m)log(m)end, Log.FINER, "removed invalid knownAsteroid un=%d", un)
         knownAsteroids[un] = nil
     end
 
@@ -588,6 +588,7 @@ end
 
 --- @param entity LuaEntity
 local function newRadar(entity)
+    Log.log(entity.unit_number, function(m)log(m)end, Log.FINE)
     local radar_un = entity.unit_number
     --- @type RadarOnPlatform
     local dart = {
@@ -609,6 +610,7 @@ end
 
 --- @param entity LuaEntity
 local function newFcc(entity)
+    Log.log(entity.unit_number, function(m)log(m)end, Log.FINE)
     local fccun = entity.unit_number
     -- the tuple of dart-fcc and its control_behavior
     --- @type FccOnPlatform
@@ -634,7 +636,7 @@ end
 
 --- @param entity LuaEntity
 local function newTurret(entity)
-    Log.log(entity.unit_number, function(m)log(m)end, Log.FINER)
+    Log.log(entity.unit_number, function(m)log(m)end, Log.FINE)
 
     local pons = global_data.getPlatforms()[entity.surface.index]
     if pons then -- fix for #25
@@ -658,7 +660,7 @@ local createFuncs = {
 --- event handler called if a new dart-fcc/dart-radar or a turret is build on a platform
 --- @param event EventData
 local function entityCreated(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
 
     local entity = event.entity or event.destination
     if not entity or not entity.valid then return end
@@ -673,6 +675,46 @@ end
 local function raiseDartComponentRemoved(entity)
     raiseDartComponentEvent(on_dart_component_removed_event, entity)
 end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+local function checkForOpenGui(entity, event)
+    Log.logEntity(entity, function(m)log(m)end, Log.FINE)
+    -- check if deleted entity is just shown in a GUI -> close it (for all players of the force owning the entity)
+    for _, player in pairs(entity.force.players) do
+        local pd = global_data.getPlayer_data(player.index)
+        if pd and pd.guis and pd.guis.open then
+            -- there is an open GUI ...
+            local opengui = pd.guis.open -- the actual opened gui
+            Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
+
+            if opengui and opengui.entity and (opengui.entity.unit_number == entity.unit_number) then
+                -- ... for the deleted entity
+                event.gae = opengui
+                event.player_index = player.index
+                -- close the opened gui
+                Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINE)
+                script.raise_event(on_dart_gui_close_event, event)
+            else
+                local rguis = pd.guis.recentlyopen or {}
+                Log.logBlock(rguis, function(m)log(m)end, Log.FINE)
+                local destroyed = {}
+                for ndx, gae in pairs(rguis) do
+                    if gae and gae.entity and (gae.entity.unit_number == entity.unit_number) then
+                        -- there is an invisible GUI for the deleted entity
+                        gae.gui.destroy() -- destroy it
+                        table.insert(destroyed, ndx)
+                    end
+                end
+                Log.logBlock(destroyed, function(m)log(m)end, Log.FINE)
+                -- and now remove it from internal data to prevent opening that gui after closing the actual
+                for _, ndx in pairs(destroyed) do
+                    rguis[ndx] = nil
+                end
+            end
+        end
+    end
+end
+-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param entity LuaEntity
 local function removedRadar(entity, event)
@@ -685,23 +727,7 @@ local function removedRadar(entity, event)
         Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
 
         -- check if deleted radar is just shown in a GUI -> close it (for all players of the force owning the entity)
-        for _, player in pairs(entity.force.players) do
-            local pd = global_data.getPlayer_data(player.index)
-            if pd and pd.guis and pd.guis.open then
-                -- there is an open GUI
-                local opengui = pd.guis.open -- the actual opened gui
-                Log.logBlock(opengui, function(m)log(m)end, Log.FINER)
-
-                if opengui and opengui.entity and (opengui.entity.unit_number == entity.unit_number) then
-                    -- for the deleted dart-radar
-                    event.gae = opengui
-                    event.player_index = player.index
-                    -- close the opened gui for this dart-radar
-                    Log.log("raising on_dart_gui_close_event", function(m)log(m)end, Log.FINER)
-                    script.raise_event(on_dart_gui_close_event, event)
-                end
-            end
-        end
+        checkForOpenGui(entity, event)
 
         -- clear the data belonging to the dart-radar
         darts[fccun] = nil
@@ -713,13 +739,18 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param entity LuaEntity
-local function removedFcc(entity)
+local function removedFcc(entity, event)
+    Log.logBlock({ entity = entity, event = event }, function(m)log(m)end, Log.FINE)
     local pons = global_data.getPlatforms()[entity.surface.index]
     if pons then -- fix for #83
         local darts = pons.fccsOnPlatform
 
         local fccun = entity.unit_number
         Log.logBlock({ darts = darts, fccun = fccun }, function(m)log(m)end, Log.FINER)
+
+        -- fix for #95
+        -- check if deleted fcc is just shown in a GUI -> close it (for all players of the force owning the entity)
+        checkForOpenGui(entity, event)
 
         -- clear the data belonging to the dart-fcc
         darts[fccun] = nil
@@ -729,12 +760,17 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param entity LuaEntity
-local function removedTurret(entity)
-    Log.log(entity.unit_number, function(m)log(m)end, Log.FINER)
+local function removedTurret(entity, event)
+    Log.logBlock({ entity = entity, event = event }, function(m)log(m)end, Log.FINE)
 
     -- remove turret
     local pons = global_data.getPlatforms()[entity.surface.index]
     if pons then -- fix for #25
+
+        -- fix for #95 (same problem as for fcc)
+        -- check if deleted turret is just shown in a GUI -> close it (for all players of the force owning the entity)
+        checkForOpenGui(entity, event)
+
         local turretsOnPlatform = pons.turretsOnPlatform
         turretsOnPlatform[entity.unit_number] = nil
         raiseDartComponentRemoved(entity)
@@ -835,15 +871,15 @@ local function dart_radar_died(entity, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function fcc_died(entity)
+local function fcc_died(entity, event)
     Log.logLine( { died=entity, un=entity.unit_number }, function(m)log(m)end, Log.FINE)
-    removedFcc(entity)
+    removedFcc(entity, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-local function turret_died(entity)
+local function turret_died(entity, event)
     Log.logLine( { died=entity, un=entity.unit_number }, function(m)log(m)end, Log.FINE)
-    removedTurret(entity)
+    removedTurret(entity, event)
 end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1237,7 +1273,7 @@ local function onResearchFinished(event)
                 -- but if player has an open GUI => update it
                 local opengui = pd and pd.guis and pd.guis.open
                 if opengui and opengui.entity then
-                    script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
+                    script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index, reason = "research finished"} )
                 end
             end
         else
@@ -1285,7 +1321,7 @@ local function ammo_in_stock_updated(event)
         local pd = global_data.getPlayer_data(player.index)
         local opengui = pd and pd.guis and pd.guis.open
         if opengui and opengui.entity then
-            script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index } )
+            script.raise_event(on_dart_gui_needs_update_event, { entity = opengui.entity, player_index = player.index, reason = "ammo updated" } )
         end
     end
 end

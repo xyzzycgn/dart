@@ -37,7 +37,7 @@ local function playerChangedSurface(event)
         Log.log("close gui", function(m)log(m)end, Log.FINER)
         if guis.open.gui and guis.open.gui.valid then
             guis.open.gui.destroy()
-            guis.open = {}
+            guis.open = nil
         end
     end
 end

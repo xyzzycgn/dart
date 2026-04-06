@@ -549,7 +549,7 @@ local function autoconfigure(gae, event)
 
     configureTurrets.autoConfigure(gae.mayBeAutoConfigured, pons)
 
-    script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = gae.entity })
+    script.raise_event(on_dart_gui_needs_update_event, { player_index = event.player_index, entity = gae.entity, reason = "auto configure" })
 end
 -- ###############################################################
 
