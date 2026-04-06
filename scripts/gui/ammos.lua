@@ -68,7 +68,7 @@ local function allUpdateOfTableRow(updateAllFields, table, v, at_row)
     Log.logBlock(table, function(m)log(m)end, Log.FINER)
     Log.logBlock(table.children_names, function(m)log(m)end, Log.FINEST)
 
-    local prefix, slot, switch, threshold = names(at_row)
+    local _, slot, switch, threshold = names(at_row)
 
     Log.logBlock({slot=slot, switch=switch, threshold=threshold}, function(m)log(m)end, Log.FINER)
 
@@ -185,7 +185,7 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param thresholds AmmoWarningThreshold[]
---- @param inv table<string, uint> List of all suitable ammos in the inventory of the Hub.
+--- @param inv table<string, number> List of all suitable ammos in the inventory of the Hub.
 --- @return AmmoWarningThresholdAndStock[]
 local function presentationData(thresholds, inv)
     Log.logBlock(thresholds, function(m)log(m)end, Log.FINER)
@@ -308,6 +308,10 @@ local function save_clicked(gae, event)
     local pons = pd.pons[platform.index]
     --
     local fop = pons.fccsOnPlatform[gae.entity.unit_number]
+    if not fop then -- fix for #94
+        Log.logMsg(function(m)log(m)end, Log.WARN, "no fop for un = %d", gae.entity.unit_number)
+        return
+    end
     -- old values (may need update)
     local thresholds = fop.ammo_warning.thresholds
 
@@ -316,11 +320,12 @@ local function save_clicked(gae, event)
 
     for ndx, v in pairs(sorteddata) do
         local _, _, switch, threshold = names(ndx)
-        local onOff = components.switchStateAsBoolean(gae.elems["ammos_table"][switch].switch_state)
+        local ammos_table = gae.elems["ammos_table"]
+        local onOff = components.switchStateAsBoolean(ammos_table[switch].switch_state)
 
         local awt = thresholds[v.threshold.type]
         if onOff then
-            local newthreshold = gae.elems["ammos_table"][threshold].text
+            local newthreshold = ammos_table[threshold].text
             awt.threshold = tonumber(newthreshold) or 0
             awt.enabled = true
             Log.logLine({ onOff = onOff, newthreshold = awt.threshold }, function(m)log(m)end, Log.CONFIG)
