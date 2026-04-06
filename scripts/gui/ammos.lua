@@ -68,7 +68,7 @@ local function allUpdateOfTableRow(updateAllFields, table, v, at_row)
     Log.logBlock(table, function(m)log(m)end, Log.FINER)
     Log.logBlock(table.children_names, function(m)log(m)end, Log.FINEST)
 
-    local prefix, slot, switch, threshold = names(at_row)
+    local _, slot, switch, threshold = names(at_row)
 
     Log.logBlock({slot=slot, switch=switch, threshold=threshold}, function(m)log(m)end, Log.FINER)
 
@@ -185,7 +185,7 @@ end
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 --- @param thresholds AmmoWarningThreshold[]
---- @param inv table<string, uint> List of all suitable ammos in the inventory of the Hub.
+--- @param inv table<string, number> List of all suitable ammos in the inventory of the Hub.
 --- @return AmmoWarningThresholdAndStock[]
 local function presentationData(thresholds, inv)
     Log.logBlock(thresholds, function(m)log(m)end, Log.FINER)
