@@ -289,6 +289,7 @@ function components.openNewGui(player_index, gui, elems, entity)
         pd = PlayerData.init_player_data(player)
         global_data.addPlayer_data(player, pd)
     end
+    Log.logBlock(pd.guis, function(m)log(m)end, Log.FINE)
     -- store reference to gui in storage
     --- @type GuiAndElements
     local nextgui =  {
@@ -297,6 +298,21 @@ function components.openNewGui(player_index, gui, elems, entity)
         entity = entity,
     }
     pd.guis.recentlyopen = pd.guis.recentlyopen or {}
+
+    -- sanity loop
+    for ndx = #pd.guis.recentlyopen, 1, -1 do
+        local ro = pd.guis.recentlyopen[ndx]
+        if ro and not ro.entity.valid then
+            Log.log("remove invalid recentlyopen entry", function(m)log(m)end, Log.WARN)
+            local rogui = ro.gui
+            if rogui and rogui.valid then
+                Log.log("destroy old gui", function(m)log(m)end, Log.WARN)
+                rogui.destroy()
+            end
+            pd.guis.recentlyopen[ndx] = nil
+        end
+    end
+
     pd.guis.recentlyopen[#pd.guis.recentlyopen + 1] = pd.guis.open
 
     Log.logBlock(pd.guis, function(m)log(m)end, Log.FINE)
