@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.11
+Date: 2026-04-12
+  Bugfixes:
+    - fixed a GUI closing issue (possibly caused by a compatibility issue in interaction with mod "Blueprint Sandboxes")
+---------------------------------------------------------------------------------------------------
 Version: 1.2.10
 Date: 2026-04-06
   Bugfixes:
