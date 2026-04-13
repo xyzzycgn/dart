@@ -6,7 +6,7 @@
 local Require = {}
 local alternatives = {
     -- here exact names
-    --["__flib__.gui"] = "lib.flib.gui",
+    ["factorio_def"] = "lib/factorio_def",
 
     -- here patterns, that start with
     starts_with = {
