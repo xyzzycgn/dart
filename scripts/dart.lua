@@ -905,7 +905,7 @@ end
 --- (triggered by "remove all entities" in editor mode - see ticket #52)
 --- or by destruction of entity (e.g. by an asteroid hit)
 local function onObjectDestroyed(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
     local res = global_data.getRegisteredEntities()
     local re = res[event.registration_number]
     if re then
@@ -1130,12 +1130,22 @@ local function onPlayerMinedEntity(event)
 end
 --###############################################################
 
+--- event handler for script_raised_built, fix for #102
+--- @param event EventData
+local function scriptRaisedBuilt(event)
+    Log.logEvent(event, function(m)log(m)end, Log.FINE)
+    entityCreated(event) -- simply delegate to well known function ;-)
+end
+--###############################################################
+
 --
 -- Mod initialization
 --
 
 --- register complexer events, e.g. with additional filters
 local function registerEvents()
+    local filters_turrets = { { filter = 'type', type = 'ammo-turret' } }
+
     local filters_dart_components = { { filter = 'name', name = 'dart-radar' },
                                       { filter = 'name', name = 'dart-fcc' },
                                       { filter = 'type', type = 'ammo-turret' },
@@ -1151,6 +1161,7 @@ local function registerEvents()
         filters_entity_died[#filters_entity_died + 1] = filter
     end
 
+    script.on_event(defines.events.script_raised_built,            scriptRaisedBuilt,   filters_turrets)
     script.on_event(defines.events.on_space_platform_built_entity, entityCreated,       filters_dart_components)
     script.on_event(defines.events.on_space_platform_mined_entity, entityRemoved,       filters_dart_components)
     script.on_event(defines.events.on_built_entity,                onBuiltEntity,       filters_dart_components)
