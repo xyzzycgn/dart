@@ -318,7 +318,7 @@ function TestDart:test_on_init()
     dart.on_init()
 
     lu.assertNotNil(storage.players)
-    lu.assertEquals(on_event_called, 6)
+    lu.assertEquals(on_event_called, 7)
 
     -- check results from call of searchDartInfrastructure()
     lu.assertEquals(getTableSize(storage.platforms), 1)
@@ -335,7 +335,7 @@ end
 function TestDart:test_on_load()
     dart.on_load()
 
-    lu.assertEquals(on_event_called, 6)
+    lu.assertEquals(on_event_called, 7)
 end
 -- ###############################################################
 
@@ -344,7 +344,7 @@ function TestDart:test_business_all_empty()
     init_storagePlatforms()
 
     dart.on_nth_tick[60]()
-    lu.assertEquals(on_event_called, 6)
+    lu.assertEquals(on_event_called, 7)
 end
 -- ###############################################################
 
@@ -366,7 +366,7 @@ function TestDart:test_business_all_fcc_only()
     init_storagePlatforms({ [4711] = fcc })
 
     dart.on_nth_tick[60]()
-    lu.assertEquals(on_event_called, 6)
+    lu.assertEquals(on_event_called,7)
 end
 -- ###############################################################
 

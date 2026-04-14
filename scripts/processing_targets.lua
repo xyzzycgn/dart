@@ -235,7 +235,7 @@ local function eliminateInvalid(prios, knownAsteroids)
     end
 
     for un, _ in pairs(invalid) do
-        Log.logMsg(function(m)log(m)end, Log.FINE, "removed invalid knownAsteroid un=%d", un)
+        Log.logMsg(function(m)log(m)end, Log.FINER, "removed invalid knownAsteroid un=%d", un)
         knownAsteroids[un] = nil
     end
 

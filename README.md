@@ -127,13 +127,14 @@ For working correctly with D.A.R.T., mods introducing new turrets need connectiv
 some additional (specifically adapted for each mod) support by this mod (introduced in v 1.0.15).
 
 Currently these mods are known to work fine with it:
+
+- [Additional-Turret-revived](https://mods.factorio.com/mod/Additional-Turret-revived) [^2]
 - [Cannon Turret](https://mods.factorio.com/mod/vtk-cannon-turret) [^2]
 - [Cupric Asteroids](https://mods.factorio.com/mod/cupric-asteroids) [^1] 
 - [Focused gun turrets](https://mods.factorio.com/mod/snouz_long_electric_gun_turret) [^1]
 - [Modular Turrets](https://mods.factorio.com/mod/scattergun_turret) [^1]
 - [Rampant Arsenal (Fork)](https://mods.factorio.com/mod/RampantArsenalFork) [^2]
 - [Schall Ammo Turrets](https://mods.factorio.com/mod/SchallAmmoTurrets) [^1][^3]
-- [Additional-Turret-revived](https://mods.factorio.com/mod/Additional-Turret-revived) [^2]
 
 If you have experience with other mods working too, please let me know. If you're missing another mod without an own 
 connectivity to the circuit network and want to use it together with D.A.R.T., let me know too - I will have a look at it.
