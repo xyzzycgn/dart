@@ -126,7 +126,7 @@ This mod is compatible to vanilla game (= space age) and other mods introducing 
 ammo-turret prototype and/or new ammunition for these turrets.
 
 **IMPORTANT**: 
-For working correctly with D.A.R.T., mods introducing new turrets need connectivity to the circuit network
+For working correctly with D.A.R.T., new types of turrets introduced by other mods need connectivity to the circuit network
 (i.e. the turrets must be connectible with red or green wire). This can be achieved by the other mod itself or require 
 some additional (specifically adapted for each mod) support by this mod (introduced in v 1.0.15).
 
@@ -136,6 +136,7 @@ Currently these mods are known to work fine with it:
 - [Cannon Turret](https://mods.factorio.com/mod/vtk-cannon-turret) [^2]
 - [Cupric Asteroids](https://mods.factorio.com/mod/cupric-asteroids) [^1] 
 - [Focused gun turrets](https://mods.factorio.com/mod/snouz_long_electric_gun_turret) [^1]
+- [Heavy Gun Turret](https://mods.factorio.com/mod/heavy_gun_turret) [^1]
 - [Modular Turrets](https://mods.factorio.com/mod/scattergun_turret) [^1]
 - [Rampant Arsenal (Fork)](https://mods.factorio.com/mod/RampantArsenalFork) [^2]
 - [Schall Ammo Turrets](https://mods.factorio.com/mod/SchallAmmoTurrets) [^1][^3]
