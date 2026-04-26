@@ -127,7 +127,7 @@ ammo-turret prototype and/or new ammunition for these turrets.
 
 **IMPORTANT**: 
 For working correctly with D.A.R.T., new types of turrets introduced by other mods need connectivity to the circuit network
-(i.e. the turrets must be connectible with red or green wire). This can be achieved by the other mod itself or require 
+(i.e. the turrets must be connectable with red or green wire). This can be achieved by the other mod itself or require 
 some additional (specifically adapted for each mod) support by this mod (introduced in v 1.0.15).
 
 Currently these mods are known to work fine with it:
