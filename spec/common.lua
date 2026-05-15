@@ -3,7 +3,7 @@
 --- common definitions used in busted test
 ---
 
-defines = {
+_G.defines = {
     direction = {
         east = 4,
         eastnortheast = 3,
@@ -30,11 +30,14 @@ defines = {
         if_visible = true
     }
 }
+-- ###############################################################
 
+_G. storage = {}
+-- ###############################################################
 
 local event_num = 1700
 
-script = {
+_G.script = {
     mod_name = "TEST_OF_MOD",
     generate_event_name = function()
         event_num = event_num + 1
@@ -47,9 +50,10 @@ script = {
         }
     end
 }
+-- ###############################################################
 
 -- Required by Log.log() from log4factorio
-function log()
+function _G.log()
 end
 
 
