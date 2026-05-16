@@ -10,8 +10,6 @@ serpent = require("serpent") -- must be global
 
 describe("ProcessingTargets", function()
     local processing_targets
-    local on_event_called
-    local raised_events
 
     setup(function()
         processing_targets = require("scripts.processing_targets")
@@ -25,6 +23,10 @@ describe("ProcessingTargets", function()
     before_each(function()
         -- clear history of spy
         _G.script.raise_event:clear()
+    end)
+
+    teardown(function()
+        _G.script.raise_event:revert()
     end)
     -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -951,6 +953,17 @@ describe("ProcessingTargets", function()
                 }
             }
 
+            -- needed to make test realiable (without it, it fails in github CI)
+            local function filtersByName(filters)
+                local result = {}
+
+                for _, filter in ipairs(filters) do
+                    result[filter.value.name] = filter
+                end
+
+                return result
+            end
+
             processing_targets.assignTargets(pons, knownAsteroids, managedTurrets)
 
             assert.are.equal(asteroid1, turret1.shooting_target)
@@ -962,25 +975,23 @@ describe("ProcessingTargets", function()
                 reason = 'assign', tun = 2, target = 4712
             })
             assert.are.same({
-                filters = {
-                    {
-                        min = 1,
-                        value = {
-                            name = "copper-ore",
-                            quality = "normal",
-                            type = "item"
-                        }
-                    },
-                    {
-                        min = 1,
-                        value = {
-                            name = "iron-ore",
-                            quality = "normal",
-                            type = "item"
-                        }
+                ["copper-ore"] = {
+                    min = 1,
+                    value = {
+                        name = "copper-ore",
+                        quality = "normal",
+                        type = "item"
+                    }
+                },
+                ["iron-ore"] = {
+                    min = 1,
+                    value = {
+                        name = "iron-ore",
+                        quality = "normal",
+                        type = "item"
                     }
                 }
-            }, lls)
+            }, filtersByName(lls.filters))
         end)
         -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
