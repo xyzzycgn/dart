@@ -7,9 +7,19 @@ _G.require = Require.replace(_G.require)
 _G.serpent = require("serpent") -- must be global
 
 require("spec.common")
+
 describe("ConfigureTurrets", function()
     local configureTurrets
     local utils
+
+    local function spied_autoconfigure(tcs, pons)
+        spy.on(configureTurrets, "autoConfigure")
+
+        configureTurrets.autoConfigure(tcs, pons)
+
+        assert.spy(configureTurrets.autoConfigure).was_called(1)
+        configureTurrets.autoConfigure:revert()
+    end
 
     setup(function()
         configureTurrets = require("scripts.ConfigureTurrets")
@@ -17,7 +27,7 @@ describe("ConfigureTurrets", function()
 
 
         -- Mock log function.
-        _G.log = function(msg) end
+        _G.log = function() end
 
         -- Mock prototypes.
         _G.prototypes = {
@@ -257,7 +267,7 @@ describe("ConfigureTurrets", function()
                     [456] = {
                         control_behavior = {
                             valid = true,
-                            get_circuit_network = function(wc)
+                            get_circuit_network = function(_)
                                 return {
                                     -- Mock network.
                                 }
@@ -358,7 +368,7 @@ describe("ConfigureTurrets", function()
                     comparator = "=",
                     constant = 5
                 },
-                get_circuit_network = function(wc)
+                get_circuit_network = function(_)
                     return {
                         -- Mock network.
                     }
@@ -425,9 +435,7 @@ describe("ConfigureTurrets", function()
                 cc = mockControlBehavior.circuit_condition
             }
 
-            configureTurrets.autoConfigure({ tc }, { turretsOnPlatform = {} })
-
-            assert.is_true(true)
+            spied_autoconfigure({ tc }, { turretsOnPlatform = {} })
         end)
     end)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -446,9 +454,7 @@ describe("ConfigureTurrets", function()
                 stateConfiguration = configureTurrets.states.circuitNetworkDisabledInTurret
             }
 
-            configureTurrets.autoConfigure({ tc })
-
-            assert.is_true(true)
+            spied_autoconfigure({ tc })
         end)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -478,9 +484,7 @@ describe("ConfigureTurrets", function()
                 stateConfiguration = configureTurrets.states.firstSignalEmpty
             }
 
-            configureTurrets.autoConfigure({ tc }, pons)
-
-            assert.is_true(true)
+            spied_autoconfigure({ tc }, pons)
         end)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -515,7 +519,7 @@ describe("ConfigureTurrets", function()
                     [456] = {
                         control_behavior = {
                             valid = true,
-                            get_circuit_network = function(wc)
+                            get_circuit_network = function(_)
                                 return {
                                     -- Mock network.
                                 }
@@ -528,7 +532,7 @@ describe("ConfigureTurrets", function()
                     [789] = {
                         control_behavior = {
                             valid = true,
-                            get_circuit_network = function(wc)
+                            get_circuit_network = function(_wc)
                                 return {
                                     -- Mock network.
                                 }
@@ -541,9 +545,7 @@ describe("ConfigureTurrets", function()
                 }
             }
 
-            configureTurrets.autoConfigure({ tc }, pons)
-
-            assert.is_true(true)
+            spied_autoconfigure({ tc }, pons)
         end)
     end)
 end)
