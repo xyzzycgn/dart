@@ -32,7 +32,7 @@ _G.defines = {
 }
 -- ###############################################################
 
-_G. storage = {}
+_G.storage = {}
 -- ###############################################################
 
 local event_num = 1700
@@ -43,12 +43,17 @@ _G.script = {
         event_num = event_num + 1
         return event_num
     end,
-    raise_event = function(number, event_data)
-        risen_event[#risen_event + 1] = {
-            number = number,
-            event_data = event_data
-        }
-    end
+}
+-- ###############################################################
+
+settings = {
+    global = {
+        ["dart-logLevel"] = { value = 5 }, -- == Log.INFO
+    },
+    startup = {
+        ["dart-update-stock-period"] = { value = 10 },
+        ["dart-release-control"] = { value = false },
+    }
 }
 -- ###############################################################
 

@@ -26,9 +26,6 @@ describe("ConfigureTurrets", function()
         utils = require("scripts.utils")
 
 
-        -- Mock log function.
-        _G.log = function() end
-
         -- Mock prototypes.
         _G.prototypes = {
             virtual_signal = {
