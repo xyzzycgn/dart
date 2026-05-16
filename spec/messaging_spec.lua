@@ -7,7 +7,6 @@ _G.require = Require.replace(_G.require)
 
 require("spec.common")
 serpent = require("serpent") -- must be global
---require("factorio_def")
 require("scripts.internalEvents")
 
 describe("Messaging", function()

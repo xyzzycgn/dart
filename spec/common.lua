@@ -61,4 +61,18 @@ settings = {
 function _G.log()
 end
 
+-- mock function table_size (normally provided by the game runtime)
+function table_size(table)
+    if (table) then
+        if (type(table) == "table") then
+            local count = 0
+            for _ in pairs(table) do
+                count = count + 1
+            end
+            return count
+        end
+    end
+
+    return 0
+end
 
