@@ -6,7 +6,6 @@ local Require = require("test.require")
 _G.require = Require.replace(_G.require)
 
 require("spec.common")
-serpent = require("serpent") -- must be global
 require("scripts.internalEvents")
 
 describe("Utils", function()

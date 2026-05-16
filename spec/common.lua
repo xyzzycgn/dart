@@ -3,6 +3,8 @@
 --- common definitions used in busted test
 ---
 
+_G.serpent = require("serpent") -- must be global
+
 _G.defines = {
     direction = {
         east = 4,

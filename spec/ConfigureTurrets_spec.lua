@@ -4,7 +4,6 @@
 local Require = require("test.require")
 -- _G is needed - otherwise test fails with "module '__log4factorio__.dump' not found"
 _G.require = Require.replace(_G.require)
-_G.serpent = require("serpent") -- must be global
 
 require("spec.common")
 
