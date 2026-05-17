@@ -9,7 +9,6 @@ require("spec.common")
 
 describe("data-updates", function()
     local createdConnectors
-    local logCalls
 
     local function makeData()
         local vtkTurret = {}
@@ -133,19 +132,16 @@ describe("data-updates", function()
 
     before_each(function()
         createdConnectors = mockGlobals()
-
-        logCalls = 0
-        log = function()
-            logCalls = logCalls + 1
-        end
     end)
 -- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     describe("without optional mods", function()
         it("does nothing", function()
+            local spied_log = spy.on(_G, log)
+
             reloadModule()
 
-            assert.are.equal(0, logCalls)
+            assert.spy(spied_log).was_not_called()
             assert.are.equal(0, #createdConnectors)
         end)
     end)
