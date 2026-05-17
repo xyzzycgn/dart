@@ -4,6 +4,27 @@
 local global_data = require("scripts.global_data")
 local Log = require("__log4factorio__.Log")
 
+-- sort keys of a table
+local function orderedPairs(t)
+    local keys = {}
+    for key in pairs(t) do
+        table.insert(keys, key)
+    end
+
+    table.sort(keys)
+
+    local i = 0
+    return function()
+        i = i + 1
+        if keys[i] == nil then
+            return nil
+        else
+            return keys[i], t[keys[i]]
+        end
+    end
+end
+-- ###############################################################
+
 local asyncHandler = {}
 
 -- hold the registered functions
@@ -12,7 +33,7 @@ local asyncs = {}
 --- register a function to be handled asynchronously
 --- has to be called prior to all calls of enqueue() or dequeue()
 --- @param func function to be handled
---- @return int handle to be used in enqueue()
+--- @return number handle to be used in enqueue()
 function asyncHandler.registerAsync(func)
     Log.logBlock(type(func), function(m)log(m)end, Log.FINEST)
 
@@ -23,7 +44,7 @@ end
 -- ###############################################################
 
 --- enqueue a call to a registered function
---- @param funcHandle int handle returned from call to registerAsync()
+--- @param funcHandle number handle returned from call to registerAsync()
 --- @param arg any argument to be passed to function when it's dequeued
 function asyncHandler.enqueue(funcHandle, arg, delay)
     local untiltick = game.tick + delay
@@ -45,7 +66,7 @@ function asyncHandler.dequeue(event)
     local tick = event.tick
 
     -- execute all enqueued functions whose untiltick is <= the tick from event
-    for untiltick, entries in pairs(queued) do
+    for untiltick, entries in orderedPairs(queued) do
         if untiltick <= tick then
             Log.logBlock(entries, function(m)log(m)end, Log.FINEST)
             for _, entry in pairs(entries) do
