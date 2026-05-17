@@ -48,7 +48,7 @@ _G.script = {
 }
 -- ###############################################################
 
-settings = {
+_G.settings = {
     global = {
         ["dart-logLevel"] = { value = 5 }, -- == Log.INFO
     },
