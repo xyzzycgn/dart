@@ -1,6 +1,6 @@
 [![](https://img.shields.io/factorio-mod-portal/factorio-version/dart?label=factorio%20version&style=for-the-badge)](https://mods.factorio.com/mod/dart) [![](https://img.shields.io/badge/dynamic/json?color=orange&label=Factorio&query=downloads_count&suffix=%20downloads&url=https%3A%2F%2Fmods.factorio.com%2Fapi%2Fmods%2Fdart&style=for-the-badge)](https://mods.factorio.com/mod/dart/downloads) [![](https://img.shields.io/factorio-mod-portal/v/dart?style=for-the-badge&color=aqua)](https://mods.factorio.com/mod/dart/changelog)
 
-[![](https://img.shields.io/github/issues/xyzzycgn/dart?label=Bug%20Reports&style=for-the-badge)](https://github.com/xyzzycgn/dart/issues) [![](https://img.shields.io/github/issues-pr/xyzzycgn/dart?label=Pull%20Requests&style=for-the-badge)](https://github.com/xyzzycgn/dart/pulls) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/xyzzycgn/dart/tests.yml?style=for-the-badge&label=tests)
+[![](https://img.shields.io/github/issues/xyzzycgn/dart?label=Bug%20Reports&style=for-the-badge)](https://github.com/xyzzycgn/dart/issues) [![](https://img.shields.io/github/issues-pr/xyzzycgn/dart?label=Pull%20Requests&style=for-the-badge)](https://github.com/xyzzycgn/dart/pulls) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/xyzzycgn/dart/busted.yml?style=for-the-badge&label=tests)
 
 # Dangerous Asteroids Radar Tracking (D.A.R.T.)
 
