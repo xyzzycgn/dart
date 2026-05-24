@@ -1,0 +1,12 @@
+return {
+  _all = {
+    coverage = true
+  },
+  default = {
+    verbose = true,
+    ["exclude-pattern"] = "test",
+  },
+  CI = {
+    output = "TAP",
+  }
+}
