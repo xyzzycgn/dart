@@ -14,7 +14,7 @@ local function register(name)
     registered[event] = name
     dump.registerGeneratedEvent(name, event)
 
-    Log.logMsg("registered %s: %d", Log.FINE, name, event)
+    Log.logMsg(function(m)log(m)end, Log.FINE, "registered %s: %d", name, event)
 
     return event
 end
