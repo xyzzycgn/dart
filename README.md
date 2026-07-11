@@ -164,8 +164,8 @@ connectivity to the circuit network and want to use it together with D.A.R.T., l
   - svenska (sv-SE)
   - türkçe (tr)
   - українська (uk-UA)    
-  - 中国人 (zh-CN)
-  - 中國人 (zh-TW)
+  - 简体中文 (zh-CN)
+  - 繁體中文 (zh-TW)
 
 Mostly translated with google or AI - may contain wrong translations or such sounding strange/funny for native speakers.
 
