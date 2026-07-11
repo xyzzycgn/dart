@@ -4,15 +4,15 @@
   "description": "An optimized asteroid defense that saves a lot of ammunition by smarter targeting",
   "author": "xyzzycgn",
   "homepage": "https://github.com/xyzzycgn/dart.git",
-  "version": "1.2.14",
-  "factorio_version": "2.0",
+  "version": "1.3.0",
+  "factorio_version": "2.1",
   "dependencies": [
-    "space-age >= 2.0.72",
-    "flib >= 0.16.2",
-    "log4factorio >= 0.2.2",
-    "? vtk-cannon-turret >= 2.3.2",
-    "? RampantArsenalFork >= 1.0.3",
-    "? Additional-Turret-revived >= 0.1.61"
+    "space-age >= 2.1.7",
+    "flib >= 0.17.1",
+    "log4factorio >= 0.3.0",
+    "? vtk-cannon-turret > 2.4.2",
+    "? RampantArsenalFork > 1.1.1",
+    "? Additional-Turret-revived > 0.1.61"
   ],
   "space_travel_required": true
 }
