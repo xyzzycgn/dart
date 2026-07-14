@@ -163,7 +163,7 @@ connectivity to the circuit network and want to use it together with D.A.R.T., l
   - русский (ru)
   - svenska (sv-SE)
   - türkçe (tr)
-  - українська (uk-UA)    
+  - українська (uk)    
   - 简体中文 (zh-CN)
   - 繁體中文 (zh-TW)
 
