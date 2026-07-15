@@ -2,7 +2,7 @@
 --- Created by xyzzycgn.
 --- DateTime: 23.12.24 16:43
 ---
-local Require = require("test.require")
+local Require = require("spec.require")
 -- _G is needed - otherwise test fails with "module '__log4factorio__.dump' not found"
 _G.require = Require.replace(_G.require)
 
