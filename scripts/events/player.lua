@@ -19,10 +19,11 @@ local function init_player_data(player_index)
         global_data.addPlayer_data(player, pd)
     end
 end
+-- ###############################################################
 
 --- @param event EventData
 local function playerJoinedOrCreated(event)
-    Log.logEvent(event, function(m)log(m)end)
+    Log.logEvent(event, function(m)log(m)end, Log.INFO)
     init_player_data(event.player_index)
 end
 -- ###############################################################
@@ -44,15 +45,15 @@ end
 --###############################################################
 
 --- @param event EventData
-local function tbd(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+local function playerRemoved(event)
+    Log.logEvent(event, function(m)log(m)end, Log.INFO)
+    global_data.getAllPlayer_data()[event.player_index] = nil
 end
 
 local Player = {
     playerJoinedOrCreated = playerJoinedOrCreated,
     playerChangedSurface = playerChangedSurface,
-    playerLeftGame = tbd,
-    playerRemoved = tbd,
+    playerRemoved = playerRemoved,
 }
 
 return Player
