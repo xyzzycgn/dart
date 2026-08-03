@@ -19,10 +19,11 @@ local function init_player_data(player_index)
         global_data.addPlayer_data(player, pd)
     end
 end
+-- ###############################################################
 
 --- @param event EventData
 local function playerJoinedOrCreated(event)
-    Log.logEvent(event, function(m)log(m)end)
+    Log.logEvent(event, function(m)log(m)end, Log.INFO)
     init_player_data(event.player_index)
 end
 -- ###############################################################
@@ -41,36 +42,18 @@ local function playerChangedSurface(event)
         end
     end
 end
--- ###############################################################
-
-local function toggleMapEditor(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINE)
-    local pd = global_data.getPlayer_data(event.player_index)
-    if pd then
-        local editorMode = pd.editorMode
-        if editorMode then
-            editorMode = false
-        else
-            editorMode = true
-        end
-
-        pd.editorMode = editorMode
-        Log.logLine({ player_index = event.player_index, editorMode = editorMode }, function(m)log(m)end, Log.INFO)
-    end
-end
 --###############################################################
 
 --- @param event EventData
-local function tbd(event)
-    Log.logEvent(event, function(m)log(m)end, Log.FINER)
+local function playerRemoved(event)
+    Log.logEvent(event, function(m)log(m)end, Log.INFO)
+    global_data.getAllPlayer_data()[event.player_index] = nil
 end
 
 local Player = {
     playerJoinedOrCreated = playerJoinedOrCreated,
     playerChangedSurface = playerChangedSurface,
-    toggleMapEditor = toggleMapEditor,
-    playerLeftGame = tbd,
-    playerRemoved = tbd,
+    playerRemoved = playerRemoved,
 }
 
 return Player
