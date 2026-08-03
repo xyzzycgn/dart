@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.15
+Date: 2026-08-03
+  Bugfixes:
+    - Corrected detection of editor mode
+  Changes:
+    - removed some not necessary (and empty) event handlers
+---------------------------------------------------------------------------------------------------
 Version: 1.2.14
 Date: 2026-07-14
   Bugfixes:
