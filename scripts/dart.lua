@@ -994,8 +994,9 @@ end
 --- @param event EventData
 --- @return boolean returns true if player has entered editor mode
 local function isInEditormode(event)
-    local pd = global_data.getPlayer_data(event.player_index)
-    return pd and pd.editorMode
+    -- fix for #120
+    local player = game.get_player(event.player_index)
+    return player.controller_type == defines.controllers.editor
 end
 -- ###############################################################
 
@@ -1487,10 +1488,8 @@ dart.events = {
     [defines.events.on_space_platform_changed_state] = space_platform_changed_state,
     [defines.events.on_player_created]               = events_player.playerJoinedOrCreated,
     [defines.events.on_player_joined_game]           = events_player.playerJoinedOrCreated,
-    [defines.events.on_player_left_game]             = events_player.playerLeftGame,
     [defines.events.on_player_removed]               = events_player.playerRemoved,
     [defines.events.on_player_changed_surface]       = events_player.playerChangedSurface,
-    [defines.events.on_player_toggled_map_editor]    = events_player.toggleMapEditor,
     [defines.events.on_runtime_mod_setting_changed]  = changeSettings,
     [defines.events.on_research_finished]            = onResearchFinished,
 
