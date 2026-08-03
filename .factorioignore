@@ -7,7 +7,7 @@
 .luacov
 doc/
 lib/
-test/
+spec/
 *.bak
 *.tmp
 *.tmp.*
